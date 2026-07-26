@@ -45,6 +45,7 @@ from datetime import UTC, datetime
 
 from sqlmodel import Session
 
+from .log_safety import log_safe
 from .models import AuditLogEntry, Document
 from .object_store import get_object_store
 from .qdrant_store import delete_document_chunks, get_qdrant_client
@@ -116,7 +117,9 @@ def purge_document(
         try:
             get_object_store().delete(object_key)
         except FileNotFoundError:
-            logger.info("original for %s already absent from the object store", document_id)
+            logger.info(
+                "original for %s already absent from the object store", log_safe(document_id)
+            )
         except Exception as exc:
             raise PurgeError(
                 f"could not delete the original for {document_id}: {exc}. Chunks are "
@@ -158,11 +161,16 @@ def purge_document(
     )
     session.commit()
     session.refresh(doc)
+    # log_safe on the externally-sourced values: actor_username is an OIDC
+    # claim, so a newline in it could forge an entire log line (CodeQL
+    # flagged this). document_id is uuid.UUID-typed and cannot contain one,
+    # but escaping it costs nothing and saves the next reader deciding which
+    # arguments need it.
     logger.warning(
         "document %s purged by %s (was %s, %d chunks)",
-        document_id,
-        actor_username,
-        original_status,
+        log_safe(document_id),
+        log_safe(actor_username),
+        log_safe(original_status),
         chunk_count,
     )
     return doc
