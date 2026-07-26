@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 
 RAG_CURATE_PREFIX = "rag-curate:"
 RAG_RELEASABILITY_PREFIX = "rag-releasability:"
+RAG_CLEARANCE_PREFIX = "rag-clearance:"
 
 # Comma-separated list of `iss` claim values to accept. Not a hypothetical: in the
 # dev Compose stack, the same Keycloak instance is reachable -- and issues tokens
@@ -48,7 +49,6 @@ OIDC_SKIP_VERIFY = os.environ.get("OIDC_SKIP_VERIFY", "false").lower() == "true"
 class UserClaims(BaseModel):
     sub: str
     preferred_username: str
-    clearance: str
     groups: list[str] = Field(default_factory=list)
     org: str | None = None
     rag_roles: list[str] = Field(default_factory=list)
@@ -60,6 +60,21 @@ class UserClaims(BaseModel):
     @property
     def can_query(self) -> bool:
         return "rag-query" in self.rag_roles
+
+    @property
+    def clearance(self) -> str:
+        # FR-18/FR-26/FR-14: the user's Classification level, derived from a
+        # rag-clearance:<value> client role -- same rag_roles-prefix pattern as
+        # curatable_orgs/releasability below, but a single ranked value rather
+        # than a set, so exactly one such role is expected per user. A stray
+        # second role just wins by rag_roles order; that's a Keycloak-admin
+        # misconfiguration to fix, not something this layer needs to guard
+        # against (it has no DB access to the ClassificationLevel rank table
+        # here anyway -- see common/classification.py).
+        for role in self.rag_roles:
+            if role.startswith(RAG_CLEARANCE_PREFIX):
+                return role[len(RAG_CLEARANCE_PREFIX) :]
+        return ""
 
     @property
     def releasability(self) -> list[str]:
@@ -115,7 +130,6 @@ def parse_claims(bearer_token: str) -> UserClaims:
     return UserClaims(
         sub=payload["sub"],
         preferred_username=payload.get("preferred_username", payload["sub"]),
-        clearance=payload.get("clearance", ""),
         groups=payload.get("groups", []),
         org=payload.get("org"),
         rag_roles=payload.get("rag_roles", []),
