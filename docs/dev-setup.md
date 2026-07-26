@@ -19,13 +19,27 @@ the NFR-11 bullet below) along the way. **LibreChat's own OIDC login is now conf
 working end to end (issue #75)** — several real LibreChat config bugs were found and fixed
 chasing it (see the `ALLOW_SOCIAL_LOGIN`/`OPENID_SCOPE`/MCP-allowlist bullets below), and the
 actual root cause (`openid-client` refusing a plain-HTTP issuer) needed a real HTTPS setup,
-not just config — see "One-time host setup" below. The OBO token-exchange mechanism is also
-confirmed live: a scripted exchange (replicating exactly what LibreChat's backend does)
-returns a correctly claims-filtered `rag_search` result. Still open: LibreChat's *own* code
-performing that exchange when a real chat message triggers the tool — driving that specific
-path hit a separate LibreChat bug (its `openidJwt` reused-token strategy rejects its own
-freshly-issued token with "invalid algorithm"), tracked as a follow-up. See
-"What's stubbed vs working" below for the complete, current list.
+not just config — see "One-time host setup" below. **The `obo.scopes` OBO token-exchange
+config is currently unused** (2026-07-26): a real chat message from `bob-query` driving
+`rag_search` showed LibreChat's actual `OboTokenService` calls Keycloak with
+`grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer` (RFC 7523), not
+`grant_type=token-exchange` (RFC 8693) as the realm's `standard.token.exchange.enabled`
+attribute was configured and manually verified for — the earlier scripted exchange
+replicated the wrong grant type, not LibreChat's real one. Keycloak 26.7's RFC 7523 support
+("JWT Authorization Grant") is built for external-IdP identity chaining and it's
+unverified whether a same-realm self-issued token even qualifies. Rather than chase that,
+`infra/librechat/librechat.yaml`'s `nexus-rag-search` server now uses `addUserJwtToken: true`
+instead — forwards the raw LibreChat session token rather than an audience-exchanged one,
+which still passes `orchestration-mcp`'s `aud=rag-app` check (see the Keycloak OBO bullet
+below for why). Revisit the RFC 7523 path if Keycloak's same-realm story becomes clearer.
+**The MCP connection itself is now confirmed working end to end (2026-07-26)** — a separate
+bug (`421 Invalid Host header`, `mcp` SDK's default DNS-rebinding protection rejecting the
+`orchestration-mcp:8002` Compose-network hostname) was found and fixed after the OBO fix
+above, see the `transport_security`/`TransportSecuritySettings` bullet below. With that
+fixed, `bob-query` can connect to the `nexus-rag-search` MCP server and LibreChat lists
+`rag_search` as an available tool — **not yet confirmed**: whether a chat message actually
+gets the model to call it (see the `llama3.2:1b` tool-calling bullet below).
+See "What's stubbed vs working" below for the complete, current list.
 
 **Schema note:** this version writes chunks with two named Qdrant vectors (`dense` +
 `bm25`) instead of one unnamed vector. If you have a Qdrant volume from before hybrid
@@ -637,8 +651,14 @@ the docs, not a silent "it works" — flag it if you find one.
   testing item below.
 
 **Stubbed / TODO (see inline `TODO` comments at each site):**
-- **Keycloak OBO/token-exchange — confirmed live end to end (issue #75), and the assumed
-  "manual admin-console step" turned out not to apply at all.** That belief traced to a
+- **Keycloak RFC 8693 token-exchange (`grant_type=token-exchange`) — verified live via a
+  scripted exchange, but turned out not to be the grant type LibreChat's real OBO code
+  path actually uses (see the opening summary and the `librechat.yaml` bullet below);
+  `standard.token.exchange.enabled` on `librechat` is currently dead config, left in place
+  in case Keycloak's RFC 7523 story clarifies enough to revisit OBO.** The manual-verification
+  work below is still accurate for what it tested, just not for what LibreChat calls at
+  runtime. The assumed "manual admin-console step" turned out not to apply at all — that
+  belief traced to a
   misreading of Keycloak's docs: the fine-grained admin permission is only required for the
   deprecated/preview *legacy* token exchange. Standard Token Exchange V2 (RFC 8693, what
   `standard.token.exchange.enabled` actually configures, confirmed via
@@ -664,18 +684,38 @@ the docs, not a silent "it works" — flag it if you find one.
   importer uses strict JSON deserialization and refuses the whole realm over one unrecognized
   property, confirmed live: `ERROR: Unrecognized field "_comment"`.)
 - `infra/librechat/librechat.yaml`'s `mcpServers` shape was checked against a real running
-  LibreChat 0.8.7 instance and found one real error: `obo.scopes` was a JSON array
-  (`["rag-query"]`), but LibreChat's actual Zod config schema wants a single space-delimited
-  string (standard OAuth2 scope-parameter format, RFC 6749) — LibreChat refused to start at
-  all (`Exiting due to invalid configuration`) until fixed. The Zod error's discriminated
-  union also confirms the rest of this shape is right: `type: streamable-http` plus an
-  `obo` object are valid together, `obo.scopes` was the only field flagged once the other
-  union branches (`stdio`, `websocket`, `sse` — which don't apply here) are excluded. The
-  underlying token-exchange mechanism this config points at is now confirmed live end to end
-  (see the Keycloak OBO bullet above) — what's still unconfirmed is LibreChat's *own* code
-  performing that exchange via this exact `librechat.yaml` config when a real chat message
-  triggers the tool (blocked on the separate `openidJwt` "invalid algorithm" bug noted in
-  this doc's opening summary).
+  LibreChat 0.8.7 instance and found one real error along the way: `obo.scopes` was a JSON
+  array (`["rag-query"]`), but LibreChat's actual Zod config schema wants a single
+  space-delimited string (standard OAuth2 scope-parameter format, RFC 6749) — LibreChat
+  refused to start at all (`Exiting due to invalid configuration`) until fixed. That fix
+  got LibreChat running and the `obo` config accepted, but a real chat message actually
+  triggering `rag_search` (2026-07-26, `bob-query`) surfaced the deeper problem above:
+  LibreChat's `OboTokenService` calls Keycloak with `grant_type=jwt-bearer`, which Keycloak
+  rejected outright (`JWT Authorization Grant is not supported for the requested client`) —
+  a hard config mismatch, not the previously-suspected `openidJwt` "invalid algorithm" bug
+  (that one either doesn't apply to this code path or was already fixed by an earlier commit;
+  the failure now happens Keycloak-side, meaning LibreChat's request reached the token
+  endpoint fine). Switched `nexus-rag-search` to `addUserJwtToken: true` instead of `obo` —
+  see the opening summary for why that still passes claims validation. The `obo` config
+  block itself was removed from `librechat.yaml`; the Zod-shape fact above (single
+  space-delimited string, not an array) still applies if OBO is revisited later.
+- **`orchestration-mcp`'s MCP endpoint rejected every LibreChat request with `421
+  Invalid Host header`, even after the `addUserJwtToken` fix above got the OBO/auth layer
+  itself working.** Confirmed live (2026-07-26): `docker logs` on both sides showed
+  LibreChat's transport erroring `Streamable HTTP error: Error POSTing to endpoint:
+  Invalid Host header` while `orchestration-mcp` logged `Invalid Host header:
+  orchestration-mcp:8002` and a `421 Misdirected Request`, before the request ever reached
+  `rag_search`'s own auth check. Root cause: `mcp` SDK's `FastMCP` auto-enables DNS-rebinding
+  protection (`mcp.server.transport_security.TransportSecuritySettings`) whenever it's
+  constructed with the default `host="127.0.0.1"`, allowlisting only `127.0.0.1`/`localhost`/
+  `::1` Host headers — it assumes a loopback bind and has no way to know the container will
+  actually be reached over the Compose network as `orchestration-mcp:8002`, which is exactly
+  the Host header LibreChat's requests carry. Fixed in `services/orchestration-mcp/app/
+  server.py` by passing an explicit `TransportSecuritySettings` that extends
+  `allowed_hosts` with `orchestration-mcp:*` instead of disabling DNS-rebinding protection
+  outright. After the fix, LibreChat's MCP log shows a clean `Tools: rag_search` /
+  `Initialized in: Nms` on startup and `orchestration-mcp`'s own log shows `200`/`202` on
+  `POST /mcp` instead of `421`.
 - **LibreChat also needs its own `JWT_SECRET`/`JWT_REFRESH_SECRET`/`CREDS_KEY`/`CREDS_IV`,
   independent of the `librechat.yaml`/OIDC config above** — found via the same live
   `docker compose up` run, one error at a time: after the `obo.scopes` fix, LibreChat's next
@@ -701,6 +741,14 @@ the docs, not a silent "it works" — flag it if you find one.
   `OPENID_CALLBACK_URL`'s relative path to build the absolute callback URL used in the OIDC
   redirect, and leaving it unset risked a second, separate failure mode once the button
   itself was fixed.
+- **`llama3.2:1b` does not appear to invoke `rag_search` as a tool call** — noticed
+  (2026-07-26) once the MCP connection itself was working (previous bullet): LibreChat
+  connects to `orchestration-mcp` and lists `rag_search` correctly, but a chat message that
+  should trigger it doesn't produce a tool call. Not yet root-caused — candidates include
+  the 1B model's tool-calling capability/instruction-following at that size, LiteLLM's
+  tool-call translation for the `ollama_chat`/`ollama` provider route, and whether
+  LibreChat is even sending the tool schema to this particular endpoint config. Needs
+  investigation with a real chat transcript / LiteLLM request log, not guessing from docs.
 - **Helm chart changes are hand-written, unverified by `helm lint`/`helm template`** — no
   network access to install the `helm` CLI in this environment (see
   `helm/nexus-rag/README.md`'s note at the top, unchanged from earlier chart work). This
