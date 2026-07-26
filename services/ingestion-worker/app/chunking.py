@@ -29,6 +29,11 @@ class Chunk:
     chunk_index: int
     heading: str | None = None
     page_or_slide: int | None = None
+    # issue #89: inherited straight from the ParsedSection this chunk was cut
+    # from ("text" or "table") -- chunking never crosses a section boundary,
+    # so a chunk's content_type is always exactly its source section's, no
+    # per-chunk detection needed.
+    content_type: str = "text"
 
 
 def chunk_sections(
@@ -54,6 +59,7 @@ def chunk_sections(
                     chunk_index=len(chunks),
                     heading=section.heading,
                     page_or_slide=section.page_or_slide,
+                    content_type=section.content_type,
                 )
             )
             if end == len(words):

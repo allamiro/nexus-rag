@@ -79,6 +79,10 @@ async def process_document(document_id: uuid.UUID) -> bool:
                         "text": chunk.text,
                         "heading": chunk.heading,
                         "page_or_slide": chunk.page_or_slide,
+                        # issue #89: lets reranking/retrieval weight chunks by
+                        # what kind of content they hold (e.g. prefer table
+                        # chunks for a query asking about a specific value).
+                        "content_type": chunk.content_type,
                         "filename": doc.filename,
                         "doc_type": doc.doc_type,
                         "source_originator": doc.source_originator,

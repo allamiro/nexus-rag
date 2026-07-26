@@ -305,6 +305,10 @@ services:
       OLLAMA_URL: http://ollama:11434
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-nomic-embed-text}
       RERANKER_URL: http://reranker-service:8003
+      # issue #89: optional {content_type: multiplier} JSON map applied to
+      # cross-encoder scores during reranking, e.g. '{"table": 1.15}' --
+      # unset (the default) means no boost, every content type weighted 1.0.
+      CONTENT_TYPE_BOOSTS: ${CONTENT_TYPE_BOOSTS:-}
     volumes:
       - orchestration-mcp-cache:/srv/.cache/huggingface
     ports:

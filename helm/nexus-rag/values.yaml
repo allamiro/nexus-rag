@@ -285,6 +285,10 @@ orchestrationMcp:
     limits:
       cpu: "1"
       memory: "1Gi"
+  # issue #89: optional {content_type: multiplier} JSON map applied to
+  # cross-encoder scores during reranking, e.g. '{"table": 1.15}'. Empty
+  # string (the default) means no boost -- every content type weighted 1.0.
+  contentTypeBoosts: ""
 
 # ---------------------------------------------------------------------------
 # ingestion-worker (FR-3..FR-6, NFR-11) -- the durable JetStream consumer
