@@ -68,3 +68,70 @@ def test_a_table_section_stays_atomic_alongside_a_split_text_section():
     assert len(table_chunks) == 1
     assert table_chunks[0].text == long_table
     assert len(text_chunks) > 1
+
+
+def test_a_table_section_past_table_max_words_is_split_by_row_preserving_header():
+    header = "| id | value |"
+    separator = "| --- | --- |"
+    rows = [f"| row{i} | val{i} |" for i in range(400)]
+    long_table = "\n".join([header, separator, *rows])
+    sections = [ParsedSection(text=long_table, content_type="table")]
+
+    chunks = chunk_sections(sections, table_max_words=50)
+
+    assert len(chunks) > 1
+    assert all(c.content_type == "table" for c in chunks)
+
+    seen_rows: list[str] = []
+    for chunk in chunks:
+        lines = chunk.text.split("\n")
+        assert lines[0] == header
+        assert lines[1] == separator
+        assert len(chunk.text.split()) <= 50
+        seen_rows.extend(lines[2:])
+    # No row dropped, duplicated, or split -- exactly the original rows, in order.
+    assert seen_rows == rows
+
+
+def test_a_table_section_under_table_max_words_is_not_split():
+    rows = [f"| row{i} | val{i} |" for i in range(5)]
+    small_table = "\n".join(["| id | value |", "| --- | --- |", *rows])
+    sections = [ParsedSection(text=small_table, content_type="table")]
+
+    chunks = chunk_sections(sections, table_max_words=1000)
+
+    assert len(chunks) == 1
+    assert chunks[0].text == small_table
+
+
+def test_a_single_row_wider_than_table_max_words_becomes_its_own_oversized_chunk():
+    huge_row = "| " + " ".join(f"cell{i}" for i in range(200)) + " |"
+    table = "\n".join(["| id | value |", "| --- | --- |", huge_row])
+    sections = [ParsedSection(text=table, content_type="table")]
+
+    chunks = chunk_sections(sections, table_max_words=10)
+
+    assert len(chunks) == 1
+    assert chunks[0].text == table
+
+
+def test_a_pdf_dot_leader_table_of_contents_is_collapsed_before_sizing():
+    # A real CIS benchmark PDF's ToC: dozens of lines like this, each dot run
+    # a single whitespace-split "word" that nonetheless tokenizes to
+    # thousands of embedding-model tokens -- see module docstring.
+    toc_line = "Overview " + ("." * 150) + " 7"
+    sections = [ParsedSection(text=toc_line, content_type="text")]
+
+    chunks = chunk_sections(sections)
+
+    assert len(chunks) == 1
+    assert chunks[0].text == "Overview ... 7"
+
+
+def test_repeated_char_collapsing_leaves_normal_prose_untouched():
+    prose = "This is completely ordinary prose, nothing repeated here."
+    sections = [ParsedSection(text=prose, content_type="text")]
+
+    chunks = chunk_sections(sections)
+
+    assert chunks[0].text == prose
