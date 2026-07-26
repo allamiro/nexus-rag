@@ -67,7 +67,7 @@ Pass a dict with "global" (the top-level .Values.global) and "image" (a componen
 {{/*
 Pod-level securityContext for the three custom-built services (ingestion-api,
 orchestration-mcp, reranker-service). UID/GID 10001 is the fixed non-root
-user baked into services/*/Dockerfile -- not runtime-injected, so it has to
+user baked into the services' Dockerfiles -- not runtime-injected, so it has to
 match exactly. Not used by qdrant or embeddingService, which run upstream
 images (qdrant/qdrant, ollama/ollama) whose own user conventions this chart
 doesn't override.
