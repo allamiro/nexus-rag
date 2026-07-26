@@ -7,6 +7,14 @@ Simplification: "tokens" here are approximated by whitespace-split words, not
 a model-specific tokenizer -- close enough for a target chunk size and cheap
 to compute without pulling in a tokenizer dependency. Revisit if chunk sizes
 need to track the embedding model's actual token count precisely.
+
+issue #90: a section's content_type marks whether its text is an atomic
+block that must never be cut by the sliding window -- currently just
+"table" (a markdown table from `_table_to_markdown`, or a spreadsheet sheet;
+see parsing.py), since those are the only non-prose content_type today. A
+table section is emitted as a single chunk even when it's longer than
+target_words -- splitting it mid-row would scatter a row's fields across two
+separate embedded chunks, which is worse than one oversized chunk.
 """
 
 from __future__ import annotations
@@ -46,10 +54,26 @@ def chunk_sections(
     chunks: list[Chunk] = []
 
     for section in sections:
-        words = section.text.split()
-        if not words:
+        text = section.text.strip()
+        if not text:
             continue
 
+        # issue #90: atomic sections (currently just tables) are kept whole,
+        # regardless of target_words -- the sliding window below only ever
+        # runs on prose, so it can no longer land a cut inside a table row.
+        if section.content_type != "text":
+            chunks.append(
+                Chunk(
+                    text=text,
+                    chunk_index=len(chunks),
+                    heading=section.heading,
+                    page_or_slide=section.page_or_slide,
+                    content_type=section.content_type,
+                )
+            )
+            continue
+
+        words = text.split()
         start = 0
         while True:
             end = min(start + target_words, len(words))
