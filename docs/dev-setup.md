@@ -163,8 +163,9 @@ environment.**
 | `carol-curator` | `rag-query`, `rag-curate:USAREUR-AF` | SECRET | FVEY, NATO | USAREUR-AF | curator scoped to one org |
 | `dave-admin` | all roles + both curator orgs | SECRET | NOFORN, USA, NATO, FVEY | USAREUR-AF | admin |
 
-Releasability is granted via `rag-releasability:<value>` client roles (same convention as
-`rag-curate:<org>`), not a user attribute — see REQUIREMENTS.md Section 6.2.
+Clearance and Releasability are both granted via `rag-clearance:<value>` and
+`rag-releasability:<value>` client roles (same convention as `rag-curate:<org>`), not user
+attributes — see REQUIREMENTS.md Section 6.2.
 
 ## Getting a token for API testing (dev-only password grant)
 
