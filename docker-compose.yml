@@ -212,7 +212,13 @@ services:
       # NFR-3: non-superuser app role, distinct from POSTGRES_USER -- see
       # postgres service's init-app-roles.sh.
       DATABASE_URL: postgresql+psycopg://${APP_DB_USER:-nexus_rag_app}:${APP_DB_PASSWORD:-nexus_rag_app}@postgres:5432/${POSTGRES_DB:-nexus_rag}
-      OIDC_ISSUERS: http://keycloak:8080/realms/nexus-rag,http://localhost:8080/realms/nexus-rag
+      # Issue #75: the third entry (https://keycloak:8443) is the issuer
+      # stamped on tokens produced by LibreChat's OBO token-exchange call,
+      # which now goes to Keycloak's HTTPS listener (openid-client's
+      # discovery requires HTTPS -- see the keycloak/librechat services'
+      # comments) -- confirmed live: exchanged tokens 403'd with "invalid
+      # token: Invalid issuer" against this endpoint until this was added.
+      OIDC_ISSUERS: http://keycloak:8080/realms/nexus-rag,http://localhost:8080/realms/nexus-rag,https://keycloak:8443/realms/nexus-rag
       OIDC_AUDIENCE: rag-app
       # Browser OIDC login (ARCHITECTURE.md Section 4.4). RAG_APP_KEYCLOAK_CLIENT_SECRET
       # is the same var already used by seed-sample-data/eval-retrieval below -- rag-app
@@ -316,7 +322,13 @@ services:
       # NFR-3: non-superuser app role, distinct from POSTGRES_USER -- see
       # postgres service's init-app-roles.sh.
       DATABASE_URL: postgresql+psycopg://${APP_DB_USER:-nexus_rag_app}:${APP_DB_PASSWORD:-nexus_rag_app}@postgres:5432/${POSTGRES_DB:-nexus_rag}
-      OIDC_ISSUERS: http://keycloak:8080/realms/nexus-rag,http://localhost:8080/realms/nexus-rag
+      # Issue #75: the third entry (https://keycloak:8443) is the issuer
+      # stamped on tokens produced by LibreChat's OBO token-exchange call,
+      # which now goes to Keycloak's HTTPS listener (openid-client's
+      # discovery requires HTTPS -- see the keycloak/librechat services'
+      # comments) -- confirmed live: exchanged tokens 403'd with "invalid
+      # token: Invalid issuer" against this endpoint until this was added.
+      OIDC_ISSUERS: http://keycloak:8080/realms/nexus-rag,http://localhost:8080/realms/nexus-rag,https://keycloak:8443/realms/nexus-rag
       OIDC_AUDIENCE: rag-app
       QDRANT_URL: http://qdrant:6333
       # NFR-15: read-only key -- this service only ever calls query_points

@@ -205,10 +205,7 @@
       "serviceAccountsEnabled": true,
       "redirectUris": ["*"],
       "webOrigins": ["*"],
-      "defaultClientScopes": ["basic", "nexus-rag-claims", "profile", "email"],
-      "attributes": {
-        "standard.token.exchange.enabled": "true"
-      }
+      "defaultClientScopes": ["basic", "nexus-rag-claims", "profile", "email"]
     },
     {
       "clientId": "librechat",
@@ -224,7 +221,8 @@
       "defaultClientScopes": ["basic", "nexus-rag-claims", "profile", "email"],
       "attributes": {
         "access.token.lifespan": "900",
-        "use.refresh.tokens": "true"
+        "use.refresh.tokens": "true",
+        "standard.token.exchange.enabled": "true"
       }
     }
   ],

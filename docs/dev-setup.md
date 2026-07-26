@@ -15,11 +15,16 @@ and a second one after NFR-11 restructured ingestion around a durable NATS queue
 `ingestion-worker` service — upload through `ingestion-api` with a real Keycloak-obtained
 token, durable queuing and processing, curation, and a claims-filtered query all manually
 verified working end to end, catching and fixing a real object-store permission bug (see
-the NFR-11 bullet below) along the way. **Not yet confirmed**: LibreChat's own OIDC login
-specifically — several real LibreChat config bugs were found and fixed chasing it (see the
-`ALLOW_SOCIAL_LOGIN`/`OPENID_SCOPE`/MCP-allowlist bullets below), but login still fails and
-remains under investigation, so `rag_search` has only been exercised via
-`orchestration-mcp`'s own debug REST endpoint, not LibreChat's actual MCP connection. See
+the NFR-11 bullet below) along the way. **LibreChat's own OIDC login is now confirmed
+working end to end (issue #75)** — several real LibreChat config bugs were found and fixed
+chasing it (see the `ALLOW_SOCIAL_LOGIN`/`OPENID_SCOPE`/MCP-allowlist bullets below), and the
+actual root cause (`openid-client` refusing a plain-HTTP issuer) needed a real HTTPS setup,
+not just config — see "One-time host setup" below. The OBO token-exchange mechanism is also
+confirmed live: a scripted exchange (replicating exactly what LibreChat's backend does)
+returns a correctly claims-filtered `rag_search` result. Still open: LibreChat's *own* code
+performing that exchange when a real chat message triggers the tool — driving that specific
+path hit a separate LibreChat bug (its `openidJwt` reused-token strategy rejects its own
+freshly-issued token with "invalid algorithm"), tracked as a follow-up. See
 "What's stubbed vs working" below for the complete, current list.
 
 **Schema note:** this version writes chunks with two named Qdrant vectors (`dense` +
@@ -632,21 +637,32 @@ the docs, not a silent "it works" — flag it if you find one.
   testing item below.
 
 **Stubbed / TODO (see inline `TODO` comments at each site):**
-- **Keycloak OBO/token-exchange, still needs manual admin-console steps.** The `rag-app`
-  client's `standard.token.exchange.enabled: "true"` attribute (in the realm export) marks
-  it as an OBO exchange target (Section 7.7), but Keycloak 26.2+ also requires a
-  fine-grained admin permission granting the `librechat` client permission to actually
-  exchange for `rag-app`'s tokens — that policy isn't expressible in a plain realm-export
-  JSON at all (note: don't add a `_comment` field or similar to work around that akin to
-  what a `.json`/`.yaml` comment would do — Keycloak's realm importer uses strict JSON
-  deserialization and will refuse to import the whole realm over a single unrecognized
-  property, which is exactly what broke `--import-realm` before this was caught during a
-  real `docker compose up` run: `ERROR: Unrecognized field "_comment"`). Finish this in the
-  admin console after import. Similarly, reusable access tokens (the other Section 7.7 OBO
-  prerequisite) are a LibreChat-side OpenID setting, not a Keycloak client attribute — set
-  via `OPENID_REUSE_TOKENS=true` in `docker-compose.yml`'s `librechat` service environment,
-  not `librechat.yaml` (that file is LibreChat's `endpoints`/`mcpServers` config, not its
-  auth environment variables).
+- **Keycloak OBO/token-exchange — confirmed live end to end (issue #75), and the assumed
+  "manual admin-console step" turned out not to apply at all.** That belief traced to a
+  misreading of Keycloak's docs: the fine-grained admin permission is only required for the
+  deprecated/preview *legacy* token exchange. Standard Token Exchange V2 (RFC 8693, what
+  `standard.token.exchange.enabled` actually configures, confirmed via
+  `www.keycloak.org/securing-apps/token-exchange`) needs no such permission — just the
+  switch on the correct client. The real, previously-undiagnosed bug: that attribute was set
+  on `rag-app` (the exchange's *target*) instead of `librechat` (the *requester* — the client
+  that actually calls the token endpoint with `grant_type=token-exchange`, per Keycloak's own
+  example). Moved to `librechat`'s `attributes` in the realm export. Verified with a scripted
+  exchange (`client_id=librechat` + a `bob-query` subject token → `audience=rag-app`): the
+  resulting token carried the correct `aud`, `azp`, and `rag_roles`/`clearance`/`org`/
+  `releasability` claims, and a real `POST /debug/rag_search` call with it returned correctly
+  claims-filtered results. One more real bug surfaced along the way: the exchanged token's
+  issuer is `https://keycloak:8443/realms/nexus-rag` (Keycloak's HTTPS listener, added for
+  the login fix above) — `orchestration-mcp`/`ingestion-api`'s `OIDC_ISSUERS` allowlist only
+  had the `:8080` HTTP forms, so the exchanged token 403'd with "invalid token: Invalid
+  issuer" until that third issuer was added (same dual-issuer pattern as before, just a third
+  entry). Similarly, reusable access tokens (the other Section 7.7 OBO prerequisite) are a
+  LibreChat-side OpenID setting, not a Keycloak client attribute — set via
+  `OPENID_REUSE_TOKENS=true` in `docker-compose.yml`'s `librechat` service environment, not
+  `librechat.yaml` (that file is LibreChat's `endpoints`/`mcpServers` config, not its auth
+  environment variables). (Historical note, kept for anyone who hits the same trap: don't add
+  a `_comment` field or similar JSON-comment workaround to the realm export — Keycloak's
+  importer uses strict JSON deserialization and refuses the whole realm over one unrecognized
+  property, confirmed live: `ERROR: Unrecognized field "_comment"`.)
 - `infra/librechat/librechat.yaml`'s `mcpServers` shape was checked against a real running
   LibreChat 0.8.7 instance and found one real error: `obo.scopes` was a JSON array
   (`["rag-query"]`), but LibreChat's actual Zod config schema wants a single space-delimited
@@ -654,10 +670,12 @@ the docs, not a silent "it works" — flag it if you find one.
   all (`Exiting due to invalid configuration`) until fixed. The Zod error's discriminated
   union also confirms the rest of this shape is right: `type: streamable-http` plus an
   `obo` object are valid together, `obo.scopes` was the only field flagged once the other
-  union branches (`stdio`, `websocket`, `sse` — which don't apply here) are excluded. Not
-  yet confirmed further than "LibreChat starts cleanly with this config" — the actual OBO
-  token exchange in front of `orchestration-mcp` (Keycloak's fine-grained token-exchange
-  admin permission, noted above) still needs to be exercised end to end.
+  union branches (`stdio`, `websocket`, `sse` — which don't apply here) are excluded. The
+  underlying token-exchange mechanism this config points at is now confirmed live end to end
+  (see the Keycloak OBO bullet above) — what's still unconfirmed is LibreChat's *own* code
+  performing that exchange via this exact `librechat.yaml` config when a real chat message
+  triggers the tool (blocked on the separate `openidJwt` "invalid algorithm" bug noted in
+  this doc's opening summary).
 - **LibreChat also needs its own `JWT_SECRET`/`JWT_REFRESH_SECRET`/`CREDS_KEY`/`CREDS_IV`,
   independent of the `librechat.yaml`/OIDC config above** — found via the same live
   `docker compose up` run, one error at a time: after the `obo.scopes` fix, LibreChat's next

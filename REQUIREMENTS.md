@@ -246,7 +246,7 @@ The MCP server itself (Section 6.1) is protocol-generic and doesn't require Libr
 
 Prerequisites for OBO to work, confirmed against LibreChat 0.8.7 and Keycloak:
 - LibreChat's OpenID connection to Keycloak must be configured for **reusable access tokens** (a LibreChat OpenID setting shipped alongside OBO in 0.8.7).
-- Keycloak must support the underlying token exchange grant — **Standard Token Exchange (RFC 8693) has been officially supported since Keycloak 26.2** (previously a preview feature). **Confirmed:** the Keycloak version in use is above 26.2, so RFC 8693 support is not a blocker; token exchange still needs to be enabled on the client Keycloak uses for LibreChat (an admin-console step, not a version gap).
+- Keycloak must support the underlying token exchange grant — **Standard Token Exchange (RFC 8693) has been officially supported since Keycloak 26.2** (previously a preview feature). **Confirmed:** the Keycloak version in use is above 26.2, so RFC 8693 support is not a blocker; token exchange needs the `standard.token.exchange.enabled` attribute on the **requester** client (`librechat`) — not the target (`rag-app`), where it was mistakenly set until issue #75's investigation found and fixed it. No fine-grained admin permission is needed for Standard Token Exchange V2 (that only gates the deprecated legacy token exchange) — confirmed live with a scripted exchange returning a correctly claims-filtered `rag_search` result.
 - Whoever administers LibreChat needs the `MCP_SERVERS.CONFIGURE_OBO` role permission to set `obo.scopes` on the RAG MCP server's config.
 
 ## 8. Open Questions

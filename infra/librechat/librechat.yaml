@@ -45,7 +45,11 @@ mcpServers:
     # real MCP client SDK, see services/orchestration-mcp/app/server.py), so
     # whatever LibreChat puts on that header -- an OBO-exchanged token per the
     # obo.scopes above, or a raw addUserJwtToken-forwarded one -- reaches it
-    # correctly. REMAINING GAP: Keycloak's fine-grained token-exchange admin
-    # permission (required on top of the client's standard.token.exchange.enabled
-    # attribute -- see the realm export's _comment) still needs a manual
-    # admin-console step.
+    # correctly. The underlying exchange is now confirmed live end to end
+    # (issue #75, see docs/dev-setup.md's Keycloak OBO bullet) -- no admin-
+    # console permission needed, contrary to what this comment used to say;
+    # the actual bug was standard.token.exchange.enabled sitting on the wrong
+    # client (see infra/keycloak/realm-export/nexus-rag-realm.json). Still
+    # unconfirmed: LibreChat's own code performing this exchange when a real
+    # chat message triggers the tool (see the openidJwt "invalid algorithm"
+    # note in docs/dev-setup.md).
