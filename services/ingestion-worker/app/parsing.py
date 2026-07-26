@@ -4,10 +4,20 @@ signal (headings, page/slide numbers) for chunking (FR-4) and citation
 upload route turns into a clear 4xx instead of a 500 or a silently-empty doc.
 
 Pragmatic choice for this pass: lightweight pure-Python per-format libraries
-(pypdf/python-docx/python-pptx/openpyxl/BeautifulSoup) rather than the
-heavier Docling/Unstructured candidates from REQUIREMENTS.md Section 7.4 --
-those remain worth evaluating for layout-aware table extraction later, but
-add a large model-download footprint this dev pass doesn't need.
+(pypdf/pdfplumber/python-docx/python-pptx/openpyxl/BeautifulSoup) rather than
+the heavier Docling/Unstructured candidates from REQUIREMENTS.md Section 7.4
+-- those remain worth evaluating later, but add a large model-download
+footprint this dev pass doesn't need.
+
+PDF and DOCX tables are extracted as their own markdown blocks (see
+`_table_to_markdown`) rather than left to fall through to plain paragraph/page
+text extraction, which flattens a table's rows and columns into an
+unstructured word sequence -- e.g. a 3x2 table becomes "Name Role Clearance
+Alice Curator Secret" with no indication of which words belonged to which
+cell. pdfplumber's table detection is heuristic (it looks for ruling lines /
+aligned whitespace) and can occasionally miss a borderless table or, rarely,
+false-positive on text that merely looks tabular; this is a known tradeoff of
+a lightweight approach, not a guarantee of perfect table recall.
 """
 
 from __future__ import annotations
@@ -153,6 +163,26 @@ def _parse_html(content: bytes) -> list[ParsedSection]:
     return sections
 
 
+def _table_to_markdown(grid: list[list[str | None]]) -> str:
+    """Render a pdfplumber/python-docx table grid (rows of cell strings, may
+    contain None for empty cells) as a markdown table. Rows that are entirely
+    empty (a common pdfplumber artifact around merged/spanning cells) are
+    dropped rather than emitted as blank table rows."""
+    rows = [[("" if cell is None else str(cell).strip()) for cell in row] for row in grid]
+    rows = [row for row in rows if any(cell for cell in row)]
+    if not rows:
+        return ""
+
+    width = len(rows[0])
+    lines = [
+        "| " + " | ".join(rows[0]) + " |",
+        "| " + " | ".join(["---"] * width) + " |",
+    ]
+    for row in rows[1:]:
+        lines.append("| " + " | ".join(row) + " |")
+    return "\n".join(lines)
+
+
 def _parse_pdf(content: bytes) -> list[ParsedSection]:
     from pypdf import PdfReader
     from pypdf.errors import PdfReadError
@@ -168,16 +198,66 @@ def _parse_pdf(content: bytes) -> list[ParsedSection]:
         if reader.decrypt("") == 0:
             raise ParsingError("password-protected PDF")
 
+    import pdfplumber
+
     sections = []
-    for i, page in enumerate(reader.pages):
-        text = (page.extract_text() or "").strip()
-        if text:
-            sections.append(ParsedSection(text=text, page_or_slide=i + 1))
+    with pdfplumber.open(io.BytesIO(content)) as pdf:
+        for i, page in enumerate(pdf.pages):
+            tables = page.find_tables()
+
+            # Extract prose from everything outside the detected table
+            # bounding boxes, so table cell text isn't also duplicated (and
+            # scrambled) into the surrounding paragraph text.
+            prose_page = page
+            for table in tables:
+                prose_page = prose_page.outside_bbox(table.bbox)
+            prose = (prose_page.extract_text() or "").strip()
+
+            parts = [prose] if prose else []
+            for table in tables:
+                markdown = _table_to_markdown(table.extract())
+                if markdown:
+                    parts.append(markdown)
+
+            text = "\n\n".join(parts).strip()
+            if text:
+                sections.append(ParsedSection(text=text, page_or_slide=i + 1))
+
     return sections
+
+
+def _iter_docx_block_items(document):
+    """Yield a document's paragraphs and tables in document order.
+
+    python-docx's own `document.paragraphs` and `document.tables` are two
+    separate flat lists with no shared ordering, so iterating them
+    independently loses each table's position relative to the surrounding
+    paragraphs. Walking `document.element.body`'s direct children and
+    wrapping each one back into its python-docx object is the standard
+    workaround for recovering document order.
+    """
+    from docx.oxml.ns import qn
+    from docx.table import Table
+    from docx.text.paragraph import Paragraph
+
+    for child in document.element.body.iterchildren():
+        if child.tag == qn("w:p"):
+            yield Paragraph(child, document)
+        elif child.tag == qn("w:tbl"):
+            yield Table(child, document)
+
+
+def _docx_table_grid(table) -> list[list[str | None]]:
+    # Note: python-docx repeats the same Cell object across a merged span, so
+    # a horizontally- or vertically-merged cell's text appears once per
+    # spanned position rather than once per visual cell -- a known
+    # python-docx quirk, not something this function corrects for.
+    return [[cell.text for cell in row.cells] for row in table.rows]
 
 
 def _parse_docx(content: bytes) -> list[ParsedSection]:
     import docx
+    from docx.table import Table
 
     document = docx.Document(io.BytesIO(content))
     sections: list[ParsedSection] = []
@@ -189,13 +269,17 @@ def _parse_docx(content: bytes) -> list[ParsedSection]:
         if body:
             sections.append(ParsedSection(text=body, heading=current_heading))
 
-    for paragraph in document.paragraphs:
-        if paragraph.style and paragraph.style.name.startswith("Heading"):
+    for block in _iter_docx_block_items(document):
+        if isinstance(block, Table):
+            markdown = _table_to_markdown(_docx_table_grid(block))
+            if markdown:
+                current_lines.append(markdown)
+        elif block.style and block.style.name.startswith("Heading"):
             flush()
-            current_heading = paragraph.text.strip() or None
+            current_heading = block.text.strip() or None
             current_lines = []
-        elif paragraph.text.strip():
-            current_lines.append(paragraph.text)
+        elif block.text.strip():
+            current_lines.append(block.text)
     flush()
 
     return sections
