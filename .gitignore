@@ -8,3 +8,8 @@ build/
 dist/
 .pytest_cache/
 .ruff_cache/
+
+# Generated dev-only TLS material (issue #75) -- see infra/certs/generate-dev-certs.sh
+infra/certs/*.crt
+infra/certs/*.key
+infra/certs/*.srl

@@ -415,16 +415,34 @@ real bug this sandbox's mocked verification couldn't have caught (a missing `mkd
 the non-root `chown` in `ingestion-api`/`ingestion-worker`'s Dockerfiles left the
 object-store mount unwritable) — fixed, see `docs/dev-setup.md`.
 
-Still genuinely open: **LibreChat's own OIDC login does not yet work**, even after fixing
+**LibreChat's own OIDC login now works, confirmed live end to end (issue #75)**, after fixing
 `librechat.yaml`'s `mcpServers` schema (`obo.scopes` needs a space-delimited string, not a
 JSON array), `ALLOW_SOCIAL_LOGIN` (off by default), `JWT_SECRET`/`JWT_REFRESH_SECRET`/
 `CREDS_KEY`/`CREDS_IV` (all required at LibreChat boot, unrelated to Keycloak), an MCP
 SSRF domain-allowlist blocking `orchestration-mcp`, a `depends_on`/Keycloak-healthcheck
-race, and a missing `OPENID_SCOPE` (LibreChat's `configureOpenId()` silently never runs
-without it) — every one of those confirmed live and fixed, yet the login still fails,
-under active investigation. Because of that, §4.3's `rag_search` has only been exercised via
-`orchestration-mcp`'s own `/debug/rag_search` REST endpoint with a real Keycloak token
-(itself now live-validated end to end), not through LibreChat's actual MCP wire connection —
-so Keycloak OBO admin-console steps (§4.4) and §4.3's prompt-injection mitigation (no
-regression test that a real generation model actually respects the delimiter/notice) both
-remain unconfirmed against the real LibreChat path specifically.
+race, a missing `OPENID_SCOPE` (LibreChat's `configureOpenId()` silently never runs without
+it), and finally the real root cause: `openid-client` refuses a plain-HTTP `OPENID_ISSUER`
+outright. Keycloak now has a real (self-signed, dev-only) HTTPS listener, fronted alongside
+a small nginx proxy for LibreChat itself (which has no HTTPS listener of its own) — verified
+with a scripted login (real Keycloak password submit, full redirect chain, real LibreChat
+session cookie), not just log inspection.
+
+The OBO token-exchange mechanism (§4.4) is also now confirmed live — and needed no Keycloak
+admin-console permission step at all, contrary to what this section previously said: that
+requirement only applies to the deprecated *legacy* token exchange. Standard Token Exchange
+V2 (RFC 8693, what `standard.token.exchange.enabled` actually configures) needs no
+fine-grained permission. The real, previously-undiagnosed bug was that switch sitting on
+`rag-app` (the exchange's target) instead of `librechat` (the requester) — plus a second bug,
+the exchanged token's HTTPS issuer wasn't in `orchestration-mcp`/`ingestion-api`'s
+`OIDC_ISSUERS` allowlist. Both fixed; a scripted token exchange now returns a correctly
+claims-filtered `rag_search` result end to end.
+
+Still open: LibreChat's *own* code performing that exchange when a real chat message
+triggers the tool. Driving that specific path hit a separate, genuine LibreChat bug — its
+`openidJwt` reused-token strategy rejects its own freshly-issued token with "invalid
+algorithm" — tracked as a follow-up rather than chased down inline. Because of that, §4.3's
+`rag_search` is confirmed two ways (the REST debug endpoint, and now a direct OBO exchange
+replicating exactly what LibreChat's backend should do) but still not through LibreChat's
+actual MCP wire connection, so §4.3's prompt-injection mitigation (no regression test that a
+real generation model actually respects the delimiter/notice) remains unconfirmed against
+the real LibreChat path specifically.

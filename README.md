@@ -31,11 +31,18 @@ non-root `chown` (object-store write permissions), several LibreChat config gaps
 (`obo.scopes`'s array-vs-string schema mismatch, missing `JWT_SECRET`/`CREDS_KEY`/`CREDS_IV`,
 `ALLOW_SOCIAL_LOGIN` defaulting off, an MCP SSRF domain-allowlist blocking `orchestration-mcp`,
 and a missing `OPENID_SCOPE`), and a `depends_on` race against Keycloak's healthcheck — see
-`docs/dev-setup.md`'s live-debugging notes for each one. Not yet live-confirmed: LibreChat's
-own OIDC login still doesn't work even with all of the above fixed (still under
-investigation), so the MCP tool call has only been exercised via the REST debug endpoint,
-not LibreChat's actual MCP wire connection; and NFR-13's revert-on-partial-failure logic,
-which nothing in a successful run exercises by construction. See `docs/dev-setup.md`'s
+`docs/dev-setup.md`'s live-debugging notes for each one. **LibreChat's own OIDC login now
+works, confirmed live end to end (issue #75)** — root cause was `openid-client` refusing a
+plain-HTTP issuer, fixed with a real (self-signed, dev-only) HTTPS cert for both Keycloak and
+a small nginx proxy in front of LibreChat (which has no HTTPS listener of its own). The OBO
+token-exchange mechanism itself is also confirmed live: two real Keycloak config bugs found
+and fixed (the Standard Token Exchange V2 switch was on the wrong client, and the exchanged
+token's HTTPS issuer wasn't in `orchestration-mcp`/`ingestion-api`'s issuer allowlist) — a
+scripted exchange now returns a correctly claims-filtered `rag_search` result. Still not
+confirmed: LibreChat's *own* code actually performing that exchange when a real chat message
+triggers the tool — driving that specific path hit a separate LibreChat auth quirk (its
+`openidJwt` reused-token strategy rejects its own token with "invalid algorithm"), tracked as
+a follow-up rather than chased down inline. See `docs/dev-setup.md`'s
 "What's stubbed vs working" section for the complete, current list, labeled per the
 implemented/mocked/live-verified convention described there.
 
@@ -125,14 +132,20 @@ implemented/mocked/live-verified convention described there.
 
 **What's explicitly not done, and why:**
 
-- **Keycloak's fine-grained token-exchange admin permission** for the OBO flow is a manual
-  admin-console step (Keycloak 26.2+) — not expressible in a realm-export JSON or anything
-  code can do for you.
+- **~~Keycloak's fine-grained token-exchange admin permission~~ — turned out not to apply.**
+  That permission only gates the deprecated/preview *legacy* token exchange; Standard Token
+  Exchange V2 (RFC 8693, what this project actually uses via
+  `standard.token.exchange.enabled`) needs no admin-console step at all, per Keycloak's own
+  docs. The real, previously-undiagnosed bug: that switch was set on `rag-app` (the
+  exchange's *target*) instead of `librechat` (the *requester*, which is what actually needs
+  it) — fixed in the realm export (issue #75).
 - **`infra/librechat/librechat.yaml`'s `mcpServers` shape has been checked against a real
   LibreChat 0.8.7 instance** — one real error found and fixed (`obo.scopes` needs to be a
   space-delimited string, not a JSON array; see `docs/dev-setup.md`). LibreChat now starts
-  cleanly with this config, but the OBO token exchange itself still hasn't been exercised
-  end to end (Keycloak's admin-console step above is still outstanding).
+  cleanly with this config, and a direct token-exchange call (bypassing LibreChat's own code)
+  is confirmed live end to end: a correctly claims-filtered `rag_search` result for the
+  exchanged token's user. LibreChat's own code performing that exchange when a real chat
+  message triggers the tool is still unconfirmed — see `REQUIREMENTS.md`'s P1 list.
 - **Helm/production wiring for browser login exists but is unrendered/unverified** — the
   chart does wire `externalKeycloak.clientId`/`.clientSecret` and
   `ingestionApi.oidcRedirectUri`/`.cookieSecure` through to the same OIDC login flow the

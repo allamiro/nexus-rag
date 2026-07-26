@@ -118,10 +118,30 @@ services:
       KC_DB_USERNAME: ${KEYCLOAK_DB_USER:-keycloak_app}
       KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak_app}
       KC_HEALTH_ENABLED: "true"
+      # Issue #75: LibreChat's openid-client discovery call refuses a plain
+      # HTTP issuer outright ("only requests to HTTPS are allowed") -- adding
+      # HTTPS here, alongside the existing HTTP listener (still used
+      # unchanged by ingestion-api/orchestration-mcp's OIDC_ISSUERS), fixes
+      # that without touching anything already working. KC_HOSTNAME is
+      # deliberately left unset -- start-dev's request-based hostname
+      # behavior (see docs/dev-setup.md's dual-issuer note) is what the rest
+      # of this stack already relies on; the browser reaching this same
+      # https://keycloak:8443 URL (for the OIDC authorization redirect, not
+      # just LibreChat's backend calls) needs a `127.0.0.1 keycloak` entry in
+      # the host's /etc/hosts -- see docs/dev-setup.md.
+      KC_HTTPS_CERTIFICATE_FILE: /opt/keycloak/certs/dev.crt
+      KC_HTTPS_CERTIFICATE_KEY_FILE: /opt/keycloak/certs/dev.key
+      # Confirmed live: enabling HTTPS on the main interface makes Keycloak's
+      # management interface (port 9000, what the healthcheck below probes)
+      # inherit HTTPS too by default -- http-management-scheme keeps it on
+      # plain HTTP so the existing raw-HTTP /dev/tcp healthcheck still works.
+      KC_HTTP_MANAGEMENT_SCHEME: http
     volumes:
       - ./infra/keycloak/realm-export:/opt/keycloak/data/import
+      - ./infra/certs:/opt/keycloak/certs:ro
     ports:
       - "8080:8080"
+      - "8443:8443"
       - "9000:9000"
     depends_on:
       postgres:
@@ -192,7 +212,13 @@ services:
       # NFR-3: non-superuser app role, distinct from POSTGRES_USER -- see
       # postgres service's init-app-roles.sh.
       DATABASE_URL: postgresql+psycopg://${APP_DB_USER:-nexus_rag_app}:${APP_DB_PASSWORD:-nexus_rag_app}@postgres:5432/${POSTGRES_DB:-nexus_rag}
-      OIDC_ISSUERS: http://keycloak:8080/realms/nexus-rag,http://localhost:8080/realms/nexus-rag
+      # Issue #75: the third entry (https://keycloak:8443) is the issuer
+      # stamped on tokens produced by LibreChat's OBO token-exchange call,
+      # which now goes to Keycloak's HTTPS listener (openid-client's
+      # discovery requires HTTPS -- see the keycloak/librechat services'
+      # comments) -- confirmed live: exchanged tokens 403'd with "invalid
+      # token: Invalid issuer" against this endpoint until this was added.
+      OIDC_ISSUERS: http://keycloak:8080/realms/nexus-rag,http://localhost:8080/realms/nexus-rag,https://keycloak:8443/realms/nexus-rag
       OIDC_AUDIENCE: rag-app
       # Browser OIDC login (ARCHITECTURE.md Section 4.4). RAG_APP_KEYCLOAK_CLIENT_SECRET
       # is the same var already used by seed-sample-data/eval-retrieval below -- rag-app
@@ -296,7 +322,13 @@ services:
       # NFR-3: non-superuser app role, distinct from POSTGRES_USER -- see
       # postgres service's init-app-roles.sh.
       DATABASE_URL: postgresql+psycopg://${APP_DB_USER:-nexus_rag_app}:${APP_DB_PASSWORD:-nexus_rag_app}@postgres:5432/${POSTGRES_DB:-nexus_rag}
-      OIDC_ISSUERS: http://keycloak:8080/realms/nexus-rag,http://localhost:8080/realms/nexus-rag
+      # Issue #75: the third entry (https://keycloak:8443) is the issuer
+      # stamped on tokens produced by LibreChat's OBO token-exchange call,
+      # which now goes to Keycloak's HTTPS listener (openid-client's
+      # discovery requires HTTPS -- see the keycloak/librechat services'
+      # comments) -- confirmed live: exchanged tokens 403'd with "invalid
+      # token: Invalid issuer" against this endpoint until this was added.
+      OIDC_ISSUERS: http://keycloak:8080/realms/nexus-rag,http://localhost:8080/realms/nexus-rag,https://keycloak:8443/realms/nexus-rag
       OIDC_AUDIENCE: rag-app
       QDRANT_URL: http://qdrant:6333
       # NFR-15: read-only key -- this service only ever calls query_points
@@ -433,16 +465,26 @@ services:
     image: ghcr.io/danny-avila/librechat:v0.8.7
     volumes:
       - ./infra/librechat/librechat.yaml:/app/librechat.yaml:ro
+      # Issue #75: trusted by Node's default TLS store via NODE_EXTRA_CA_CERTS
+      # below, so the openid-client discovery/token calls to Keycloak's
+      # self-signed HTTPS cert (infra/certs/generate-dev-certs.sh) don't fail
+      # TLS verification.
+      - ./infra/certs/ca.crt:/certs/ca.crt:ro
     environment:
       HOST: 0.0.0.0
       PORT: 3080
+      NODE_ENV: development
+      NODE_EXTRA_CA_CERTS: /certs/ca.crt
       MONGO_URI: mongodb://mongodb:27017/LibreChat
       # LibreChat's own domain config, used to build absolute callback/redirect
-      # URLs (paired with OPENID_CALLBACK_URL's relative path below) -- matches
-      # the host port binding (ports: "3080:3080"), since that's the URL a
-      # browser actually round-trips through during the OIDC redirect.
-      DOMAIN_CLIENT: http://localhost:3080
-      DOMAIN_SERVER: http://localhost:3080
+      # URLs (paired with OPENID_CALLBACK_URL's relative path below). This is
+      # genuinely served now by the librechat-proxy service (nginx terminating
+      # TLS with the same dev cert, forwarding plaintext to this container) --
+      # LibreChat itself (v0.8.7, api/server/index.js) has no built-in HTTPS
+      # listener, so without that proxy this would just be a string that
+      # doesn't correspond to a real endpoint.
+      DOMAIN_CLIENT: https://localhost:3080
+      DOMAIN_SERVER: https://localhost:3080
       # Required to show the OIDC login button at all -- confirmed live:
       # without this, LibreChat starts fine but silently has no OIDC login
       # option in the UI (LibreChat's own .env.example ships ALLOW_SOCIAL_LOGIN
@@ -450,9 +492,34 @@ services:
       # switch for the whole social/OIDC login family this config only uses
       # OpenID from.
       ALLOW_SOCIAL_LOGIN: "true"
-      OPENID_ISSUER: http://keycloak:8080/realms/nexus-rag
+      # Root cause (confirmed via api/strategies/openidStrategy.js, v0.8.7):
+      # setupOpenId() calls openid-client's client.discovery() with no
+      # `execute: [allowInsecureRequests]` option, so it unconditionally
+      # throws "only requests to HTTPS are allowed" for a plain-HTTP issuer --
+      # this was never about the callback URL. Keycloak now has a real HTTPS
+      # listener (see the keycloak service's KC_HTTPS_* vars) reachable at
+      # this same hostname from both this container (Compose DNS) and the
+      # browser (needs a `127.0.0.1 keycloak` /etc/hosts entry on the host --
+      # see docs/dev-setup.md -- since Keycloak's discovery metadata,
+      # including the browser-facing authorization_endpoint, is stamped with
+      # whichever hostname the request came in on; start-dev's default
+      # request-based behavior is left as-is rather than pinning KC_HOSTNAME,
+      # to avoid disturbing the already-working dual-issuer setup ingestion-
+      # api/orchestration-mcp rely on).
+      OPENID_ISSUER: https://keycloak:8443/realms/nexus-rag
       OPENID_CLIENT_ID: librechat
       OPENID_CLIENT_SECRET: ${LIBRECHAT_KEYCLOAK_CLIENT_SECRET:-dev-librechat-secret}
+      # LibreChat's configureOpenId() function (api/server/socialLogins.js) only
+      # runs at all if OPENID_CLIENT_ID/OPENID_ISSUER/OPENID_SCOPE/
+      # OPENID_SESSION_SECRET are ALL present. This was missing, causing the entire
+      # OIDC setup to be skipped silently (confirmed: no OIDC requests even attempted).
+      # Value matches LibreChat's own .env.example default.
+      OPENID_SCOPE: "openid profile email"
+      # Relative path, per LibreChat's own .env.example -- the code builds the
+      # actual callback as `DOMAIN_SERVER + OPENID_CALLBACK_URL`
+      # (openidStrategy.js's setupOpenId()), so the previous absolute-URL
+      # value here concatenated into a malformed
+      # "https://localhost:3080https://localhost:3080/..." callback.
       OPENID_CALLBACK_URL: /oauth/openid/callback
       OPENID_SESSION_SECRET: dev-session-secret-change-me
       OPENID_USE_PKCE: "true"
@@ -472,10 +539,41 @@ services:
       # Generated with `openssl rand -hex 32` / `openssl rand -hex 16`.
       CREDS_KEY: ${LIBRECHAT_CREDS_KEY:-b981603e3853e792749bd57a37263dcac98f05e9bcc3221b28ea9ce1d31407f6}
       CREDS_IV: ${LIBRECHAT_CREDS_IV:-59ac382baf239caa9f8bb22863d45e41}
+    # No host port mapping here anymore -- librechat-proxy below is what the
+    # host's :3080 actually reaches (issue #75: this container has no HTTPS
+    # listener of its own).
+    depends_on:
+      mongodb:
+        condition: service_started
+      # LibreChat registers its passport "openid" strategy at boot by fetching
+      # Keycloak's /.well-known/openid-configuration -- if that fails (Keycloak
+      # container started but not yet actually serving, still mid realm-import)
+      # the strategy setup fails and never retries, so every later login
+      # attempt 500s with "Unknown authentication strategy \"openid\"" even
+      # once Keycloak comes up. condition: service_started (the bare depends_on
+      # this used to be) doesn't wait for that; service_healthy does -- same
+      # fix ingestion-api/orchestration-mcp already needed for their own
+      # Keycloak dependency, found live the same way (see the Keycloak
+      # healthcheck bullet above).
+      keycloak:
+        condition: service_healthy
+      litellm:
+        condition: service_started
+      orchestration-mcp:
+        condition: service_started
+
+  # Issue #75: terminates TLS for LibreChat's browser-facing :3080 -- LibreChat
+  # v0.8.7 (api/server/index.js) always calls a plain http app.listen(), so a
+  # real https://localhost:3080 (required for the OIDC redirect round-trip)
+  # has to be fronted by something else.
+  librechat-proxy:
+    image: nginx:1.27.4-alpine
+    volumes:
+      - ./infra/nginx/librechat-tls.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./infra/certs/dev.crt:/certs/dev.crt:ro
+      - ./infra/certs/dev.key:/certs/dev.key:ro
     ports:
       - "3080:3080"
     depends_on:
-      - mongodb
-      - keycloak
-      - litellm
-      - orchestration-mcp
+      librechat:
+        condition: service_started
