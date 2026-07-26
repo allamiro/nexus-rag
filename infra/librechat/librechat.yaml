@@ -3,6 +3,17 @@
 version: 1.2.8
 cache: true
 
+# Issue #75: without this, LibreChat's default-deny SSRF protection
+# (packages/api/src/auth/domain.ts's isDomainAllowedCore) blocks the
+# orchestration-mcp connection outright -- it resolves to a private Docker
+# network IP, and with no allowedDomains configured at all, private/reserved
+# IPs are always rejected regardless of intent. Explicitly allowlisting this
+# internal hostname is the supported pattern for docker-internal MCP servers,
+# confirmed against api/server/services/MCP.js's isEarlyDomainAllowed check.
+mcpSettings:
+  allowedDomains:
+    - "http://orchestration-mcp:8002"
+
 endpoints:
   custom:
     - name: "LiteLLM"

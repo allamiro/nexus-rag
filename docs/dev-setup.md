@@ -40,6 +40,33 @@ the new schema on its own.
   are plain local Docker volumes with no encryption, fine for throwaway dev data — see
   `helm/nexus-rag/README.md`'s "Encryption at rest" section for the production posture.
 
+## One-time host setup for LibreChat OIDC (issue #75)
+
+LibreChat's own OIDC login needs two things a fresh checkout doesn't have yet:
+
+1. **A trusted dev CA + cert.** LibreChat's `openid-client` refuses a plain-HTTP
+   `OPENID_ISSUER` outright, and LibreChat v0.8.7 has no built-in HTTPS listener of its
+   own, so both Keycloak and a small nginx proxy in front of LibreChat need a real
+   (self-signed, dev-only) cert:
+   ```bash
+   infra/certs/generate-dev-certs.sh
+   ```
+   Then trust `infra/certs/ca.crt`:
+   - **Browser** (Firefox/Chrome, NSS-backed, no sudo): `certutil -A -d "sql:$HOME/.mozilla/firefox/<profile>" -n "nexus-rag dev CA" -t "C,," -i infra/certs/ca.crt` (repeat per Firefox profile; Chrome/Chromium share `sql:$HOME/.pki/nssdb`).
+   - **System store** (only needed if you'll `curl`/script against these endpoints from the host): `sudo cp infra/certs/ca.crt /etc/pki/ca-trust/source/anchors/nexus-rag-dev-ca.crt && sudo update-ca-trust` (Fedora/RHEL-family; Debian/Ubuntu use `/usr/local/share/ca-certificates/` + `sudo update-ca-certificates`).
+2. **A `/etc/hosts` alias for `keycloak`.** Keycloak's discovery metadata (including the
+   browser-facing `authorization_endpoint`, not just LibreChat's own backend calls) is
+   stamped with whichever hostname the request used (`start-dev`'s default, request-based
+   behavior — see the dual-issuer note below). LibreChat's backend reaches Keycloak over
+   the Compose network as `keycloak`, so the browser needs that same name to resolve too:
+   ```bash
+   echo "127.0.0.1 keycloak" | sudo tee -a /etc/hosts
+   ```
+
+Skip either step and the OIDC login redirect will fail — a missing CA trust shows up as a
+TLS error in LibreChat's logs or a browser cert warning at the Keycloak redirect; a missing
+`/etc/hosts` entry shows up as the browser failing to resolve `keycloak` after login.
+
 ## Start the stack
 
 ```bash
@@ -63,7 +90,7 @@ once everything above is healthy.
 | reranker-service | http://localhost:8003 | `/health`, `/rerank` |
 | ingestion-worker | http://localhost:8004 | `/health` only -- its real work is the NATS consumer loop, not an HTTP API (NFR-11) |
 | Qdrant | http://localhost:6333/dashboard | |
-| LibreChat | http://localhost:3080 | throwaway, log in via Keycloak |
+| LibreChat | https://localhost:3080 | throwaway, log in via Keycloak. HTTPS is real (issue #75) via the `librechat-proxy` nginx service, not just a config label -- see "One-time host setup" above |
 | LiteLLM | http://localhost:4000 | throwaway gateway in front of Ollama |
 
 ## Seeded Keycloak users (realm `nexus-rag`)
