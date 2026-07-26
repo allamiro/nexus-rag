@@ -64,6 +64,8 @@ spec:
               value: {{ .Values.embeddingService.model | quote }}
             - name: RERANKER_URL
               value: "http://{{ include "nexus-rag.fullname" . }}-reranker-service:{{ .Values.rerankerService.service.port }}"
+            - name: CONTENT_TYPE_BOOSTS
+              value: {{ .Values.orchestrationMcp.contentTypeBoosts | quote }}
           livenessProbe:
             httpGet:
               path: /health

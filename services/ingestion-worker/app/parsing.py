@@ -71,11 +71,20 @@ def _check_zip_bomb(content: bytes) -> None:
 class ParsedSection:
     """One structural unit of a document -- a heading's worth of text, a PDF
     page, a slide, a spreadsheet sheet. Chunking (FR-4) never splits across
-    section boundaries, only within them."""
+    section boundaries, only within them.
+
+    content_type (issue #89): what kind of content this section holds --
+    "text" (prose, the default) or "table" (a markdown table block extracted
+    by `_table_to_markdown`, or a spreadsheet sheet, which is tabular by
+    construction). Tables are emitted as their own section rather than joined
+    into the surrounding prose specifically so chunking never mixes the two
+    within one chunk -- that's what lets each chunk carry a single, accurate
+    content_type through to the Qdrant payload instead of a per-chunk guess."""
 
     text: str
     heading: str | None = None
     page_or_slide: int | None = None
+    content_type: str = "text"
 
 
 def parse_document(filename: str, content: bytes) -> list[ParsedSection]:
@@ -213,15 +222,19 @@ def _parse_pdf(content: bytes) -> list[ParsedSection]:
                 prose_page = prose_page.outside_bbox(table.bbox)
             prose = (prose_page.extract_text() or "").strip()
 
-            parts = [prose] if prose else []
+            # issue #89: prose and each table become their own section
+            # (same page_or_slide, content_type "text" vs "table") instead of
+            # being joined into one blob -- see the ParsedSection docstring.
+            if prose:
+                sections.append(
+                    ParsedSection(text=prose, page_or_slide=i + 1, content_type="text")
+                )
             for table in tables:
                 markdown = _table_to_markdown(table.extract())
                 if markdown:
-                    parts.append(markdown)
-
-            text = "\n\n".join(parts).strip()
-            if text:
-                sections.append(ParsedSection(text=text, page_or_slide=i + 1))
+                    sections.append(
+                        ParsedSection(text=markdown, page_or_slide=i + 1, content_type="table")
+                    )
 
     return sections
 
@@ -264,23 +277,31 @@ def _parse_docx(content: bytes) -> list[ParsedSection]:
     current_heading: str | None = None
     current_lines: list[str] = []
 
-    def flush():
+    def flush_prose():
         body = "\n".join(current_lines).strip()
         if body:
-            sections.append(ParsedSection(text=body, heading=current_heading))
+            sections.append(ParsedSection(text=body, heading=current_heading, content_type="text"))
+        current_lines.clear()
 
     for block in _iter_docx_block_items(document):
         if isinstance(block, Table):
             markdown = _table_to_markdown(_docx_table_grid(block))
             if markdown:
-                current_lines.append(markdown)
+                # issue #89: flush any prose accumulated so far as its own
+                # "text" section, then the table as its own "table" section --
+                # prose before/after a table under the same heading no longer
+                # get glued to it into one section (see ParsedSection
+                # docstring for why that matters for chunk-level tagging).
+                flush_prose()
+                sections.append(
+                    ParsedSection(text=markdown, heading=current_heading, content_type="table")
+                )
         elif block.style and block.style.name.startswith("Heading"):
-            flush()
+            flush_prose()
             current_heading = block.text.strip() or None
-            current_lines = []
         elif block.text.strip():
             current_lines.append(block.text)
-    flush()
+    flush_prose()
 
     return sections
 
@@ -320,5 +341,7 @@ def _parse_xlsx(content: bytes) -> list[ParsedSection]:
                 rows.append(" | ".join(cells))
         body = "\n".join(rows)
         if body:
-            sections.append(ParsedSection(text=body, heading=sheet.title))
+            # issue #89: a spreadsheet sheet is tabular by construction, no
+            # detection heuristic needed.
+            sections.append(ParsedSection(text=body, heading=sheet.title, content_type="table"))
     return sections

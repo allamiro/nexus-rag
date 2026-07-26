@@ -104,7 +104,20 @@ def _audit(claims: UserClaims, action: str, detail: dict) -> None:
         session.commit()
 
 
-async def run_rag_search(bearer_token: str, query: str, top_k: int = 5) -> dict:
+async def run_rag_search(
+    bearer_token: str,
+    query: str,
+    top_k: int = 5,
+    *,
+    content_type_boosts: dict[str, float] | None = None,
+) -> dict:
+    """content_type_boosts (issue #89): optional {content_type: multiplier}
+    preference hint -- e.g. {"table": 1.2} to prefer table chunks for a query
+    that's plausibly asking about tabular data. Applied to cross-encoder
+    scores in reranking.rerank(); omitted/None falls back to the
+    deployment-wide CONTENT_TYPE_BOOSTS default (no boost by default). See
+    reranking.py's module docstring for why this is scoped down from full
+    modality-aware retrieval."""
     try:
         claims = parse_claims(bearer_token)
     except jwt.PyJWTError as exc:
@@ -197,7 +210,9 @@ async def run_rag_search(bearer_token: str, query: str, top_k: int = 5) -> dict:
         return result
 
     candidates = [{"id": str(h.id), "score": h.score, "payload": h.payload} for h in hits]
-    reranked, rerank_note = await rerank(query, candidates, top_k)
+    reranked, rerank_note = await rerank(
+        query, candidates, top_k, content_type_boosts=content_type_boosts
+    )
     result["reranking"] = rerank_note
     # P1: delimit chunk text *after* reranking, not before -- reranker-service's
     # cross-encoder needs the raw text to score against the query, not text
