@@ -196,6 +196,11 @@ services:
     build:
       context: .
       dockerfile: services/reranker-service/Dockerfile
+      args:
+        # CPU torch by default for local testing; a GPU host sets
+        # TORCH_INDEX_URL to its CUDA index, an air-gapped build to its
+        # internal mirror (see the Dockerfile's rationale).
+        TORCH_INDEX_URL: ${TORCH_INDEX_URL:-https://download.pytorch.org/whl/cpu}
     environment:
       # #73: log verbosity, matching the other custom services.
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
