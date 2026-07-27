@@ -8,12 +8,19 @@ production — fail-open: a dead collector must never break the write path.
 
 from __future__ import annotations
 
+import datetime as dt
+import ipaddress
 import json
 import socket
+import ssl
+import threading
 import uuid
 from datetime import datetime
 
 import pytest
+from cryptography import x509
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
 from sqlmodel import Session, SQLModel, create_engine
 
 from common import siem
@@ -171,3 +178,135 @@ class TestExport:
         udp_collector.recvfrom(65535)
         with pytest.raises(TimeoutError):
             udp_collector.recvfrom(65535)
+
+
+def _self_signed_cert(tmp_path):
+    """A throwaway CA-less self-signed cert for 127.0.0.1, written to disk the
+    way a real deployment would mount one."""
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    name = x509.Name([x509.NameAttribute(x509.NameOID.COMMON_NAME, "127.0.0.1")])
+    now = dt.datetime.now(dt.UTC)
+    cert = (
+        x509.CertificateBuilder()
+        .subject_name(name)
+        .issuer_name(name)
+        .public_key(key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(now - dt.timedelta(minutes=1))
+        .not_valid_after(now + dt.timedelta(hours=1))
+        .add_extension(
+            x509.SubjectAlternativeName([x509.IPAddress(ipaddress.ip_address("127.0.0.1"))]),
+            critical=False,
+        )
+        .sign(key, hashes.SHA256())
+    )
+    cert_path = tmp_path / "collector.crt"
+    key_path = tmp_path / "collector.key"
+    cert_path.write_bytes(cert.public_bytes(serialization.Encoding.PEM))
+    key_path.write_bytes(
+        key.private_bytes(
+            serialization.Encoding.PEM,
+            serialization.PrivateFormat.TraditionalOpenSSL,
+            serialization.NoEncryption(),
+        )
+    )
+    return cert_path, key_path
+
+
+class _TlsCollector:
+    """A real TLS syslog collector: accepts one connection, records one
+    octet-counted frame."""
+
+    def __init__(self, cert_path, key_path):
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        context.load_cert_chain(cert_path, key_path)
+        self._context = context
+        self._server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._server.bind(("127.0.0.1", 0))
+        self._server.listen(1)
+        self._server.settimeout(3)
+        self.received: bytes | None = None
+        self._thread = threading.Thread(target=self._serve, daemon=True)
+        self._thread.start()
+
+    @property
+    def address(self):
+        return self._server.getsockname()
+
+    def _serve(self):
+        try:
+            conn, _ = self._server.accept()
+            with self._context.wrap_socket(conn, server_side=True) as tls:
+                tls.settimeout(3)
+                self.received = tls.recv(65535)
+        except (TimeoutError, ssl.SSLError, OSError):
+            pass  # handshake-refused tests land here by design
+
+    def wait(self):
+        self._thread.join(timeout=4)
+        self._server.close()
+
+
+class TestTlsExport:
+    """RFC 5425: octet-counted syslog inside TLS -- the production transport
+    for a collector on a protected segment."""
+
+    def _configure(self, monkeypatch, host, port, **extra):
+        monkeypatch.setenv("SIEM_SYSLOG_HOST", host)
+        monkeypatch.setenv("SIEM_SYSLOG_PORT", str(port))
+        monkeypatch.setenv("SIEM_SYSLOG_PROTOCOL", "tls")
+        for k, v in extra.items():
+            monkeypatch.setenv(k, v)
+
+    def test_export_over_verified_tls(self, monkeypatch, db, entry, tmp_path):
+        cert_path, key_path = _self_signed_cert(tmp_path)
+        collector = _TlsCollector(cert_path, key_path)
+        host, port = collector.address
+        # The collector's own cert acts as the CA bundle -- exactly how a
+        # deployment trusts a private-PKI collector via SIEM_SYSLOG_CA_CERT.
+        self._configure(monkeypatch, host, port, SIEM_SYSLOG_CA_CERT=str(cert_path))
+        assert enable_siem_export("ingestion-api") is True
+
+        db.add(entry)
+        db.commit()
+        collector.wait()
+
+        assert collector.received is not None
+        length, _, message = collector.received.partition(b" ")
+        assert int(length) == len(message)
+        payload = json.loads(message.decode("ascii").split(" - ", 1)[1])
+        assert payload["action"] == "document.submit"
+
+    def test_untrusted_collector_is_refused_but_fails_open(
+        self, monkeypatch, db, entry, tmp_path
+    ):
+        # No CA configured, so the self-signed collector must fail
+        # verification -- the export is refused (no plaintext-equivalent
+        # fallback), while the audit row still lands (fail-open).
+        cert_path, key_path = _self_signed_cert(tmp_path)
+        collector = _TlsCollector(cert_path, key_path)
+        host, port = collector.address
+        self._configure(monkeypatch, host, port)
+        assert enable_siem_export("ingestion-api") is True
+
+        db.add(entry)
+        db.commit()  # must not raise
+        collector.wait()
+
+        assert collector.received is None  # nothing crossed the channel
+        assert db.get(AuditLogEntry, entry.id) is not None
+
+    def test_verify_false_accepts_untrusted_cert_for_debugging(
+        self, monkeypatch, db, entry, tmp_path
+    ):
+        cert_path, key_path = _self_signed_cert(tmp_path)
+        collector = _TlsCollector(cert_path, key_path)
+        host, port = collector.address
+        self._configure(monkeypatch, host, port, SIEM_SYSLOG_TLS_VERIFY="false")
+        assert enable_siem_export("ingestion-api") is True
+
+        db.add(entry)
+        db.commit()
+        collector.wait()
+
+        assert collector.received is not None

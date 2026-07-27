@@ -519,9 +519,22 @@ the docs, not a silent "it works" — flag it if you find one.
   model) is forwarded as an RFC 5424 syslog message with a JSON payload the
   moment it is inserted, via a SQLAlchemy `after_insert` hook in
   `common/siem.py` — no per-call-site discipline required. Disabled unless
-  `SIEM_SYSLOG_HOST` is set (`SIEM_SYSLOG_PORT` default 514,
-  `SIEM_SYSLOG_PROTOCOL` udp default or tcp with RFC 6587 octet-counted
-  framing; Helm: `observability.siem.*`). Fail-open on purpose: a collector
+  `SIEM_SYSLOG_HOST` is set — any IP/hostname and port the environment's
+  collector listens on (`SIEM_SYSLOG_PORT` default 514, or 6514 for tls;
+  Helm: `observability.siem.*`). Three transports via
+  `SIEM_SYSLOG_PROTOCOL`: `udp` (default), `tcp` (RFC 6587 octet-counted
+  framing), and `tls` (RFC 5425 — the same framing inside a verified TLS
+  session, for a collector on a protected segment: `SIEM_SYSLOG_CA_CERT`
+  points at the CA that signed the collector's certificate, optional
+  `SIEM_SYSLOG_CLIENT_CERT`/`SIEM_SYSLOG_CLIENT_KEY` for mutual TLS, and
+  `SIEM_SYSLOG_TLS_VERIFY=false` exists as a loudly-logged debug-only
+  escape hatch). To watch the export end to end locally, an opt-in
+  stand-in collector prints every message it receives, tagged per
+  transport: `docker compose --profile siem-debug up -d syslog-collector`,
+  point services at it with `SIEM_SYSLOG_HOST=syslog-collector`, then
+  `docker compose logs -f syslog-collector` (its TLS listener activates
+  automatically once `infra/certs/generate-dev-certs.sh` has run).
+  Fail-open on purpose: a collector
   outage logs one warning and never blocks the request path — the DB row
   remains the durable record either way. Denied actions (`query.denied`) go
   out at WARNING severity, everything else at NOTICE, facility 13 (log
@@ -532,8 +545,9 @@ the docs, not a silent "it works" — flag it if you find one.
   silently dropped every `logger.info` in the codebase. Both the syslog
   payload and both log formats escape control characters, so a hostile value
   cannot forge a second record (`common/log_safety.py`'s rule). Tested
-  against real UDP/TCP sockets in `tests/unit/common/test_siem.py`; not yet
-  validated against a live SIEM appliance.
+  against real UDP/TCP/TLS sockets in `tests/unit/common/test_siem.py`,
+  and validated live against the `syslog-collector` container on all three
+  transports; not yet validated against a production SIEM appliance.
 - **Separate DB credentials for the app and Keycloak, and an append-only audit log
   (NFR-2/NFR-3)** — `POSTGRES_USER` is now the bootstrap superuser only, never used for
   day-to-day traffic. `infra/postgres/init-app-roles.sh` (runs automatically on the

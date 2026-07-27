@@ -388,6 +388,31 @@ services:
       reranker-service:
         condition: service_healthy
 
+  syslog-collector:
+    # #73/NFR-2 validation only: a stand-in SIEM that prints every syslog
+    # message it receives to stdout, tagged [udp]/[tcp]/[tls], so the export
+    # path can be watched end to end. Opt-in via the siem-debug profile --
+    # production points SIEM_SYSLOG_HOST at the environment's real collector
+    # (any IP/port/protocol, TLS certificates via SIEM_SYSLOG_CA_CERT /
+    # _CLIENT_CERT / _CLIENT_KEY) and never runs this.
+    #
+    #   docker compose --profile siem-debug up -d syslog-collector
+    #   SIEM_SYSLOG_HOST=syslog-collector docker compose up -d
+    #   docker compose logs -f syslog-collector
+    #
+    # TLS (RFC 5425, port 6514) activates automatically when infra/certs has
+    # been generated (generate-dev-certs.sh -- same certs Keycloak uses).
+    profiles: ["siem-debug"]
+    image: python:3.11-slim
+    command: ["python3", "/collector.py"]
+    volumes:
+      - ./infra/syslog-collector/collector.py:/collector.py:ro
+      - ./infra/certs:/certs:ro
+    ports:
+      - "5514:514/udp"
+      - "5514:514/tcp"
+      - "6514:6514/tcp"
+
   harden-audit-log:
     # NFR-2: audit_log must be append-only from the app's own DB credentials
     # (APP_DB_USER, not the postgres superuser). Can't do this from

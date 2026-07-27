@@ -34,11 +34,27 @@ Design decisions, and why:
   cannot forge a second syslog record (the same log-injection rule
   common/log_safety.py enforces for process logs).
 
-Configuration (all optional -- unset host means the export is disabled):
+Configuration (all optional -- unset host means the export is disabled). The
+collector is whatever the environment already runs: any IP/hostname, any
+port, any of the three transports -- nothing here assumes a co-located
+sidecar.
 
-    SIEM_SYSLOG_HOST      hostname/IP of the syslog collector; unset = off
-    SIEM_SYSLOG_PORT      collector port (default 514)
-    SIEM_SYSLOG_PROTOCOL  "udp" (default) or "tcp" (RFC 6587 octet-counted)
+    SIEM_SYSLOG_HOST         hostname/IP of the syslog collector; unset = off
+    SIEM_SYSLOG_PORT         collector port (default 514; 6514 is the
+                             RFC 5425 convention for TLS)
+    SIEM_SYSLOG_PROTOCOL     "udp" (default), "tcp" (RFC 6587 octet-counted),
+                             or "tls" (RFC 5425: the same octet-counted
+                             framing inside TLS)
+    SIEM_SYSLOG_CA_CERT      tls only: path to the CA bundle that signed the
+                             collector's certificate; unset = the system
+                             trust store
+    SIEM_SYSLOG_CLIENT_CERT  tls only, optional: client certificate for
+    SIEM_SYSLOG_CLIENT_KEY   mutual TLS, if the collector demands it
+    SIEM_SYSLOG_TLS_VERIFY   tls only: "false" disables server-certificate
+                             verification. Dev/debug escape hatch ONLY -- it
+                             is logged loudly, because an unverified TLS
+                             channel to a SIEM invites exactly the
+                             man-in-the-middle an audit trail must resist.
 """
 
 from __future__ import annotations
@@ -47,6 +63,8 @@ import json
 import logging
 import os
 import socket
+import ssl
+from datetime import UTC
 
 from sqlalchemy import event
 
@@ -94,9 +112,15 @@ def format_rfc5424(entry: AuditLogEntry, service: str, hostname: str, procid: in
     #125/#128, already excludes raw query text).
     """
     pri = _FACILITY_LOG_AUDIT * 8 + _severity(entry.action)
-    # AuditLogEntry.created_at is a naive UTC datetime (models._utcnow); RFC
-    # 5424 wants an explicit offset, so stamp the Z on.
-    timestamp = entry.created_at.isoformat() + "Z"
+    # RFC 5424 wants an RFC 3339 timestamp with an explicit offset. Normalize
+    # instead of assuming: models._utcnow() returns an aware datetime today,
+    # but rows written before that change (or by tests) can be naive UTC --
+    # blindly appending "Z" to an aware isoformat() produced the invalid
+    # "+00:00Z" double offset the live collector run caught.
+    created = entry.created_at
+    if created.tzinfo is None:
+        created = created.replace(tzinfo=UTC)
+    timestamp = created.isoformat().replace("+00:00", "Z")
     payload = json.dumps(
         {
             "id": str(entry.id),
@@ -139,8 +163,13 @@ class _TcpSender:
         self._addr = (host, port)
         self._sock: socket.socket | None = None
 
+    def _wrap(self, sock: socket.socket) -> socket.socket:
+        """Transport hook: the TLS subclass wraps here; plain TCP passes
+        through."""
+        return sock
+
     def _connect(self) -> socket.socket:
-        sock = socket.create_connection(self._addr, timeout=5)
+        sock = self._wrap(socket.create_connection(self._addr, timeout=5))
         self._sock = sock
         return sock
 
@@ -162,17 +191,67 @@ class _TcpSender:
             self._sock = None
 
 
+class _TlsSender(_TcpSender):
+    """RFC 5425: syslog over TLS -- the same octet-counted framing as the TCP
+    transport, inside a verified TLS session. This is the transport for a
+    production collector on a protected segment: the audit stream crosses the
+    network encrypted, the collector's identity is verified against a CA, and
+    mutual TLS is supported for collectors that require the sender to present
+    a certificate too."""
+
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        *,
+        ca_cert: str | None,
+        client_cert: str | None,
+        client_key: str | None,
+        verify: bool,
+    ) -> None:
+        super().__init__(host, port)
+        self._server_hostname = host
+        context = ssl.create_default_context(cafile=ca_cert or None)
+        if not verify:
+            # Deliberately loud: an unverified TLS channel to a SIEM accepts
+            # any endpoint that answers, which defeats the point of moving off
+            # plaintext. Allowed for dev/debug only.
+            logger.warning(
+                "SIEM_SYSLOG_TLS_VERIFY=false: collector certificate is NOT "
+                "verified -- do not run production this way"
+            )
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+        if client_cert:
+            context.load_cert_chain(client_cert, client_key or None)
+        self._context = context
+
+    def _wrap(self, sock: socket.socket) -> socket.socket:
+        return self._context.wrap_socket(sock, server_hostname=self._server_hostname)
+
+
 def _build_sender() -> _UdpSender | _TcpSender | None:
     host = os.environ.get("SIEM_SYSLOG_HOST", "").strip()
     if not host:
         return None
-    port = int(os.environ.get("SIEM_SYSLOG_PORT", "514"))
     protocol = os.environ.get("SIEM_SYSLOG_PROTOCOL", "udp").strip().lower()
+    default_port = "6514" if protocol == "tls" else "514"
+    port = int(os.environ.get("SIEM_SYSLOG_PORT", default_port))
+    if protocol == "tls":
+        return _TlsSender(
+            host,
+            port,
+            ca_cert=os.environ.get("SIEM_SYSLOG_CA_CERT", "").strip() or None,
+            client_cert=os.environ.get("SIEM_SYSLOG_CLIENT_CERT", "").strip() or None,
+            client_key=os.environ.get("SIEM_SYSLOG_CLIENT_KEY", "").strip() or None,
+            verify=os.environ.get("SIEM_SYSLOG_TLS_VERIFY", "true").strip().lower()
+            != "false",
+        )
     if protocol == "tcp":
         return _TcpSender(host, port)
     if protocol != "udp":
         logger.warning(
-            "SIEM_SYSLOG_PROTOCOL=%r is not udp or tcp; defaulting to udp", protocol
+            "SIEM_SYSLOG_PROTOCOL=%r is not udp, tcp, or tls; defaulting to udp", protocol
         )
     return _UdpSender(host, port)
 
