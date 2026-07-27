@@ -23,14 +23,15 @@ from datetime import UTC, datetime
 from nats.errors import TimeoutError as NatsTimeoutError
 from nats.js.api import ConsumerConfig
 from qdrant_client.models import PointStruct
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from app.chunking import chunk_sections
 from app.embedding import EMBEDDING_MODEL, EmbeddingError, embed_texts
 from app.parsing import ParsingError, parse_document
 from common.db import get_engine
 from common.job_queue import INGESTION_SUBJECT, ensure_stream, get_nats_connection
-from common.models import AuditLogEntry, Document
+from common.marking_detection import detect_markings, evaluate_markings
+from common.models import AuditLogEntry, ClassificationLevel, Document, ReleasabilityValue
 from common.object_store import get_object_store
 from common.qdrant_store import (
     EMBEDDING_MODEL_KEY,
@@ -111,6 +112,64 @@ class ConsumerStatus:
 # the HTTP app having to share anything else.
 STATUS = ConsumerStatus()
 
+# Issue #138: bound how much text the marking detector scans. Banner/portion
+# markings sit in the document body, not gigabytes deep, so scanning the whole
+# of a very large document would add latency for no real recall gain.
+_ADVISORY_SCAN_LIMIT = 1_000_000
+
+
+def _apply_tagging_advisory(session: Session, doc: Document, sections) -> None:
+    """Issue #138 Phase 1: compute the advisory marking-mismatch finding, attach
+    it to `doc`, and (only if it has findings) add an audit entry -- both persist
+    with the caller's next commit.
+
+    Fail-safe by construction: any error here is swallowed and logged, leaving
+    doc.tagging_advisory untouched. This is decision-support for the curator, so
+    it must never fail, block, or delay ingestion -- FR-11's spillage control
+    stays the human curator's job, not this signal's.
+    """
+    try:
+        text = "\n".join(s.text for s in sections)[:_ADVISORY_SCAN_LIMIT]
+        levels = session.exec(
+            select(ClassificationLevel).where(ClassificationLevel.active == True)  # noqa: E712
+        ).all()
+        rank_by_value = {lvl.value: lvl.rank for lvl in levels}
+        # The configured Releasability vocabulary, so caveat comparison can't
+        # false-positive on marking segments that aren't releasability values
+        # at all (CUI control markings like SP-CTI) -- see evaluate_markings.
+        releasability_values = session.exec(
+            select(ReleasabilityValue).where(ReleasabilityValue.active == True)  # noqa: E712
+        ).all()
+        advisory = evaluate_markings(
+            assigned_classification=doc.classification,
+            assigned_releasability=doc.releasability,
+            detected=detect_markings(text),
+            rank_by_value=rank_by_value,
+            known_caveats=[r.value for r in releasability_values],
+        )
+        doc.tagging_advisory = advisory.to_dict()
+        if advisory.has_findings:
+            logger.info(
+                "document %s tagging advisory: under_classified=%s unassigned_caveats=%s",
+                doc.id,
+                advisory.under_classified,
+                advisory.unassigned_caveats,
+            )
+            session.add(
+                AuditLogEntry(
+                    actor_sub=doc.uploader_sub,
+                    actor_username=doc.uploader_username,
+                    action="document.tagging_advisory",
+                    target_id=str(doc.id),
+                    detail=advisory.to_dict(),
+                )
+            )
+    except Exception:
+        logger.exception(
+            "tagging advisory failed for document %s; continuing ingestion without it",
+            doc.id,
+        )
+
 
 async def process_document(document_id: uuid.UUID) -> bool:
     """Returns True for a terminal outcome (success or permanent failure --
@@ -131,6 +190,8 @@ async def process_document(document_id: uuid.UUID) -> bool:
         try:
             contents = get_object_store().get(doc.original_object_key)
             sections = parse_document(doc.filename, contents)
+            # Issue #138: advisory only, never blocks -- see _apply_tagging_advisory.
+            _apply_tagging_advisory(session, doc, sections)
             chunks = chunk_sections(sections)
             if not chunks:
                 raise ParsingError("document contained no extractable text")
