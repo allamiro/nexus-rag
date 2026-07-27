@@ -24,6 +24,25 @@ global:
   labels: {}
 
 # ---------------------------------------------------------------------------
+# Observability (#73)
+# ---------------------------------------------------------------------------
+
+observability:
+  # Process-log verbosity/format for every custom service
+  # (DEBUG|INFO|WARNING|ERROR|CRITICAL, and text|json).
+  logLevel: INFO
+  logFormat: text
+  # NFR-2: forward every audit event as RFC 5424 syslog to the environment's
+  # existing SIEM collector. Leave syslogHost empty to disable the export.
+  # In-cluster this is typically a syslog forwarder Service/sidecar the
+  # platform already runs; point it wherever the accreditation boundary's
+  # collector listens.
+  siem:
+    syslogHost: ""
+    syslogPort: 514
+    syslogProtocol: udp
+
+# ---------------------------------------------------------------------------
 # External dependencies (not deployed by this chart)
 # ---------------------------------------------------------------------------
 

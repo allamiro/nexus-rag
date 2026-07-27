@@ -195,6 +195,9 @@ services:
     build:
       context: .
       dockerfile: services/reranker-service/Dockerfile
+    environment:
+      # #73: log verbosity, matching the other custom services.
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
     volumes:
       - reranker-cache:/srv/.cache/huggingface
     ports:
@@ -212,6 +215,13 @@ services:
       context: .
       dockerfile: services/ingestion-api/Dockerfile
     environment:
+      # #73: process-log verbosity/format, and NFR-2 SIEM export -- leaving
+      # SIEM_SYSLOG_HOST unset keeps the export disabled (dev default).
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: ${LOG_FORMAT:-text}
+      SIEM_SYSLOG_HOST: ${SIEM_SYSLOG_HOST:-}
+      SIEM_SYSLOG_PORT: ${SIEM_SYSLOG_PORT:-514}
+      SIEM_SYSLOG_PROTOCOL: ${SIEM_SYSLOG_PROTOCOL:-udp}
       # NFR-3: non-superuser app role, distinct from POSTGRES_USER -- see
       # postgres service's init-app-roles.sh.
       DATABASE_URL: postgresql+psycopg://${APP_DB_USER:-nexus_rag_app}:${APP_DB_PASSWORD:-nexus_rag_app}@postgres:5432/${POSTGRES_DB:-nexus_rag}
@@ -281,6 +291,13 @@ services:
       context: .
       dockerfile: services/ingestion-worker/Dockerfile
     environment:
+      # #73: process-log verbosity/format, and NFR-2 SIEM export -- leaving
+      # SIEM_SYSLOG_HOST unset keeps the export disabled (dev default).
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: ${LOG_FORMAT:-text}
+      SIEM_SYSLOG_HOST: ${SIEM_SYSLOG_HOST:-}
+      SIEM_SYSLOG_PORT: ${SIEM_SYSLOG_PORT:-514}
+      SIEM_SYSLOG_PROTOCOL: ${SIEM_SYSLOG_PROTOCOL:-udp}
       # NFR-3: non-superuser app role, distinct from POSTGRES_USER -- see
       # postgres service's init-app-roles.sh.
       DATABASE_URL: postgresql+psycopg://${APP_DB_USER:-nexus_rag_app}:${APP_DB_PASSWORD:-nexus_rag_app}@postgres:5432/${POSTGRES_DB:-nexus_rag}
@@ -322,6 +339,13 @@ services:
       context: .
       dockerfile: services/orchestration-mcp/Dockerfile
     environment:
+      # #73: process-log verbosity/format, and NFR-2 SIEM export -- leaving
+      # SIEM_SYSLOG_HOST unset keeps the export disabled (dev default).
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: ${LOG_FORMAT:-text}
+      SIEM_SYSLOG_HOST: ${SIEM_SYSLOG_HOST:-}
+      SIEM_SYSLOG_PORT: ${SIEM_SYSLOG_PORT:-514}
+      SIEM_SYSLOG_PROTOCOL: ${SIEM_SYSLOG_PROTOCOL:-udp}
       # NFR-3: non-superuser app role, distinct from POSTGRES_USER -- see
       # postgres service's init-app-roles.sh.
       DATABASE_URL: postgresql+psycopg://${APP_DB_USER:-nexus_rag_app}:${APP_DB_PASSWORD:-nexus_rag_app}@postgres:5432/${POSTGRES_DB:-nexus_rag}
