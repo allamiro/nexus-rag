@@ -54,6 +54,17 @@ def doc(db):
     return d
 
 
+class _FakeStore:
+    """#160: purge now goes through the vector-store seam; tests fake the
+    store rather than the old qdrant helper functions."""
+
+    def __init__(self, on_delete):
+        self._on_delete = on_delete
+
+    def delete_document_chunks(self, document_id):
+        self._on_delete(document_id)
+
+
 @pytest.fixture
 def stores(monkeypatch):
     """Record what each store was asked to destroy."""
@@ -63,9 +74,8 @@ def stores(monkeypatch):
         def delete(self, key):
             calls["objects"].append(key)
 
-    monkeypatch.setattr(purge_mod, "get_qdrant_client", object)
     monkeypatch.setattr(
-        purge_mod, "delete_document_chunks", lambda _c, doc_id: calls["qdrant"].append(doc_id)
+        purge_mod, "get_store", lambda: _FakeStore(calls["qdrant"].append)
     )
     monkeypatch.setattr(purge_mod, "get_object_store", _Store)
     return calls
@@ -140,8 +150,7 @@ class TestPartialFailure:
         def _boom(_c, _id):
             raise RuntimeError("qdrant down")
 
-        monkeypatch.setattr(purge_mod, "get_qdrant_client", object)
-        monkeypatch.setattr(purge_mod, "delete_document_chunks", _boom)
+        monkeypatch.setattr(purge_mod, "get_store", lambda: _FakeStore(_boom))
 
         with pytest.raises(PurgeError, match="retry"):
             purge_document(db, doc.id, actor_sub="d", actor_username="dave", reason="r")
@@ -158,9 +167,8 @@ class TestPartialFailure:
             def delete(self, _key):
                 raise RuntimeError("s3 down")
 
-        monkeypatch.setattr(purge_mod, "get_qdrant_client", object)
         monkeypatch.setattr(
-            purge_mod, "delete_document_chunks", lambda _c, i: cleared.append(i)
+            purge_mod, "get_store", lambda: _FakeStore(cleared.append)
         )
         monkeypatch.setattr(purge_mod, "get_object_store", _Store)
 
@@ -184,8 +192,7 @@ class TestPartialFailure:
             def delete(self, _key):
                 raise FileNotFoundError("already gone")
 
-        monkeypatch.setattr(purge_mod, "get_qdrant_client", object)
-        monkeypatch.setattr(purge_mod, "delete_document_chunks", lambda _c, _i: None)
+        monkeypatch.setattr(purge_mod, "get_store", lambda: _FakeStore(lambda _i: None))
         monkeypatch.setattr(purge_mod, "get_object_store", _Store)
 
         purge_document(db, doc.id, actor_sub="d", actor_username="dave", reason="r")
