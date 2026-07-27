@@ -46,13 +46,15 @@ jobs:
           pip install "pydantic>=2.7" "PyJWT>=2.8" "cryptography>=42.0" \
             "sqlmodel>=0.0.21" "qdrant-client>=1.10" "nats-py>=2.7" "boto3>=1.34"
       # The repo-root tree covers services/common (which has no service
-      # directory of its own) plus the cross-cutting BDD scenarios. Per-service
-      # unit tests live next to their service and run in the service-tests job
-      # below -- see issue #113 and docs/testing.md for why they aren't merged
-      # into one invocation.
+      # directory of its own), the cross-cutting BDD scenarios, and the
+      # standalone scripts (e.g. the retrieval-eval trend/baseline logic,
+      # issue #71). Per-service unit tests live next to their service and run in
+      # the service-tests job below -- see issue #113 and docs/testing.md for
+      # why they aren't merged into one invocation. The coverage gate stays
+      # scoped to `common`; the script tests run but don't count toward it.
       - name: Unit tests + BDD security scenarios (services/common)
         run: >
-          pytest tests/unit/common tests/e2e
+          pytest tests/unit tests/e2e
           --cov=common --cov-branch --cov-fail-under=85
           --cov-report=xml:coverage-common.xml --cov-report=term-missing -q
       - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3

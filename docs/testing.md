@@ -126,8 +126,50 @@ spuriously survives. Two related gotchas, both encoded in the repo:
 installed package would shadow the mutated copy), and `tests/conftest.py`'s
 sys.path shim disables itself when `MUTANT_UNDER_TEST` is set.
 
+## Retrieval-quality tracking & re-evaluation policy (FR-30/FR-32)
+
+`scripts/evaluate_retrieval.py` runs the golden-query set through the real
+`rag_search` pipeline and reports recall@K / precision@K plus the forbidden-leak
+check. On its own that is a point-in-time snapshot; FR-30 wants quality tracked
+*over time* so degradation is visible rather than silent, and FR-32 wants
+re-evaluation tied to the changes that can cause it.
+
+**Trend store + regression gate.** The harness supports this directly:
+
+```bash
+# Persist each run under a timestamped filename (the trend store) and fail if
+# recall@K/precision@K drop below the most recent prior run.
+python scripts/evaluate_retrieval.py --history-dir eval-history
+
+# Or diff against an explicit committed baseline, allowing a small noise band.
+python scripts/evaluate_retrieval.py \
+  --baseline eval-history/retrieval-eval-<stamp>.json --regression-tolerance 0.02
+```
+
+With `--history-dir`, each run is kept (not overwritten) and the previous run is
+used as the baseline; a drop beyond `--regression-tolerance` exits non-zero, the
+same way a forbidden leak already does. The pure history/baseline logic is unit
+tested in `tests/unit/test_evaluate_retrieval.py`; the scoring itself is covered
+by the golden-query e2e job.
+
+**Re-evaluation triggers (FR-32).** Re-run the harness, and refresh the
+baseline, on any of:
+
+- **A change to the embedding or reranker model pin (NFR-16)** — a different
+  embedding model changes the vector space and a different cross-encoder changes
+  ranking, either of which can move recall silently. This is mandatory: treat a
+  model-pin PR as incomplete until the golden-query run is green against the
+  prior baseline.
+- **A change to chunking or retrieval logic** (`ingestion-worker` chunking,
+  `orchestration-mcp` fusion/rerank).
+- **The nightly `e2e.yml` schedule**, which covers the "periodic" cadence.
+
 ## Known gaps / follow-ups
 
+- Wiring the trend store into CI so nightly runs retain history *across* runs
+  (download the prior artifact or commit a baseline) and gate on it — the
+  harness supports it (issue #71); the cross-run persistence in `e2e.yml` is the
+  remaining step.
 - Integration layer with containerized Postgres/Qdrant/NATS/Keycloak
   (NFR-11 crash-redelivery, NFR-13 revert-on-partial-failure, NFR-2
   append-only audit enforcement are only covered live/manually today).
