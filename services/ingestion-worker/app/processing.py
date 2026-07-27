@@ -41,8 +41,13 @@ from common.qdrant_store import (
     upsert_chunks,
 )
 from common.sparse_embedding import embed_sparse
+from common.tracing import extract_trace_context, get_tracer
 
 logger = logging.getLogger("ingestion-worker")
+
+# #134: spans carry ids, counts, and byte sizes only -- never chunk text,
+# filenames, or any other corpus content (see common/tracing.py).
+tracer = get_tracer("ingestion-worker")
 
 # Generous enough to cover a slow embedding pass over a large document
 # without a false-positive redelivery racing the attempt that's already
@@ -189,15 +194,24 @@ async def process_document(document_id: uuid.UUID) -> bool:
 
         try:
             contents = get_object_store().get(doc.original_object_key)
-            sections = parse_document(doc.filename, contents)
+            # #134's ingest.process stage spans: attribute values are counts
+            # and byte sizes only, never the text they describe.
+            with tracer.start_as_current_span("parse") as span:
+                span.set_attribute("document.bytes", len(contents))
+                sections = parse_document(doc.filename, contents)
+                span.set_attribute("document.sections", len(sections))
             # Issue #138: advisory only, never blocks -- see _apply_tagging_advisory.
             _apply_tagging_advisory(session, doc, sections)
-            chunks = chunk_sections(sections)
+            with tracer.start_as_current_span("chunk") as span:
+                chunks = chunk_sections(sections)
+                span.set_attribute("document.chunks", len(chunks))
             if not chunks:
                 raise ParsingError("document contained no extractable text")
 
-            dense_vectors = await embed_texts([c.text for c in chunks])
-            sparse_vectors = embed_sparse([c.text for c in chunks])
+            with tracer.start_as_current_span("embed") as span:
+                span.set_attribute("document.chunks", len(chunks))
+                dense_vectors = await embed_texts([c.text for c in chunks])
+                sparse_vectors = embed_sparse([c.text for c in chunks])
 
             points = [
                 PointStruct(
@@ -238,9 +252,11 @@ async def process_document(document_id: uuid.UUID) -> bool:
                     chunks, dense_vectors, sparse_vectors, strict=True
                 )
             ]
-            qdrant = get_qdrant_client()
-            ensure_collection(qdrant, dense_size=len(dense_vectors[0]))
-            upsert_chunks(qdrant, points)
+            with tracer.start_as_current_span("qdrant.upsert") as span:
+                span.set_attribute("qdrant.points", len(points))
+                qdrant = get_qdrant_client()
+                ensure_collection(qdrant, dense_size=len(dense_vectors[0]))
+                upsert_chunks(qdrant, points)
 
             doc.status = "embedded"
             doc.chunk_count = len(chunks)
@@ -362,7 +378,21 @@ async def _handle_message(msg) -> None:
         await msg.term()
         return
 
-    terminal = await process_document(document_id)
+    # #134: parent this consumer's span onto the publisher's trace via the
+    # message headers, so ingest.submit -> ingest.process reads as one trace
+    # even across pods and redeliveries (JetStream stores headers with the
+    # message). A missing header -- an in-flight message from before this
+    # existed, or an untraced publisher -- just starts a fresh trace.
+    with tracer.start_as_current_span(
+        "ingest.process",
+        context=extract_trace_context(msg.headers),
+        attributes={
+            "document.id": str(document_id),
+            "messaging.delivery_attempt": msg.metadata.num_delivered,
+        },
+    ) as span:
+        terminal = await process_document(document_id)
+        span.set_attribute("ingest.terminal", terminal)
     if terminal:
         await msg.ack()
         STATUS.processed += 1
