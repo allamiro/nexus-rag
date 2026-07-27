@@ -39,8 +39,23 @@ observability:
   # collector listens.
   siem:
     syslogHost: ""
+    # 6514 is the RFC 5425 convention when syslogProtocol is tls.
     syslogPort: 514
+    # udp | tcp | tls. tls is RFC 5425: octet-counted syslog inside a
+    # verified TLS session -- the transport for a collector on a protected
+    # segment reached across the cluster boundary.
     syslogProtocol: udp
+    tls:
+      # Secret carrying the CA bundle that signed the collector's
+      # certificate, under the key ca.crt. Mounted read-only and passed as
+      # SIEM_SYSLOG_CA_CERT. Empty = the container's system trust store.
+      caCertSecret: ""
+      # Optional mutual TLS: a kubernetes.io/tls secret (tls.crt/tls.key)
+      # presented to collectors that require client authentication.
+      clientCertSecret: ""
+      # false disables server-certificate verification. Debug only; the
+      # exporter logs a loud warning when this is off.
+      verify: true
 
 # ---------------------------------------------------------------------------
 # External dependencies (not deployed by this chart)
