@@ -45,6 +45,9 @@ sidecar.
     SIEM_SYSLOG_PROTOCOL     "udp" (default), "tcp" (RFC 6587 octet-counted),
                              or "tls" (RFC 5425: the same octet-counted
                              framing inside TLS)
+    SIEM_SYSLOG_FACILITY     RFC 5424 facility number 0..23 (default 13,
+                             "log audit") for collectors that route by a
+                             different facility, e.g. a localN slot
     SIEM_SYSLOG_CA_CERT      tls only: path to the CA bundle that signed the
                              collector's certificate; unset = the system
                              trust store
@@ -73,11 +76,30 @@ from common.models import AuditLogEntry
 logger = logging.getLogger("siem")
 
 # RFC 5424 facility 13: "log audit" -- the facility defined for exactly this
-# kind of record, not a generic localN slot a collector would have to be told
-# about out-of-band.
+# kind of record. The default, not a hardcode: SIEM ingest pipelines commonly
+# route/filter by facility, so environments whose collector expects a localN
+# slot (16-23) can override via SIEM_SYSLOG_FACILITY without a code change.
 _FACILITY_LOG_AUDIT = 13
 _SEVERITY_NOTICE = 5
 _SEVERITY_WARNING = 4
+
+
+def _facility() -> int:
+    raw = os.environ.get("SIEM_SYSLOG_FACILITY", "").strip()
+    if not raw:
+        return _FACILITY_LOG_AUDIT
+    try:
+        value = int(raw)
+    except ValueError:
+        value = -1
+    if not 0 <= value <= 23:  # RFC 5424's facility range
+        logger.warning(
+            "SIEM_SYSLOG_FACILITY=%r is not an integer in 0..23; using %d (log audit)",
+            raw,
+            _FACILITY_LOG_AUDIT,
+        )
+        return _FACILITY_LOG_AUDIT
+    return value
 
 _NILVALUE = "-"
 
@@ -111,7 +133,7 @@ def format_rfc5424(entry: AuditLogEntry, service: str, hostname: str, procid: in
     identity, action, target, and the structured detail dict (which, per
     #125/#128, already excludes raw query text).
     """
-    pri = _FACILITY_LOG_AUDIT * 8 + _severity(entry.action)
+    pri = _facility() * 8 + _severity(entry.action)
     # RFC 5424 wants an RFC 3339 timestamp with an explicit offset. Normalize
     # instead of assuming: models._utcnow() returns an aware datetime today,
     # but rows written before that change (or by tests) can be naive UTC --

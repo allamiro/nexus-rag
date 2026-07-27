@@ -30,6 +30,12 @@ import ssl
 import sys
 import threading
 
+# Loopback by default (CodeQL py/bind-socket-all-network-interfaces): binding
+# every interface is only right inside a container network namespace, where
+# "all interfaces" means the container's own veth and traffic is governed by
+# what the Compose file publishes. The Compose service sets BIND_HOST=0.0.0.0
+# explicitly for that reason; run directly on a host, this stays loopback.
+BIND_HOST = os.environ.get("BIND_HOST", "127.0.0.1")
 UDP_PORT = int(os.environ.get("UDP_PORT", "514"))
 TCP_PORT = int(os.environ.get("TCP_PORT", "514"))
 TLS_PORT = int(os.environ.get("TLS_PORT", "6514"))
@@ -44,8 +50,8 @@ def emit(transport: str, message: bytes) -> None:
 
 def udp_listener() -> None:
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind(("0.0.0.0", UDP_PORT))
-    emit("udp", f"listening on {UDP_PORT}".encode())
+    sock.bind((BIND_HOST, UDP_PORT))
+    emit("udp", f"listening on {BIND_HOST}:{UDP_PORT}".encode())
     while True:
         datagram, _ = sock.recvfrom(65535)
         emit("udp", datagram)
@@ -82,9 +88,9 @@ def read_frames(conn: socket.socket, transport: str) -> None:
 def stream_listener(port: int, transport: str, context: ssl.SSLContext | None) -> None:
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server.bind(("0.0.0.0", port))
+    server.bind((BIND_HOST, port))
     server.listen(8)
-    emit(transport, f"listening on {port}".encode())
+    emit(transport, f"listening on {BIND_HOST}:{port}".encode())
     while True:
         conn, _ = server.accept()
         if context is not None:

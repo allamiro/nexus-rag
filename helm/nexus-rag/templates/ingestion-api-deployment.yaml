@@ -63,6 +63,8 @@ spec:
               value: {{ .Values.observability.siem.syslogPort | quote }}
             - name: SIEM_SYSLOG_PROTOCOL
               value: {{ .Values.observability.siem.syslogProtocol | quote }}
+            - name: SIEM_SYSLOG_FACILITY
+              value: {{ .Values.observability.siem.facility | quote }}
             {{- if eq .Values.observability.siem.syslogProtocol "tls" }}
             - name: SIEM_SYSLOG_TLS_VERIFY
               value: {{ .Values.observability.siem.tls.verify | quote }}

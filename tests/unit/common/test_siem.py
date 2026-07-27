@@ -106,6 +106,15 @@ class TestFormat:
         assert " " not in msgid
         assert len(msgid) == 32
 
+    def test_facility_is_env_overridable(self, monkeypatch, entry):
+        # A collector routing on local0 (16): PRI = 16*8 + notice(5) = 133.
+        monkeypatch.setenv("SIEM_SYSLOG_FACILITY", "16")
+        assert format_rfc5424(entry, "s", "h", 1).startswith(b"<133>1 ")
+
+    def test_invalid_facility_falls_back_to_log_audit(self, monkeypatch, entry):
+        monkeypatch.setenv("SIEM_SYSLOG_FACILITY", "99")
+        assert format_rfc5424(entry, "s", "h", 1).startswith(b"<109>1 ")
+
 
 class TestExport:
     def test_disabled_without_host(self, monkeypatch):

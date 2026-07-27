@@ -45,6 +45,10 @@ observability:
     # verified TLS session -- the transport for a collector on a protected
     # segment reached across the cluster boundary.
     syslogProtocol: udp
+    # RFC 5424 facility number (0..23). 13 = "log audit", the facility
+    # defined for this kind of record; override for collectors that route by
+    # a localN slot (16..23) instead.
+    facility: 13
     tls:
       # Secret carrying the CA bundle that signed the collector's
       # certificate, under the key ca.crt. Mounted read-only and passed as
