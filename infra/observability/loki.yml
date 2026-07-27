@@ -4,11 +4,11 @@ server:
   http_listen_port: 3100
 
 common:
-  path_prefix: /var/loki
+  path_prefix: /loki
   storage:
     filesystem:
-      chunks_directory: /var/loki/chunks
-      rules_directory: /var/loki/rules
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
   replication_factor: 1
   ring:
     kvstore:
@@ -29,7 +29,7 @@ limits_config:
   allow_structured_metadata: true
 
 compactor:
-  working_directory: /var/loki/compactor
+  working_directory: /loki/compactor
   retention_enabled: true
   delete_request_store: filesystem
 

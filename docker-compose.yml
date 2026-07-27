@@ -202,6 +202,11 @@ services:
     build:
       context: .
       dockerfile: services/reranker-service/Dockerfile
+      args:
+        # CPU torch by default for local testing; a GPU host sets
+        # TORCH_INDEX_URL to its CUDA index, an air-gapped build to its
+        # internal mirror (see the Dockerfile's rationale).
+        TORCH_INDEX_URL: ${TORCH_INDEX_URL:-https://download.pytorch.org/whl/cpu}
     environment:
       # #73: log verbosity, matching the other custom services.
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
@@ -444,7 +449,10 @@ services:
       - -varz
       - -connz
       - -healthz
-      - -jsz=streams,consumers
+      # One mode, not a list: the exporter's -jsz flag accepts a single
+      # filter (all|streams|consumers|...); "streams,consumers" is rejected
+      # at startup ("invalid jsz filter"). `all` covers both.
+      - -jsz=all
       - http://nats:8222
     ports:
       - "127.0.0.1:7777:7777"
@@ -526,7 +534,9 @@ services:
     command: ["-config.file=/etc/loki/local-config.yaml"]
     volumes:
       - ./infra/observability/loki.yml:/etc/loki/local-config.yaml:ro
-      - loki-data:/var/loki
+      # /loki is the image's own data dir, already owned by loki's uid --
+      # a custom path mounts root-owned and kills the ruler on mkdir.
+      - loki-data:/loki
     ports:
       - "127.0.0.1:3100:3100"
 
