@@ -62,8 +62,11 @@ class TestPurgeLogging:
             def delete(self, _k):
                 return None
 
-        monkeypatch.setattr(purge_mod, "get_qdrant_client", object)
-        monkeypatch.setattr(purge_mod, "delete_document_chunks", lambda _c, _i: None)
+        class _FakeStore:  # #160: purge goes through the vector-store seam now
+            def delete_document_chunks(self, _i):
+                return None
+
+        monkeypatch.setattr(purge_mod, "get_store", _FakeStore)
         monkeypatch.setattr(purge_mod, "get_object_store", _Store)
 
         with Session(engine) as db:

@@ -22,7 +22,6 @@ from datetime import UTC, datetime
 
 from nats.errors import TimeoutError as NatsTimeoutError
 from nats.js.api import ConsumerConfig
-from qdrant_client.models import PointStruct
 from sqlmodel import Session
 
 from app.chunking import chunk_sections
@@ -32,15 +31,10 @@ from common.db import get_engine
 from common.job_queue import INGESTION_SUBJECT, ensure_stream, get_nats_connection
 from common.models import AuditLogEntry, Document
 from common.object_store import get_object_store
-from common.qdrant_store import (
-    EMBEDDING_MODEL_KEY,
-    chunk_vector,
-    ensure_collection,
-    get_qdrant_client,
-    upsert_chunks,
-)
+from common.qdrant_store import EMBEDDING_MODEL_KEY
 from common.sparse_embedding import embed_sparse
 from common.tracing import extract_trace_context, get_tracer
+from common.vector_store import ChunkPoint, backend_name, get_store
 
 logger = logging.getLogger("ingestion-worker")
 
@@ -153,9 +147,10 @@ async def process_document(document_id: uuid.UUID) -> bool:
                 sparse_vectors = embed_sparse([c.text for c in chunks])
 
             points = [
-                PointStruct(
+                ChunkPoint(
                     id=str(uuid.uuid4()),
-                    vector=chunk_vector(dense, sparse),
+                    dense=dense,
+                    sparse=sparse,
                     payload={
                         "document_id": str(doc.id),
                         "chunk_index": chunk.chunk_index,
@@ -191,11 +186,15 @@ async def process_document(document_id: uuid.UUID) -> bool:
                     chunks, dense_vectors, sparse_vectors, strict=True
                 )
             ]
-            with tracer.start_as_current_span("qdrant.upsert") as span:
-                span.set_attribute("qdrant.points", len(points))
-                qdrant = get_qdrant_client()
-                ensure_collection(qdrant, dense_size=len(dense_vectors[0]))
-                upsert_chunks(qdrant, points)
+            # #160: through the backend seam -- Qdrant by default, Milvus when
+            # VECTOR_BACKEND=milvus. One span name either way, backend as an
+            # attribute, so the A/B reads side by side in Tempo.
+            with tracer.start_as_current_span("vector.upsert") as span:
+                span.set_attribute("vector.backend", backend_name())
+                span.set_attribute("vector.points", len(points))
+                store = get_store()
+                store.ensure_ready(dense_size=len(dense_vectors[0]))
+                store.upsert(points)
 
             doc.status = "embedded"
             doc.chunk_count = len(chunks)

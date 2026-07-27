@@ -17,7 +17,7 @@ from app.deps import allowed_classifications, require_curator, verify_csrf
 from common.db import get_session
 from common.metadata import releasability_authorized
 from common.models import AuditLogEntry, Document, Notification
-from common.qdrant_store import delete_document_chunks, get_qdrant_client, update_document_payload
+from common.vector_store import get_store
 
 logger = logging.getLogger("ingestion-api")
 
@@ -99,7 +99,8 @@ def _validate_supersede(user, new_doc: Document, session: Session) -> Document:
 def _execute_supersede(user, old_doc: Document, new_doc: Document, session: Session) -> None:
     """The actual swap -- only called after _validate_supersede has already
     passed, so this is expected not to fail."""
-    delete_document_chunks(get_qdrant_client(), str(old_doc.id))
+    # #160: through the backend seam (Qdrant by default, Milvus opt-in).
+    get_store().delete_document_chunks(str(old_doc.id))
     old_doc.status = "superseded"
     old_doc.updated_at = datetime.now(UTC)
     session.add(old_doc)
@@ -158,8 +159,8 @@ def approve(
             qdrant_fields["releasability"] = doc.releasability
         if corrections.access_scope is not None:
             qdrant_fields["access_scope"] = doc.access_scope
-    qdrant = get_qdrant_client()
-    update_document_payload(qdrant, str(doc.id), qdrant_fields)
+    store = get_store()
+    store.update_document_payload(str(doc.id), qdrant_fields)
 
     # NFR-13: Qdrant now already shows the new document as `approved`, but
     # nothing is durable yet -- Postgres (the system of record for the
@@ -197,7 +198,7 @@ def approve(
         session.commit()
     except Exception:
         try:
-            update_document_payload(qdrant, str(doc.id), {"status": "pending_review"})
+            store.update_document_payload(str(doc.id), {"status": "pending_review"})
         except Exception:
             logger.exception(
                 "approval of document %s failed and the Qdrant status revert also "
@@ -229,8 +230,8 @@ def reject(
     doc.rejection_reason = body.reason
     doc.reviewed_by_sub = user.sub
     doc.reviewed_at = datetime.now(UTC)
-    qdrant = get_qdrant_client()
-    update_document_payload(qdrant, str(doc.id), {"status": doc.status})
+    store = get_store()
+    store.update_document_payload(str(doc.id), {"status": doc.status})
     # NFR-13: same reasoning as approve() above -- revert the Qdrant write if
     # the Postgres commit doesn't durably land, so the two stores don't end up
     # disagreeing about whether this document is still pending.
@@ -257,7 +258,7 @@ def reject(
         session.commit()
     except Exception:
         try:
-            update_document_payload(qdrant, str(doc.id), {"status": "pending_review"})
+            store.update_document_payload(str(doc.id), {"status": "pending_review"})
         except Exception:
             logger.exception(
                 "rejection of document %s failed and the Qdrant status revert also "
