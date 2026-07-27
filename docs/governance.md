@@ -6,10 +6,8 @@ not controlled yet.
 
 Related: [REQUIREMENTS.md](../REQUIREMENTS.md) for the numbered requirements
 this cites, [ARCHITECTURE.md](../ARCHITECTURE.md) for component/flow diagrams,
-and [SECURITY.md](../SECURITY.md) for the vulnerability-reporting surface.
-(`docs/testing.md`, covering how the controls below are verified, arrives with
-[#67](https://github.com/schuecl/nexus-rag/pull/67); link it here once that
-lands.)
+[testing.md](testing.md) for how the controls below are verified, and
+[SECURITY.md](../SECURITY.md) for the vulnerability-reporting surface.
 
 ## Why this document exists
 

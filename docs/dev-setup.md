@@ -274,6 +274,46 @@ automated or for testing with your own file.
    output is a real FR-26 regression, not just a quality miss, and the run exits non-zero
    if one occurs.
 
+## Live validation history
+
+Most of this project was built with no Docker daemon, live Keycloak/Qdrant/Ollama, or
+Hugging Face access available, so initial verification leaned on `TestClient`/`uvicorn`/
+MCP-client round trips, in-memory Postgres/Qdrant, and hand-crafted JWTs — rigorous, but
+not the same as a real cluster.
+
+The full pipeline has since been validated against a real `docker compose up`, including
+the P0 durability work: a document submitted as `alice-ingest` was durably queued (NATS
+JetStream), picked up and processed by `ingestion-worker` (`queued → processing →
+pending_review`, confirmed via `GET /documents/{id}` polling), curated and approved, and
+then found by a real claims-filtered query against `orchestration-mcp`'s
+`/debug/rag_search` with a `bob-query`-obtained Keycloak token.
+
+That live run surfaced and fixed eight real bugs this repo's mocked verification couldn't
+have caught:
+
+1. A missing `mkdir` before a non-root `chown` — object-store write permissions.
+2. `obo.scopes` supplied as a JSON array where LibreChat expects a space-delimited string.
+3. Missing `JWT_SECRET` / `CREDS_KEY` / `CREDS_IV` in the LibreChat config.
+4. `ALLOW_SOCIAL_LOGIN` defaulting off, which disabled the OIDC button.
+5. An MCP SSRF domain-allowlist that blocked `orchestration-mcp`.
+6. A missing `OPENID_SCOPE`.
+7. A `depends_on` race against Keycloak's healthcheck.
+8. `openid-client` refusing a plain-HTTP issuer, which broke LibreChat's own OIDC login
+   (issue #75) — fixed with a real (self-signed, dev-only) HTTPS cert for both Keycloak
+   and a small nginx proxy in front of LibreChat, which has no HTTPS listener of its own.
+
+The OBO token-exchange mechanism itself is confirmed live: two real Keycloak config bugs
+were found and fixed (the Standard Token Exchange V2 switch was on the wrong client, and
+the exchanged token's HTTPS issuer wasn't in `orchestration-mcp`/`ingestion-api`'s issuer
+allowlist), and a scripted exchange now returns a correctly claims-filtered `rag_search`
+result.
+
+Still not confirmed: LibreChat's *own* code performing that exchange when a real chat
+message triggers the tool — driving that specific path hit a separate LibreChat auth quirk
+(its `openidJwt` reused-token strategy rejects its own token with "invalid algorithm"),
+tracked as a follow-up rather than chased down inline. See the "What's stubbed vs working"
+list below and `REQUIREMENTS.md`'s P1 list.
+
 ## What's stubbed vs working
 
 **Status-label convention (P1, REQUIREMENTS.md Section 11):** a bare "works" claim conflates
