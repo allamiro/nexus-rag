@@ -40,6 +40,20 @@ spec:
             - name: hf-cache
               mountPath: /srv/.cache/huggingface
           env:
+            # #73: log verbosity/format, and NFR-2 SIEM export (disabled when
+            # syslogHost is empty).
+            - name: LOG_LEVEL
+              value: {{ .Values.observability.logLevel | quote }}
+            - name: LOG_FORMAT
+              value: {{ .Values.observability.logFormat | quote }}
+            {{- if .Values.observability.siem.syslogHost }}
+            - name: SIEM_SYSLOG_HOST
+              value: {{ .Values.observability.siem.syslogHost | quote }}
+            - name: SIEM_SYSLOG_PORT
+              value: {{ .Values.observability.siem.syslogPort | quote }}
+            - name: SIEM_SYSLOG_PROTOCOL
+              value: {{ .Values.observability.siem.syslogProtocol | quote }}
+            {{- end }}
             # NFR-3: non-superuser app role, distinct from POSTGRES_USER.
             - name: DATABASE_URL
               valueFrom:
