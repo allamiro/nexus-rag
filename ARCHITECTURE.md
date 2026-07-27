@@ -65,6 +65,7 @@ throwaway copies of the `existing` box too, so the whole diagram runs on a lapto
 | `common` | Yes | Python package | Shared claims parsing, metadata schema, Qdrant filter builder, DB models, object-store abstraction (NFR-12), NATS job-queue helpers (NFR-11) — the single source of truth every service imports rather than reimplements |
 | NATS JetStream | Config only | NATS | Durable, token-authenticated ingestion job queue between `ingestion-api` and `ingestion-worker` (NFR-11) |
 | object store | Config only | Filesystem (dev) / any S3-compatible endpoint (prod) | Durable storage for original uploaded files, independent of Qdrant/Postgres (NFR-12) |
+| observability stack | Config only | Prometheus, Alertmanager, Grafana, Tempo, Loki, Alloy, OpenTelemetry Collector | Local metrics, alerts, traces, and container logs; production can point the same service telemetry at managed/external equivalents |
 | embedding Ollama | Config only | Ollama | Dedicated embedding-serving instance (NFR-8: separate GPU allocation from generation) |
 | Qdrant | Config only | Qdrant | Vector store — dense + BM25 named vectors per chunk, access-control payload fields |
 | Postgres | Config only | Postgres | System of record: document status, audit log, notifications, admin-configurable classification/releasability lists |
@@ -87,6 +88,8 @@ erDiagram
         string releasability
         json access_scope
         string status "queued|processing|embedded|pending_review|approved|rejected|superseded|failed"
+        datetime queue_published_at "null until JetStream acknowledges persistence"
+        datetime processing_started_at "short duplicate-safe worker lease"
         uuid supersedes_document_id FK
         string original_object_key "NFR-12: key into the object store, set at submission time"
     }
@@ -144,7 +147,9 @@ sequenceDiagram
     I->>I: parse_claims(token), validate tags against claims (FR-18)
     I->>OS: put(original bytes)
     I->>PG: insert Document(status=queued, original_object_key)
-    I->>N: publish(document_id)
+    I->>N: publish(document_id, Nats-Msg-Id=document_id)
+    N-->>I: persisted acknowledgement
+    I->>PG: set queue_published_at
     I-->>U: 202 Accepted {status: queued}
     Note over I,N: request already returned -- everything below runs<br/>in a separate process/pod, asynchronously
     N->>W: pull_subscribe delivers document_id
@@ -160,6 +165,14 @@ sequenceDiagram
 ```
 
 Implementation notes:
+- **Durable Postgres → JetStream hand-off:** Postgres and JetStream cannot share a
+  transaction. The document row therefore commits first with `queue_published_at = null`;
+  only a JetStream persistence acknowledgement sets the timestamp. A background
+  reconciler republishes any queued/null row after a broker outage or process crash.
+  `Nats-Msg-Id=document_id` covers ambiguous publish acknowledgements inside JetStream's
+  duplicate window, while the worker's locked processing lease and deterministic
+  per-chunk UUIDs make later at-least-once deliveries safe too. A crash after the
+  `embedded` checkpoint is reclaimable rather than treated as terminal.
 - **Why a queue, not `BackgroundTasks`:** the previous in-process design lost queued/
   in-flight documents on a process restart or crash mid-processing — nothing recorded
   that work needed to happen again. JetStream's ack/redelivery semantics fix that: `W`
@@ -404,26 +417,31 @@ via `values.yaml` (`externalPostgres.existingSecret`, `externalKeycloak.issuerUr
 
 ## 7. Known gaps
 
-### Observability (issue #72)
+### Observability status (issue #72)
 
-`orchestration-mcp` exposes a Prometheus `/metrics` endpoint covering the
-retrieval path: per-stage latency (embed / retrieve / rerank / total), query
-outcomes, result-count distribution, and the reranker fallback rate — the last
-of which matters because FR-25 degrades to fused order instead of failing, so
-a ranking-quality drop is otherwise invisible. Per-request timings also land in
-the FR-31 audit entry, next to the actor and the authorization outcome.
+Every first-party service exposes a content-free Prometheus `/metrics` surface.
+`orchestration-mcp` covers retrieval stage latency, outcomes, result counts, and
+reranker fallback; `ingestion-api` covers HTTP traffic, submissions, curation,
+and the Postgres → JetStream reconciliation backlog; `ingestion-worker` covers
+consumer health, attempts, document/chunk counts, and stage duration; and
+`reranker-service` covers model readiness, batch sizes, outcomes, and prediction
+duration. Per-request query timings also land in the FR-31 audit entry.
+
+The Compose topology includes a complete local stack: Prometheus plus alert
+rules and Alertmanager, OTLP Collector → Tempo traces, Alloy → Loki container
+logs, and provisioned Grafana data sources/dashboard. Exporters cover NATS and
+Postgres, while Qdrant and Keycloak are scraped directly. Operational surfaces
+are bound to loopback; Grafana itself requires the configured admin login.
 
 Deliberately *not* returned to callers: response latency correlates with how
 much the access filter matched and how many candidates were reranked, so
 per-stage figures would sharpen the membership-inference surface #127
 describes. Operators get them via the audit log and the scrape endpoint.
 
-Still open: `ingestion-api`, `ingestion-worker`, and `reranker-service` have no
-metrics surface, so ingestion throughput, queue depth, and worker processing
-duration remain unmeasured (NATS exposes its own monitoring endpoint on :8222
-to align with). NFR-4's end-to-end latency budget also remains an open question
-in REQUIREMENTS.md — the instrumentation to eventually answer it with data now
-exists for the query path only.
+Still open: the new local stack has configuration/unit validation but has not
+yet been smoke-tested as a complete live Compose deployment. NFR-4's exact
+latency budget also remains an open question in REQUIREMENTS.md; the telemetry
+needed to establish and then alert on a defensible threshold now exists.
 
 See `docs/dev-setup.md`'s "What's stubbed vs working" for the current, authoritative list
 (kept there rather than duplicated here, since it changes as work lands). §4.1's NATS-based

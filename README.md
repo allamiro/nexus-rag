@@ -37,8 +37,9 @@ claims through one shared library, never trusted from the client.
   gating classification, releasability, access scope, and approval status before anything
   reaches Qdrant. Exposed to LibreChat as an MCP server over streamable HTTP.
 - **Monitoring & evaluation (FR-30..FR-32):** every ingestion, curation, and retrieval event
-  is audit-logged by OIDC identity, and a golden-query harness reports recall@K/precision@K
-  plus a regression check that pending/rejected/superseded content never leaks into results.
+  is audit-logged by OIDC identity; Prometheus/Grafana, Tempo, and Loki cover metrics,
+  traces, alerts, and logs; and a golden-query harness reports recall@K/precision@K plus a
+  regression check that pending/rejected/superseded content never leaks into results.
 
 **Operational & security hardening:**
 
@@ -120,6 +121,7 @@ nexus-rag/
   infra/
     keycloak/realm-export/   # seeded dev realm
     librechat/, litellm/     # throwaway dev configs
+    observability/           # Prometheus/Grafana/Tempo/Loki/Alloy configs
   scripts/                   # sample-data seeding, retrieval evaluation harness
   helm/nexus-rag/            # production Helm chart (NFR-10)
   docs/                      # dev-setup.md, testing.md

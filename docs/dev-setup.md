@@ -143,11 +143,14 @@ once everything above is healthy.
 |---|---|---|
 | Keycloak admin console | http://localhost:8080 | login `admin` / `admin` (`.env`) |
 | Keycloak health/metrics | http://localhost:9000/health/ready | `KC_HEALTH_ENABLED=true` moves `/health*` onto Keycloak's separate management interface (default port 9000) rather than 8080 -- what the `keycloak` service's Compose healthcheck actually probes |
-| Ingestion UI | http://localhost:8001 | upload form, curation queue, and a search page (click "Log in", real Keycloak login) |
-| orchestration-mcp debug API | http://localhost:8002 | `/health`, `/debug/rag_search` |
-| reranker-service | http://localhost:8003 | `/health`, `/rerank` |
-| ingestion-worker | http://localhost:8004 | `/health` only -- its real work is the NATS consumer loop, not an HTTP API (NFR-11) |
+| Ingestion UI | http://localhost:8001 | upload form, curation queue, search page, `/health`, `/metrics` (click "Log in" for the UI) |
+| orchestration-mcp debug API | http://localhost:8002 | `/health`, `/metrics`, `/debug/rag_search` |
+| reranker-service | http://localhost:8003 | `/health`, `/metrics`, `/rerank` |
+| ingestion-worker | http://localhost:8004 | `/health`, `/metrics`; its real work is the NATS consumer loop (NFR-11) |
 | Qdrant | http://localhost:6333/dashboard | |
+| Grafana | http://localhost:3000 | provisioned Nexus RAG dashboard and Prometheus/Loki/Tempo/Alertmanager data sources; admin credentials come from `.env` |
+| Prometheus | http://localhost:9090 | loopback-only metrics and alert-rule UI |
+| Alertmanager | http://localhost:9093 | loopback-only; the local default records alerts without notifying an external system |
 | LibreChat | https://localhost:3080 | throwaway, log in via Keycloak. HTTPS is real (issue #75) via the `librechat-proxy` nginx service, not just a config label -- see "One-time host setup" above |
 | LiteLLM | http://localhost:4000 | throwaway gateway in front of Ollama |
 
@@ -405,7 +408,12 @@ the docs, not a silent "it works" — flag it if you find one.
   unreachable, etc.) is left un-acked, so JetStream redelivers it to another attempt
   after `ACK_WAIT_SECONDS`. This is what replaced the earlier `BackgroundTasks`-based
   pipeline, which had no equivalent recovery and left a document stuck in `processing`
-  forever if the process restarted mid-document.
+  forever if the process restarted mid-document. The hand-off itself is durable too:
+  the row commits with `queue_published_at = null`, the API sets that marker only after
+  JetStream acknowledges persistence, and its reconciliation loop republishes any
+  queued/null row after a broker outage or crash. JetStream message-id deduplication,
+  a locked worker processing lease, and stable per-chunk IDs make those retries
+  at-least-once without duplicate retrievable chunks.
 - **Hybrid dense+BM25 retrieval and reranking (FR-24/FR-25)** —
   `services/orchestration-mcp/app/rag_search.py` queries a dense semantic leg and a BM25
   sparse leg (`common/sparse_embedding.py`, Qdrant's own `fastembed`/`Qdrant/bm25` model)
@@ -589,8 +597,22 @@ the docs, not a silent "it works" — flag it if you find one.
   is no longer opaque. Span attributes are ids/counts/sizes only, never
   query or chunk text (#125's rule), and head sampling defaults to 5%
   (`OTEL_TRACES_SAMPLER_ARG`; ParentBased, so one decision covers a whole
-  request tree). Helm: `observability.tracing.*`. Unit-tested with a real
-  in-memory TracerProvider; not yet validated against a live Tempo.
+  request tree). Compose sends these traces through its OpenTelemetry
+  Collector to Tempo and provisions the Tempo data source in Grafana; Helm
+  uses `observability.tracing.*`. Unit-tested with a real in-memory
+  TracerProvider; the complete live Collector/Tempo path has not yet been
+  smoke-tested.
+- **Full local operational telemetry** — Prometheus scrapes all four
+  first-party services plus NATS, Postgres, Qdrant, Keycloak, Loki, Tempo,
+  Alloy, and the OpenTelemetry Collector. Alert rules cover service/dependency
+  availability, a stopped worker consumer, stale Postgres → JetStream
+  hand-offs, exhausted worker retries, query latency, authorization-denial
+  spikes, and elevated reranker fallback. Alloy collects only this Compose
+  project's container logs into Loki, while Grafana is pre-provisioned with
+  Prometheus/Loki/Tempo/Alertmanager data sources and the Nexus RAG operations
+  dashboard. Metrics never label user, query, filename, document metadata, or
+  chunk text. Implemented and configuration/unit-tested; the complete stack
+  is not yet live-Compose-validated.
 - **SIEM export of audit events, and level-configurable structured logging
   (NFR-2, issue #73)** — every `audit_log` row (FR-31 funnels each ingestion,
   curation, retrieval, and purge event from every service through that one

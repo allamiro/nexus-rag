@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: Nexus RAG
+    orgId: 1
+    folder: Nexus RAG
+    type: file
+    disableDeletion: true
+    editable: false
+    options:
+      path: /var/lib/grafana/dashboards

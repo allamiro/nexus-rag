@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
+from app import metrics
 from app.deps import allowed_classifications, require_curator, verify_csrf
 from common.db import get_session
 from common.metadata import releasability_authorized
@@ -208,6 +209,7 @@ def approve(
             )
         raise
     session.refresh(doc)
+    metrics.curation_decisions_total.labels(decision="approved").inc()
     return doc
 
 
@@ -268,4 +270,5 @@ def reject(
             )
         raise
     session.refresh(doc)
+    metrics.curation_decisions_total.labels(decision="rejected").inc()
     return doc

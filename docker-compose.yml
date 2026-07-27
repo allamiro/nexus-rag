@@ -5,9 +5,14 @@ networks:
     name: nexus-rag-net
 
 volumes:
+  alloy-data:
+  grafana-data:
+  loki-data:
   milvus-data:
+  prometheus-data:
   postgres-data:
   qdrant-data:
+  tempo-data:
   ollama-data:
   reranker-cache:
   ingestion-worker-cache:
@@ -122,6 +127,7 @@ services:
       KC_DB_USERNAME: ${KEYCLOAK_DB_USER:-keycloak_app}
       KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak_app}
       KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
       # Issue #75: LibreChat's openid-client discovery call refuses a plain
       # HTTP issuer outright ("only requests to HTTPS are allowed") -- adding
       # HTTPS here, alongside the existing HTTP listener (still used
@@ -202,7 +208,7 @@ services:
       # #134: distributed tracing -- disabled unless an OTLP endpoint is set
       # (e.g. a Tempo/otel-collector on the compose network). Dev default
       # samples everything when enabled; production should stay low.
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318}
       OTEL_TRACES_SAMPLER_ARG: ${OTEL_TRACES_SAMPLER_ARG:-1.0}
     volumes:
       - reranker-cache:/srv/.cache/huggingface
@@ -237,8 +243,10 @@ services:
       # #134: distributed tracing -- disabled unless an OTLP endpoint is set
       # (e.g. a Tempo/otel-collector on the compose network). Dev default
       # samples everything when enabled; production should stay low.
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318}
       OTEL_TRACES_SAMPLER_ARG: ${OTEL_TRACES_SAMPLER_ARG:-1.0}
+      QUEUE_RECONCILE_INTERVAL_SECONDS: ${QUEUE_RECONCILE_INTERVAL_SECONDS:-15}
+      QUEUE_RECONCILE_BATCH_SIZE: ${QUEUE_RECONCILE_BATCH_SIZE:-100}
       # NFR-3: non-superuser app role, distinct from POSTGRES_USER -- see
       # postgres service's init-app-roles.sh.
       DATABASE_URL: postgresql+psycopg://${APP_DB_USER:-nexus_rag_app}:${APP_DB_PASSWORD:-nexus_rag_app}@postgres:5432/${POSTGRES_DB:-nexus_rag}
@@ -324,7 +332,7 @@ services:
       # #134: distributed tracing -- disabled unless an OTLP endpoint is set
       # (e.g. a Tempo/otel-collector on the compose network). Dev default
       # samples everything when enabled; production should stay low.
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318}
       OTEL_TRACES_SAMPLER_ARG: ${OTEL_TRACES_SAMPLER_ARG:-1.0}
       # NFR-3: non-superuser app role, distinct from POSTGRES_USER -- see
       # postgres service's init-app-roles.sh.
@@ -383,7 +391,7 @@ services:
       # #134: distributed tracing -- disabled unless an OTLP endpoint is set
       # (e.g. a Tempo/otel-collector on the compose network). Dev default
       # samples everything when enabled; production should stay low.
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318}
       OTEL_TRACES_SAMPLER_ARG: ${OTEL_TRACES_SAMPLER_ARG:-1.0}
       # NFR-3: non-superuser app role, distinct from POSTGRES_USER -- see
       # postgres service's init-app-roles.sh.
@@ -426,6 +434,139 @@ services:
         condition: service_started
       reranker-service:
         condition: service_healthy
+
+  # ---------------------------------------------------------- observability
+  # Metrics: Prometheus scrapes every Nexus RAG service plus the queue,
+  # database, identity provider, vector store, and telemetry backends.
+  nats-exporter:
+    image: natsio/prometheus-nats-exporter:0.20.1
+    command:
+      - -varz
+      - -connz
+      - -healthz
+      - -jsz=streams,consumers
+      - http://nats:8222
+    ports:
+      - "127.0.0.1:7777:7777"
+    depends_on:
+      nats:
+        condition: service_healthy
+
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.19.1
+    environment:
+      DATA_SOURCE_URI: postgres:5432/${POSTGRES_DB:-nexus_rag}?sslmode=disable
+      # Read the statistics views with the existing non-superuser app role;
+      # the bootstrap POSTGRES_USER must not become a day-to-day monitoring
+      # credential.
+      DATA_SOURCE_USER: ${APP_DB_USER:-nexus_rag_app}
+      DATA_SOURCE_PASS: ${APP_DB_PASSWORD:-nexus_rag_app}
+    ports:
+      - "127.0.0.1:9187:9187"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:v3.11.3
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+      - --web.enable-lifecycle
+    volumes:
+      - ./infra/observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infra/observability/prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    depends_on:
+      alertmanager:
+        condition: service_started
+
+  alertmanager:
+    image: prom/alertmanager:v0.32.1
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+    volumes:
+      - ./infra/observability/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    ports:
+      - "127.0.0.1:9093:9093"
+
+  # Traces: services emit OTLP/HTTP to the collector, which batches and
+  # forwards to Tempo. Grafana exposes the cross-service trace trees.
+  tempo:
+    image: grafana/tempo:2.10.5
+    command: ["-config.file=/etc/tempo.yml"]
+    volumes:
+      - ./infra/observability/tempo.yml:/etc/tempo.yml:ro
+      - tempo-data:/var/tempo
+    ports:
+      - "127.0.0.1:3200:3200"
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.153.0
+    command: ["--config=/etc/otelcol/config.yml"]
+    volumes:
+      - ./infra/observability/otel-collector.yml:/etc/otelcol/config.yml:ro
+    ports:
+      - "127.0.0.1:4317:4317"
+      - "127.0.0.1:4318:4318"
+      - "127.0.0.1:13133:13133"
+    depends_on:
+      tempo:
+        condition: service_started
+
+  # Logs: Alloy discovers only containers in this Compose project and ships
+  # their stdout/stderr to Loki. The Docker socket is read-only and this
+  # collector is strictly a local-development component.
+  loki:
+    image: grafana/loki:3.7.2
+    command: ["-config.file=/etc/loki/local-config.yaml"]
+    volumes:
+      - ./infra/observability/loki.yml:/etc/loki/local-config.yaml:ro
+      - loki-data:/var/loki
+    ports:
+      - "127.0.0.1:3100:3100"
+
+  alloy:
+    image: grafana/alloy:v1.16.1
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+    volumes:
+      - ./infra/observability/alloy.alloy:/etc/alloy/config.alloy:ro
+      - alloy-data:/var/lib/alloy/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "127.0.0.1:12345:12345"
+    depends_on:
+      loki:
+        condition: service_started
+
+  grafana:
+    image: grafana/grafana:13.1.0
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-nexus-rag-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./infra/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      prometheus:
+        condition: service_started
+      loki:
+        condition: service_started
+      tempo:
+        condition: service_started
 
   syslog-collector:
     # #73/NFR-2 validation only: a stand-in SIEM that prints every syslog

@@ -1,0 +1,42 @@
+discovery.docker "nexus_rag" {
+  host = "unix:///var/run/docker.sock"
+}
+
+discovery.relabel "nexus_rag" {
+  targets = discovery.docker.nexus_rag.targets
+
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_project"]
+    regex         = "nexus-rag"
+    action        = "keep"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "service"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_project"]
+    target_label  = "compose_project"
+  }
+}
+
+loki.source.docker "nexus_rag" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.relabel.nexus_rag.output
+  labels     = {environment = "development"}
+  forward_to = [loki.write.local.receiver]
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

@@ -16,13 +16,16 @@ what fixes that; see services/ingestion-worker/app/processing.py.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import uuid
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
 from pydantic import BaseModel, Field
 from sqlmodel import Session, select
 
+from app import metrics
 from app.deps import (
     allowed_classifications,
     get_current_user,
@@ -30,6 +33,7 @@ from app.deps import (
     require_purge,
     verify_csrf,
 )
+from app.recovery import mark_published
 from common.db import get_session
 from common.job_queue import publish_ingestion_job
 from common.metadata import DocumentMetadataIn, MetadataValidationError, validate_against_claims
@@ -40,6 +44,7 @@ from common.tracing import get_tracer
 from common.versioning import SupersedeValidationError, validate_supersede_target
 
 router = APIRouter(prefix="/documents", tags=["ingestion"])
+logger = logging.getLogger("ingestion-api")
 
 # #134: spans carry ids, counts, and byte sizes only -- never file content or
 # filenames (the purge path treats filenames as content; see common/purge.py).
@@ -116,6 +121,7 @@ async def submit_document(
     contents = await _read_bounded(file, MAX_UPLOAD_BYTES)
     if not contents:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "empty file")
+    metrics.upload_bytes.observe(len(contents))
 
     try:
         metadata = DocumentMetadataIn(
@@ -214,11 +220,38 @@ async def submit_document(
     # #134: publish inside a named ingest.submit span so the traceparent
     # riding the NATS message headers points here, and ingestion-worker's
     # ingest.process span continues this trace across the queue.
-    with tracer.start_as_current_span(
-        "ingest.submit",
-        attributes={"document.id": str(doc.id), "document.bytes": len(contents)},
-    ):
-        await publish_ingestion_job(request.app.state.jetstream, str(doc.id))
+    try:
+        with tracer.start_as_current_span(
+            "ingest.submit",
+            attributes={"document.id": str(doc.id), "document.bytes": len(contents)},
+        ):
+            await publish_ingestion_job(request.app.state.jetstream, str(doc.id))
+        metrics.queue_publish_total.labels(
+            source="request", outcome="acknowledged"
+        ).inc()
+        try:
+            mark_published(doc.id)
+            doc.queue_published_at = datetime.now(UTC)
+            metrics.submissions_total.labels(outcome="published").inc()
+        except Exception:
+            # JetStream already acknowledged the durable message. Leaving the
+            # marker null is safe: the reconciler republishes with the same
+            # Nats-Msg-Id, and the worker is duplicate-safe.
+            logger.exception(
+                "job %s was published but its hand-off marker could not be saved",
+                doc.id,
+            )
+            metrics.submissions_total.labels(outcome="queued_for_recovery").inc()
+    except Exception:
+        # The document row and original are durable. Return the accepted row
+        # and let the background reconciler retry instead of reporting a 5xx
+        # that encourages the user to create a second submission.
+        logger.exception(
+            "initial queue publish failed for document %s; reconciliation will retry",
+            doc.id,
+        )
+        metrics.queue_publish_total.labels(source="request", outcome="failed").inc()
+        metrics.submissions_total.labels(outcome="queued_for_recovery").inc()
     return doc
 
 
