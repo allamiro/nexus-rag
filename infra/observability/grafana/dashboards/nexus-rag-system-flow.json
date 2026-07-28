@@ -748,7 +748,7 @@
         "moddedSeriesVal": 0,
         "mermaidServiceUrl": "",
         "useBasicAuth": false,
-        "style": "/* #133: belt and braces for the node label ink. mermaid emits labels as\n   <text> or inside a foreignObject depending on htmlLabels, and\n   nodeTextColor does not always reach the HTML path. */\n.node .nodeLabel, .node .label, .node text, .node tspan,\n.node foreignObject div, .node foreignObject span, .node foreignObject p {\n  fill: #0e1a10 !important;\n  color: #0e1a10 !important;\n  font-weight: 600 !important;\n}\n/* Edge labels and cluster titles are on the panel background, not on a\n   node -- inverting them would make them invisible. */\n.edgeLabel, .edgeLabel *, .cluster-label, .cluster-label * {\n  fill: #dfe6f0 !important;\n  color: #dfe6f0 !important;\n  background-color: transparent !important;\n}\n.cluster rect {\n  fill: rgba(255, 255, 255, 0.03) !important;\n  stroke: #4a5666 !important;\n}\n",
+        "style": "/* #133: lanes were solid slabs competing with the nodes; a hairline and a\n   near-transparent wash is enough to group them. Label ink is handled by\n   the threshold colours instead -- see the fieldConfig comment. */\n.cluster rect {\n  fill: rgba(255, 255, 255, 0.03) !important;\n  stroke: #4a5666 !important;\n}\n.edgeLabel, .edgeLabel * { background-color: transparent !important; }\n",
         "nodeSize": {
           "minWidth": 30,
           "minHeight": 30
@@ -850,15 +850,16 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "#B02A37",
                 "value": null
               },
               {
-                "color": "green",
+                "color": "#1A7F37",
                 "value": 1
               }
             ]
-          }
+          },
+          "noValue": "0"
         },
         "overrides": []
       }
