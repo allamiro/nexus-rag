@@ -86,6 +86,22 @@ search was added, run `docker compose down -v` first -- `ensure_collection` only
 configures a collection when it doesn't already exist, so a stale volume won't pick up
 the new schema on its own.
 
+## Running on a GPU host (optional)
+
+Everything defaults to CPU so `docker compose up` works with no drivers. Two
+pieces can use an NVIDIA GPU when one is present:
+
+- **reranker-service** bakes its torch wheel at build time from
+  `TORCH_INDEX_URL` (`.env`). CPU by default; for GPU set it to the matching
+  CUDA index (e.g. `https://download.pytorch.org/whl/cu124`) and uncomment the
+  service's `deploy.resources` GPU reservation in `docker-compose.yml`.
+- **Ollama** uses the GPU automatically once its GPU reservation is uncommented.
+
+Host prerequisites for the GPU path: an NVIDIA driver, the
+`nvidia-container-toolkit`, and Docker configured with the `nvidia` runtime.
+Air-gapped (NFR-1): mirror the chosen torch index internally and point
+`TORCH_INDEX_URL` at it, same as PyPI is already mirrored.
+
 ## Prerequisites
 
 - Docker with Compose v2 (`docker compose version`)
