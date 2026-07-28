@@ -1,34 +1,34 @@
 :root {
   /* Issue #166: a dark operational theme rather than the light default. The
-     hue is the phosphor green of night-vision and legacy terminal displays --
-     the association is the point, and it reads as instrument rather than
-     decoration. Every value below is a token so the palette can be swapped
+     default is a neutral slate-blue: no strong hue association, and the accent
+     stays clear of the red/green range the reserved status colours occupy.
+     The phosphor green is still available, as an opt-in theme. Every value below is a token so the palette can be swapped
      without touching a single rule. */
   /* The page sits a step lighter than the first pass, and the surfaces a step
      lighter again. The first version put near-black panels on a near-black
      page: technically high contrast for text, but the panels read as holes
      rather than as cards, and the form looked severe rather than legible.
      Panels should be *of* the background, one step above it. */
-  --page: #0a1a12;
-  --page-deep: #061009;
-  --surface: rgba(22, 47, 34, 0.9);
-  --surface-muted: rgba(17, 38, 27, 0.85);
-  --text: #e4f4ea;
+  --page: #0d1420;
+  --page-deep: #070b12;
+  --surface: rgba(26, 36, 53, 0.9);
+  --surface-muted: rgba(20, 29, 43, 0.85);
+  --text: #e6ecf7;
   /* Lifted from #7ea992: secondary text was technically passing AA and still
      reading as disabled, which is the wrong signal on a form label. */
-  --muted: #9dbfad;
+  --muted: #a3b1c8;
   /* Borders were nearly invisible at 0.16 alpha, so fields had no edge and the
      eye had nothing to follow down the form. */
-  --line: rgba(120, 200, 158, 0.22);
-  --line-strong: rgba(120, 200, 158, 0.4);
+  --line: rgba(140, 170, 220, 0.2);
+  --line-strong: rgba(140, 170, 220, 0.38);
 
   /* One accent, used for every interactive affordance. The previous theme had
      a separate blue for links, a cyan for accents, and a third colour on
      primary buttons, so nothing signalled "this is the action". */
-  --primary: #35d67f;
-  --primary-dark: #1fa35c;
-  --primary-soft: rgba(53, 214, 127, 0.12);
-  --cyan: #4fd6c1;
+  --primary: #5b9dff;
+  --primary-dark: #3574d4;
+  --primary-soft: rgba(91, 157, 255, 0.14);
+  --cyan: #5ec8d8;
 
   /* Status colours stay reserved for state and are never reused as accents.
      Each is lifted enough to clear 4.5:1 on the dark surface -- the light
@@ -40,8 +40,8 @@
   --danger: #f87171;
   --danger-soft: rgba(248, 113, 113, 0.14);
 
-  --navy: #041009;
-  --navy-soft: #0a2015;
+  --navy: #070d18;
+  --navy-soft: #141d2b;
   --shadow-sm: 0 4px 14px rgba(0, 0, 0, 0.45);
   --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.55);
   --radius-sm: 9px;
@@ -75,10 +75,10 @@ body {
      black. Slightly oversized and slowly drifting, so the light moves the way
      a scanning display does rather than sitting still. */
   background:
-    radial-gradient(ellipse 120% 80% at 18% 108%, rgba(53, 214, 127, 0.5), transparent 62%),
-    radial-gradient(ellipse 90% 60% at 82% 96%, rgba(31, 163, 92, 0.34), transparent 58%),
-    radial-gradient(circle at 50% 0%, rgba(79, 214, 193, 0.1), transparent 46%),
-    linear-gradient(178deg, var(--page-deep) 0%, var(--page) 52%, #071a10 100%);
+    radial-gradient(ellipse 120% 80% at 18% 108%, rgba(91, 157, 255, 0.4), transparent 62%),
+    radial-gradient(ellipse 90% 60% at 82% 96%, rgba(53, 116, 212, 0.26), transparent 58%),
+    radial-gradient(circle at 50% 0%, rgba(94, 200, 216, 0.1), transparent 46%),
+    linear-gradient(178deg, var(--page-deep) 0%, var(--page) 52%, #0b121d 100%);
   background-attachment: fixed;
   color: var(--text);
   font-family:
@@ -239,7 +239,7 @@ svg {
 .brand-mark svg {
   width: 23px;
   fill: none;
-  stroke: #04170d;
+  stroke: #101010;
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 1.8;
@@ -372,7 +372,7 @@ svg {
 .primary-account-action {
   border-color: var(--primary);
   background: var(--primary);
-  color: #04170d;
+  color: #101010;
 }
 
 .primary-account-action:hover {
@@ -484,7 +484,7 @@ h1 {
   padding: 4px 7px;
   border-radius: 7px;
   background: var(--primary);
-  color: #04170d;
+  color: #101010;
   font-size: 0.65rem;
   letter-spacing: 0.04em;
 }
@@ -626,7 +626,7 @@ h1 {
   border-radius: 10px;
   background: var(--primary);
   box-shadow: 0 7px 17px rgba(53, 214, 127, 0.18);
-  color: #04170d;
+  color: #101010;
   font-size: 0.8rem;
   font-weight: 790;
   cursor: pointer;
@@ -1001,7 +1001,7 @@ code {
   border: 1px solid var(--primary);
   background: var(--primary);
   box-shadow: 0 8px 18px rgba(53, 214, 127, 0.18);
-  color: #04170d;
+  color: #101010;
 }
 
 .primary-button:hover {
@@ -1355,7 +1355,7 @@ code {
   border: 1px solid var(--primary);
   border-radius: 9px;
   background: var(--primary);
-  color: #04170d;
+  color: #101010;
   font-weight: 740;
   cursor: pointer;
 }
@@ -1851,7 +1851,7 @@ button:disabled,
 .primary-account-action,
 button[type="submit"] {
   --btn-bg: linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%);
-  --btn-fg: #04170d;
+  --btn-fg: #101010;
   --btn-border: transparent;
   box-shadow: 0 6px 18px rgba(53, 214, 127, 0.22);
 }
@@ -1965,4 +1965,216 @@ button[type="submit"]:hover {
   .admin-actions button {
     width: 100%;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   Themes (issue #166)
+
+   The palette is entirely tokens, so a theme is a token block and nothing
+   else -- no per-component overrides, and a new theme cannot miss a
+   component. Selected in Admin > Portal settings and rendered server-side as
+   data-theme on <html>, so there is no flash of the default before it applies.
+
+   Two things every theme keeps, because they are not decoration:
+     - the CAPCO banner colours (--cls-*), prescribed by the register and
+       meaning the same thing regardless of palette;
+     - the status colours (--success/--warning/--danger), reserved for state
+       and never reused as an accent.
+   Both stay defined once at :root and are not overridden below.
+   --------------------------------------------------------------------------- */
+
+/* phosphor -- night-vision green. Was the default; now opt-in, because a
+   strong hue association is a poor default for everyone. */
+:root[data-theme="phosphor"] {
+  --page: #0a1a12;
+  --page-deep: #061009;
+  --surface: rgba(22, 47, 34, 0.9);
+  --surface-muted: rgba(17, 38, 27, 0.85);
+  --text: #e4f4ea;
+  --muted: #9dbfad;
+  --line: rgba(120, 200, 158, 0.22);
+  --line-strong: rgba(120, 200, 158, 0.4);
+  --primary: #35d67f;
+  --primary-dark: #1fa35c;
+  --primary-soft: rgba(53, 214, 127, 0.12);
+  --cyan: #4fd6c1;
+  --navy: #041009;
+  --navy-soft: #0a2015;
+}
+
+/* slate -- no accent hue beyond a cool grey-blue. The quietest option. */
+:root[data-theme="slate"] {
+  --page: #14171c;
+  --page-deep: #0d0f13;
+  --surface: rgba(33, 38, 46, 0.92);
+  --surface-muted: rgba(26, 30, 37, 0.88);
+  --text: #e8eaee;
+  --muted: #a8afba;
+  --line: rgba(180, 190, 205, 0.18);
+  --line-strong: rgba(180, 190, 205, 0.34);
+  --primary: #8fa8c8;
+  --primary-dark: #6b83a3;
+  --primary-soft: rgba(143, 168, 200, 0.16);
+  --cyan: #7fb0bd;
+  --navy: #0d0f13;
+  --navy-soft: #1c2029;
+}
+
+/* amber -- warm and high contrast. The accent sits near --warning, which is
+   the one case where an accent could be confused with a status; status
+   colours are the only things that ship with an icon and a label beside them,
+   which is what keeps them distinguishable. */
+:root[data-theme="amber"] {
+  --page: #17130c;
+  --page-deep: #0e0b06;
+  --surface: rgba(43, 34, 21, 0.9);
+  --surface-muted: rgba(34, 27, 17, 0.86);
+  --text: #f5ecdc;
+  --muted: #c2ae90;
+  --line: rgba(220, 180, 110, 0.2);
+  --line-strong: rgba(220, 180, 110, 0.36);
+  --primary: #f0b429;
+  --primary-dark: #c2900f;
+  --primary-soft: rgba(240, 180, 41, 0.14);
+  --cyan: #d9a441;
+  --navy: #0e0b06;
+  --navy-soft: #241c11;
+}
+
+/* daylight -- a real light theme, for a bright room or a projector. The token
+   layer makes this the same amount of work as any other theme. */
+:root[data-theme="daylight"] {
+  --page: #f4f7fb;
+  --page-deep: #e8eef6;
+  --surface: #ffffff;
+  --surface-muted: #f5f8fc;
+  --text: #16202f;
+  --muted: #55627a;
+  --line: rgba(30, 60, 100, 0.14);
+  --line-strong: rgba(30, 60, 100, 0.26);
+  --primary: #1f5fd0;
+  --primary-dark: #16469c;
+  --primary-soft: rgba(31, 95, 208, 0.09);
+  --cyan: #0d7f9c;
+  --navy: #16202f;
+  --navy-soft: #26344a;
+  --shadow-sm: 0 4px 14px rgba(19, 35, 58, 0.06);
+  --shadow-lg: 0 20px 52px rgba(19, 35, 58, 0.1);
+}
+
+/* Each theme's ambient gradient follows its own accent. */
+:root[data-theme="phosphor"] body {
+  background:
+    radial-gradient(ellipse 120% 80% at 18% 108%, rgba(53, 214, 127, 0.5), transparent 62%),
+    radial-gradient(ellipse 90% 60% at 82% 96%, rgba(31, 163, 92, 0.34), transparent 58%),
+    linear-gradient(178deg, var(--page-deep) 0%, var(--page) 52%, #071a10 100%);
+}
+
+:root[data-theme="slate"] body,
+:root[data-theme="amber"] body {
+  background:
+    radial-gradient(ellipse 120% 80% at 18% 108%, var(--primary-soft), transparent 62%),
+    linear-gradient(178deg, var(--page-deep) 0%, var(--page) 55%, var(--page-deep) 100%);
+}
+
+:root[data-theme="daylight"] body {
+  background:
+    radial-gradient(ellipse 110% 70% at 15% 105%, rgba(31, 95, 208, 0.07), transparent 60%),
+    linear-gradient(178deg, #ffffff 0%, var(--page) 60%, var(--page-deep) 100%);
+}
+
+/* The scanline wash belongs to phosphor's terminal association. Elsewhere it
+   is texture with no meaning, and on daylight it is just dirt. */
+:root:not([data-theme="phosphor"]) body::after {
+  display: none;
+}
+
+/* Ink on the primary fill is chosen against that fill. Four of the five
+   accents are light enough that white fails AA on them -- midnight's #5b9dff
+   is 2.72:1 and slate's #8fa8c8 is 2.44:1 -- so near-black is the base and
+   only daylight's deep blue takes white. Getting this wrong is what made the
+   first dark pass unreadable. */
+:root[data-theme="daylight"] .btn-primary,
+:root[data-theme="daylight"] .primary-account-action,
+:root[data-theme="daylight"] button[type="submit"] {
+  --btn-fg: #ffffff;
+}
+
+:root[data-theme="daylight"] .browse-button,
+:root[data-theme="daylight"] .primary-button,
+:root[data-theme="daylight"] .policy-badge span,
+:root[data-theme="daylight"] .page-shell:not(.upload-page) button {
+  color: #ffffff;
+}
+
+:root[data-theme="daylight"] .brand-mark svg {
+  stroke: #ffffff;
+}
+
+/* Theme swatches on the admin page. */
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.theme-option {
+  position: relative;
+  display: block;
+  cursor: pointer;
+}
+
+.theme-option input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.theme-swatch {
+  display: block;
+  padding: 10px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.theme-option input:checked + .theme-swatch {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.theme-option input:focus-visible + .theme-swatch {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.theme-swatch strong {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 0.9rem;
+}
+
+.theme-swatch small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+/* A real sample of the palette, not a description of it. */
+.theme-chips {
+  display: flex;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.theme-chips i {
+  width: 22px;
+  height: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  border-radius: 3px;
 }

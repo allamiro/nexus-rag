@@ -1,5 +1,8 @@
 <!doctype html>
-<html lang="en">
+{# Issue #166: the admin-selected theme, as an attribute portal.css keys its
+   token block off. Server-rendered rather than applied by script, so there is
+   no flash of the default palette before a theme loads. #}
+<html lang="en"{% if theme %} data-theme="{{ theme }}"{% endif %}>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -19,7 +22,7 @@
     information at both edges of the screen, so a cropped screenshot or a
     printed page still carries it.
 
-    Admin-set (PortalBanner, /admin/banner), never derived from the viewer. A
+    Admin-set (PortalSettings, /admin/banner), never derived from the viewer. A
     marking states what the *system* is accredited to hold -- deriving it from
     whoever is signed in would put different markings on the same page for
     different people, which is the one thing a marking must not do.

@@ -37,9 +37,9 @@ class ReleasabilityValue(SQLModel, table=True):
     active: bool = Field(default=True)
 
 
-class PortalBanner(SQLModel, table=True):
-    """Issue #166: the classification banner shown at the top and bottom of
-    every portal page.
+class PortalSettings(SQLModel, table=True):
+    """Issue #166: deployment-wide portal settings -- the classification
+    banner, and the visual theme.
 
     Admin-set, not derived. The banner states what this *system* is accredited
     to hold, which is a deployment property an accrediting authority decides --
@@ -54,7 +54,7 @@ class PortalBanner(SQLModel, table=True):
     true is how a wrong marking ends up on a screen.
     """
 
-    __tablename__ = "portal_banner"
+    __tablename__ = "portal_settings"
 
     id: int | None = Field(default=None, primary_key=True)
     # Free text rather than a foreign key to classification_levels: a banner
@@ -67,6 +67,12 @@ class PortalBanner(SQLModel, table=True):
     # is worse than no colour.
     level: str = Field(default="")
     active: bool = Field(default=False)
+    # Selected in Admin > Portal settings, applied as a data-theme attribute
+    # the stylesheet keys its token block off. Deployment-wide rather than
+    # per-user: two people looking at the same classified record should see
+    # the same page, and a per-user theme is a small step towards them not
+    # doing so. Empty means the built-in default.
+    theme: str = Field(default="")
     updated_by: str | None = Field(default=None)
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 

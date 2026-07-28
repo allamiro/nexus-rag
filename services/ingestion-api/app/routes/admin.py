@@ -6,7 +6,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
@@ -16,7 +16,7 @@ from common.db import get_session
 from common.models import (
     AuditLogEntry,
     ClassificationLevel,
-    PortalBanner,
+    PortalSettings,
     ReleasabilityValue,
 )
 
@@ -141,16 +141,16 @@ def retire_releasability(
 # --------------------------------------------------------------------------
 
 
-def _load_banner(session: Session) -> PortalBanner:
+def _load_banner(session: Session) -> PortalSettings:
     """The single banner row, created inactive on first read.
 
     Inactive is the correct default: "no authority has set a marking" is not
     the same statement as "this system holds unclassified material", and
     defaulting to the second is how a wrong marking reaches a screen.
     """
-    banner = session.get(PortalBanner, 1)
+    banner = session.get(PortalSettings, 1)
     if banner is None:
-        banner = PortalBanner(id=1, text="", level="", active=False)
+        banner = PortalSettings(id=1, text="", level="", active=False)
         session.add(banner)
         session.commit()
         session.refresh(banner)
@@ -160,8 +160,14 @@ def _load_banner(session: Session) -> PortalBanner:
 @router.get("/banner")
 def get_banner(
     _user: UserClaims = Depends(require_admin), session: Session = Depends(get_session)
-) -> PortalBanner:
+) -> PortalSettings:
     return _load_banner(session)
+
+
+# The stylesheet defines a token block per theme; anything not in this set has
+# no block and would silently render as the default, so it is rejected rather
+# than accepted-and-ignored.
+THEMES = frozenset({"", "midnight", "phosphor", "slate", "amber", "daylight"})
 
 
 class BannerIn(BaseModel):
@@ -176,7 +182,7 @@ def set_banner(
     user: UserClaims = Depends(require_admin),
     session: Session = Depends(get_session),
     _csrf: None = Depends(verify_csrf),
-) -> PortalBanner:
+) -> PortalSettings:
     banner = _load_banner(session)
     banner.text = body.text.strip()
     banner.level = body.level.strip()
@@ -201,3 +207,46 @@ def set_banner(
     session.commit()
     session.refresh(banner)
     return banner
+
+
+class ThemeIn(BaseModel):
+    theme: str
+
+
+@router.post("/theme")
+def set_theme(
+    body: ThemeIn,
+    user: UserClaims = Depends(require_admin),
+    session: Session = Depends(get_session),
+    _csrf: None = Depends(verify_csrf),
+) -> PortalSettings:
+    """Issue #166: the portal's visual theme.
+
+    Deployment-wide rather than per-user, deliberately. Two people looking at
+    the same classified record should see the same page; a per-user theme is a
+    small step towards them not doing so, and the classification banner's
+    colours in particular must mean the same thing to everyone.
+    """
+    theme = body.theme.strip().lower()
+    if theme not in THEMES:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            f"unknown theme {theme!r}; choose one of {sorted(t for t in THEMES if t)}",
+        )
+    settings = _load_banner(session)
+    settings.theme = theme
+    settings.updated_by = user.preferred_username
+    settings.updated_at = datetime.now(UTC)
+    session.add(settings)
+    session.add(
+        AuditLogEntry(
+            actor_sub=user.sub,
+            actor_username=user.preferred_username,
+            action="admin.theme_set",
+            target_id="portal_settings",
+            detail={"theme": theme or "default"},
+        )
+    )
+    session.commit()
+    session.refresh(settings)
+    return settings

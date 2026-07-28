@@ -20,7 +20,7 @@ from common.db import get_engine, get_session, init_db
 from common.job_queue import ensure_stream, get_nats_connection
 from common.logging_setup import setup_logging
 from common.metadata import NO_RELEASABILITY_RESTRICTION
-from common.models import ClassificationLevel, PortalBanner, ReleasabilityValue
+from common.models import ClassificationLevel, PortalSettings, ReleasabilityValue
 from common.siem import enable_siem_export
 from common.tracing import setup_tracing
 
@@ -152,10 +152,13 @@ def _page_context(session: Session, current_user: UserClaims | None) -> dict:
     statements, and rendering the second when the first is true puts a wrong
     marking on a screen.
     """
-    banner = session.get(PortalBanner, 1)
+    settings = session.get(PortalSettings, 1)
     return {
         "current_user": current_user,
-        "banner": banner if (banner and banner.active and banner.text) else None,
+        "banner": settings if (settings and settings.active and settings.text) else None,
+        # Empty string is the built-in default; base.html emits it as a
+        # data-theme attribute and portal.css keys its token block off it.
+        "theme": (settings.theme if settings else "") or "",
     }
 
 

@@ -63,6 +63,71 @@
 
   <div class="msg" id="bannerResult" hidden></div>
 </form>
+
+<form class="admin-card" id="themeForm" autocomplete="off">
+  <h2>Portal theme</h2>
+  <p class="lede">
+    Applies to everyone. Deliberately not a per-user preference: two people
+    looking at the same classified record should see the same page, and the
+    classification banner's colours in particular must mean the same thing to
+    every viewer.
+  </p>
+
+  <div class="theme-grid" role="radiogroup" aria-label="Portal theme">
+      <label class="theme-option">
+        <input type="radio" name="theme" value="" />
+        <span class="theme-swatch">
+          <strong>Default (midnight)</strong>
+          <small>Neutral slate-blue. No strong hue association.</small>
+          <span class="theme-chips" aria-hidden="true"><i style="background:#0d1420"></i><i style="background:#1a2435"></i><i style="background:#5b9dff"></i><i style="background:#e6ecf7"></i></span>
+        </span>
+      </label>
+      <label class="theme-option">
+        <input type="radio" name="theme" value="phosphor" />
+        <span class="theme-swatch">
+          <strong>Phosphor</strong>
+          <small>Night-vision green, terminal association.</small>
+          <span class="theme-chips" aria-hidden="true"><i style="background:#0a1a12"></i><i style="background:#162f22"></i><i style="background:#35d67f"></i><i style="background:#e4f4ea"></i></span>
+        </span>
+      </label>
+      <label class="theme-option">
+        <input type="radio" name="theme" value="slate" />
+        <span class="theme-swatch">
+          <strong>Slate</strong>
+          <small>Quietest option; the interface recedes.</small>
+          <span class="theme-chips" aria-hidden="true"><i style="background:#14171c"></i><i style="background:#21262e"></i><i style="background:#8fa8c8"></i><i style="background:#e8eaee"></i></span>
+        </span>
+      </label>
+      <label class="theme-option">
+        <input type="radio" name="theme" value="amber" />
+        <span class="theme-swatch">
+          <strong>Amber</strong>
+          <small>Warm and high contrast.</small>
+          <span class="theme-chips" aria-hidden="true"><i style="background:#17130c"></i><i style="background:#2b2215"></i><i style="background:#f0b429"></i><i style="background:#f5ecdc"></i></span>
+        </span>
+      </label>
+      <label class="theme-option">
+        <input type="radio" name="theme" value="daylight" />
+        <span class="theme-swatch">
+          <strong>Daylight</strong>
+          <small>Light theme, for a bright room or projector.</small>
+          <span class="theme-chips" aria-hidden="true"><i style="background:#f4f7fb"></i><i style="background:#ffffff"></i><i style="background:#1f5fd0"></i><i style="background:#16202f"></i></span>
+        </span>
+      </label>
+  </div>
+
+  <p class="hint">
+    Themes change the palette only. CAPCO banner colours and the
+    good/degraded/failed status colours are fixed in every theme — they carry
+    meaning, so they are not a matter of taste.
+  </p>
+
+  <div class="admin-actions">
+    <button type="submit" class="btn-primary">Save theme</button>
+  </div>
+
+  <div class="msg" id="themeResult" hidden></div>
+</form>
 {% endblock %}
 
 {% block scripts %}
@@ -124,6 +189,34 @@
     save('', '');
   });
 
+
+  // ---- theme ------------------------------------------------------------
+  const themeForm = document.getElementById('themeForm');
+  const themeResult = document.getElementById('themeResult');
+
+  themeForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const chosen = themeForm.querySelector('input[name="theme"]:checked');
+    const res = await fetch('/admin/theme', {
+      method: 'POST',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ theme: chosen ? chosen.value : '' }),
+    });
+    const body = await res.json().catch(() => ({}));
+    themeResult.hidden = false;
+    themeResult.className = 'msg ' + (res.ok ? 'ok' : 'err');
+    if (!res.ok) {
+      themeResult.textContent = body.detail || `Failed: HTTP ${res.status}`;
+      return;
+    }
+    // Apply it immediately rather than asking for a reload -- the whole
+    // palette is tokens keyed off this attribute, so the swap is live.
+    const value = body.theme || '';
+    if (value) document.documentElement.setAttribute('data-theme', value);
+    else document.documentElement.removeAttribute('data-theme');
+    themeResult.textContent = 'Theme saved and applied for everyone.';
+  });
+
   // Load whatever is currently set, so the form shows the live value rather
   // than an empty box that looks like "nothing is configured".
   (async () => {
@@ -137,6 +230,8 @@
     textEl.value = banner.text || '';
     levelEl.value = banner.level || '';
     renderPreview();
+    const current = themeForm.querySelector(`input[name="theme"][value="${banner.theme || ''}"]`);
+    if (current) current.checked = true;
   })();
 </script>
 {% endblock %}
