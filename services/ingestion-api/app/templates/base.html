@@ -9,7 +9,7 @@
   <meta name="color-scheme" content="light" />
   <meta name="theme-color" content="#ffffff" />
   <title>{% block title %}Document Portal{% endblock %}</title>
-  <link rel="stylesheet" href="{{ url_for('static', path='/portal.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', path='/portal.css') }}?v={{ asset_version }}" />
   {% block head %}{% endblock %}
 </head>
 <body>

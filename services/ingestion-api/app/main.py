@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager, suppress
 from pathlib import Path
@@ -138,6 +139,27 @@ def _live_controlled_vocab(session: Session) -> dict:
     }
 
 
+def _asset_version() -> str:
+    """Cache-busting suffix for the stylesheet, from its own content.
+
+    Issue #166: a theme change looked like it had not applied because the
+    browser was still serving the previous portal.css -- the link carried no
+    version, so nothing told the cache the file had changed. That cost a real
+    debugging round chasing a CSS bug that was not there.
+
+    Hashing the file rather than using a timestamp means the URL only changes
+    when the bytes do, so an unchanged deploy keeps the cache warm.
+    """
+    css = Path(__file__).parent / "static" / "portal.css"
+    try:
+        return hashlib.sha256(css.read_bytes()).hexdigest()[:12]
+    except OSError:  # pragma: no cover - the file ships with the image
+        return "dev"
+
+
+ASSET_VERSION = _asset_version()
+
+
 def _page_context(session: Session, current_user: UserClaims | None) -> dict:
     """Context every rendered page needs.
 
@@ -154,6 +176,7 @@ def _page_context(session: Session, current_user: UserClaims | None) -> dict:
     """
     settings = session.get(PortalSettings, 1)
     return {
+        "asset_version": ASSET_VERSION,
         "current_user": current_user,
         "banner": settings if (settings and settings.active and settings.text) else None,
         # Empty string is the built-in default; base.html emits it as a
