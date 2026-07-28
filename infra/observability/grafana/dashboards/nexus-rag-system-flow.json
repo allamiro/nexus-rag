@@ -541,7 +541,7 @@
       "panels": []
     },
     {
-      "id": 2,
+      "id": 30,
       "type": "grafana-graphviz-panel",
       "title": "B \u2014 Graphviz DOT (grafana-graphviz-panel): auto-layout, no animation",
       "gridPos": {
