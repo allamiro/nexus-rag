@@ -3,9 +3,11 @@ from __future__ import annotations
 import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager, suppress
+from pathlib import Path
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.responses import HTMLResponse, Response
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 
@@ -80,14 +82,17 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         await nc.close()
 
 
+APP_DIR = Path(__file__).resolve().parent
+
 app = FastAPI(title="nexus-rag ingestion-api", lifespan=lifespan)
+app.mount("/static", StaticFiles(directory=APP_DIR / "static"), name="static")
 app.middleware("http")(metrics.http_metrics_middleware)
 # #134: one request span per route, with incoming traceparent honored; the
 # import lives here rather than at the top so the app object exists first.
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor  # noqa: E402
 
 FastAPIInstrumentor.instrument_app(app)
-templates = Jinja2Templates(directory="app/templates")
+templates = Jinja2Templates(directory=APP_DIR / "templates")
 
 app.include_router(auth.router)
 app.include_router(upload.router)
