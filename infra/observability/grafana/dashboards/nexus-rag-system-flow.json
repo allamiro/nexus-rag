@@ -135,7 +135,7 @@
               {
                 "id": "node-health-fill",
                 "kind": "fillColor",
-                "colorFieldName": "Value",
+                "colorFieldName": "up",
                 "thresholdId": "health"
               }
             ]
@@ -178,7 +178,19 @@
             ]
           }
         ]
-      }
+      },
+      "transformations": [
+        {
+          "id": "labelsToFields",
+          "options": {
+            "mode": "columns"
+          }
+        },
+        {
+          "id": "merge",
+          "options": {}
+        }
+      ]
     },
     {
       "id": 4,
