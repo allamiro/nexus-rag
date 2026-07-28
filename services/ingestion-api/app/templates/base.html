@@ -12,6 +12,43 @@
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
 
+  {#
+    Issue #166: CAPCO-style classification banner, top and bottom.
+
+    DoDM 5200.01 Vol 2 requires the overall classification of displayed
+    information at both edges of the screen, so a cropped screenshot or a
+    printed page still carries it.
+
+    Admin-set (PortalBanner, /admin/banner), never derived from the viewer. A
+    marking states what the *system* is accredited to hold -- deriving it from
+    whoever is signed in would put different markings on the same page for
+    different people, which is the one thing a marking must not do.
+
+    Unset renders "NO LABEL SET" in a neutral style, not UNCLASSIFIED. "Nobody
+    has configured a marking" and "this system holds unclassified material" are
+    different statements, and rendering the second when the first is true is
+    how a wrong marking reaches a screen.
+  #}
+  {% macro classification_banner(position) %}
+  {% if banner %}
+  <div class="classification-banner banner-{{ position }} banner-{{ banner.level | lower | replace(' ', '-') | replace('//', '-') if banner.level else 'unset' }}"
+       role="note" aria-label="Classification banner">
+    <span class="banner-rail" aria-hidden="true"></span>
+    <span class="banner-text">{{ banner.text }}</span>
+  </div>
+  {% else %}
+  <div class="classification-banner banner-{{ position }} banner-unset" role="note"
+       aria-label="Classification banner: none configured">
+    <span class="banner-text">No label set</span>
+    {% if current_user and current_user.is_admin %}
+    <span class="banner-note">Set one in Admin &rsaquo; Banner</span>
+    {% endif %}
+  </div>
+  {% endif %}
+  {% endmacro %}
+
+  {{ classification_banner('top') }}
+
   <header class="site-header">
     <div class="nav-shell">
       <a class="brand" href="/" aria-label="Document Portal home">
@@ -108,6 +145,8 @@
     </div>
     <span>Access and actions are audited</span>
   </footer>
+
+  {{ classification_banner('bottom') }}
 
   <script>
     // Auth is a browser session cookie (ARCHITECTURE.md Section 4.4).

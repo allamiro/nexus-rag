@@ -20,7 +20,7 @@ from common.db import get_engine, get_session, init_db
 from common.job_queue import ensure_stream, get_nats_connection
 from common.logging_setup import setup_logging
 from common.metadata import NO_RELEASABILITY_RESTRICTION
-from common.models import ClassificationLevel, ReleasabilityValue
+from common.models import ClassificationLevel, PortalBanner, ReleasabilityValue
 from common.siem import enable_siem_export
 from common.tracing import setup_tracing
 
@@ -138,6 +138,27 @@ def _live_controlled_vocab(session: Session) -> dict:
     }
 
 
+def _page_context(session: Session, current_user: UserClaims | None) -> dict:
+    """Context every rendered page needs.
+
+    Issue #166: the classification banner goes through here rather than each
+    route adding it, because a banner missing from one page is a real defect,
+    not a cosmetic one -- and four routes each assembling their own dict is
+    exactly how one of them ends up without it.
+
+    An unset or inactive banner is passed through as None. base.html then says
+    so explicitly instead of falling back to a level: "no marking has been
+    configured" and "this system holds unclassified material" are different
+    statements, and rendering the second when the first is true puts a wrong
+    marking on a screen.
+    """
+    banner = session.get(PortalBanner, 1)
+    return {
+        "current_user": current_user,
+        "banner": banner if (banner and banner.active and banner.text) else None,
+    }
+
+
 @app.get("/", response_class=HTMLResponse)
 def upload_page(
     request: Request,
@@ -145,7 +166,7 @@ def upload_page(
     current_user: UserClaims | None = Depends(get_current_user_optional),
 ) -> HTMLResponse:
     ctx = _live_controlled_vocab(session)
-    ctx["current_user"] = current_user
+    ctx.update(_page_context(session, current_user))
     return templates.TemplateResponse(request, "upload.html", ctx)
 
 
@@ -156,19 +177,25 @@ def curate_page(
     current_user: UserClaims | None = Depends(get_current_user_optional),
 ) -> HTMLResponse:
     ctx = _live_controlled_vocab(session)
-    ctx["current_user"] = current_user
+    ctx.update(_page_context(session, current_user))
     return templates.TemplateResponse(request, "curate.html", ctx)
 
 
 @app.get("/notifications", response_class=HTMLResponse)
 def notifications_page(
-    request: Request, current_user: UserClaims | None = Depends(get_current_user_optional)
+    request: Request,
+    session: Session = Depends(get_session),
+    current_user: UserClaims | None = Depends(get_current_user_optional),
 ) -> HTMLResponse:
-    return templates.TemplateResponse(request, "notifications.html", {"current_user": current_user})
+    return templates.TemplateResponse(
+        request, "notifications.html", _page_context(session, current_user)
+    )
 
 
 @app.get("/search", response_class=HTMLResponse)
 def search_page(
-    request: Request, current_user: UserClaims | None = Depends(get_current_user_optional)
+    request: Request,
+    session: Session = Depends(get_session),
+    current_user: UserClaims | None = Depends(get_current_user_optional),
 ) -> HTMLResponse:
-    return templates.TemplateResponse(request, "search.html", {"current_user": current_user})
+    return templates.TemplateResponse(request, "search.html", _page_context(session, current_user))
