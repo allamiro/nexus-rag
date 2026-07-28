@@ -320,6 +320,103 @@
         },
         "overrides": []
       }
+    },
+    {
+      "id": 20,
+      "type": "jdbranham-diagram-panel",
+      "title": "System flow \u2014 live status (mermaid)",
+      "gridPos": {
+        "h": 15,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "label_replace(label_replace(up{job=~\"nexus-rag-.*\"}, \"node\", \"$1\", \"job\", \"nexus-rag-(.*)\"), \"node\", \"${1}_${2}\", \"node\", \"(.+)-(.+)\") or label_replace(up{job=~\"qdrant|nats|postgres|keycloak\"}, \"node\", \"$1\", \"job\", \"(.*)\") or label_replace(vector(1), \"node\", \"librechat\", \"\", \"\") or label_replace(vector(1), \"node\", \"litellm\", \"\", \"\") or label_replace(vector(1), \"node\", \"ollama\", \"\", \"\") or label_replace(vector(1), \"node\", \"object_store\", \"\", \"\")",
+          "instant": true,
+          "range": false,
+          "legendFormat": "{{node}}"
+        }
+      ],
+      "options": {
+        "content": "graph LR\n  subgraph AUTH[AUTHENTICATION]\n    keycloak[Keycloak]\n    librechat[LibreChat]\n  end\n\n  subgraph INGEST[INGESTION]\n    ingestion_api[ingestion-api]\n    nats{{NATS}}\n    ingestion_worker[ingestion-worker]\n    qdrant[(Qdrant)]\n    object_store[(object store)]\n    postgres[(Postgres)]\n  end\n\n  subgraph RETRIEVE[RETRIEVAL]\n    orchestration_mcp[orchestration-mcp]\n    reranker[reranker]\n  end\n\n  subgraph GENERATE[GENERATION]\n    litellm[LiteLLM]\n    ollama[Ollama]\n  end\n\n  keycloak -- OIDC --> librechat\n  librechat -- upload --> ingestion_api\n  ingestion_api -- publish --> nats\n  nats -- consume --> ingestion_worker\n  ingestion_worker -- vectors --> qdrant\n  ingestion_api -. original .-> object_store\n  ingestion_worker -. audit .-> postgres\n  ingestion_worker -. embed .-> ollama\n  librechat -- query --> orchestration_mcp\n  orchestration_mcp -- retrieve --> qdrant\n  orchestration_mcp -- rerank --> reranker\n  orchestration_mcp -. embed .-> ollama\n  librechat -- prompt --> litellm\n  litellm -- generate --> ollama\n",
+        "mode": "content",
+        "valueName": "last",
+        "useBackground": true,
+        "maxWidth": true,
+        "composites": [],
+        "metricCharacterReplacements": [],
+        "moddedSeriesVal": 0,
+        "mermaidServiceUrl": "",
+        "useBasicAuth": false,
+        "style": "",
+        "nodeSize": {
+          "minWidth": 30,
+          "minHeight": 30
+        },
+        "legend": {
+          "show": false,
+          "asTable": false,
+          "placement": "bottom",
+          "stats": [
+            "last"
+          ],
+          "hideEmpty": true,
+          "hideZero": false,
+          "displayMode": "list",
+          "sortBy": "last",
+          "sortDesc": true,
+          "gradient": {
+            "enabled": false,
+            "show": false
+          }
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "DOWN",
+                  "index": 1
+                },
+                "1": {
+                  "text": "UP",
+                  "index": 0
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
     }
   ]
 }
