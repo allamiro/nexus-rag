@@ -148,6 +148,7 @@ once everything above is healthy.
 | reranker-service | http://localhost:8003 | `/health`, `/rerank` |
 | ingestion-worker | http://localhost:8004 | `/health` only -- its real work is the NATS consumer loop, not an HTTP API (NFR-11) |
 | Qdrant | http://localhost:6333/dashboard | |
+| Attu (Milvus profile only) | http://127.0.0.1:8000 | connect to `milvus:19530` with the dev Milvus credentials; host port is `ATTU_PORT` |
 | LibreChat | https://localhost:3080 | throwaway, log in via Keycloak. HTTPS is real (issue #75) via the `librechat-proxy` nginx service, not just a config label -- see "One-time host setup" above |
 | LiteLLM | http://localhost:4000 | throwaway gateway in front of Ollama |
 
@@ -553,6 +554,27 @@ the docs, not a silent "it works" — flag it if you find one.
   particular (26.2 → 26.7.0) deserves a full `down -v` / `up` / realm-import / login retest
   before trusting it, given how many of the eight Keycloak bugs above turned out to be
   version-behavior surprises rather than code bugs.
+- **Optional Milvus vector backend, either/or with Qdrant (issue #160)** —
+  `VECTOR_BACKEND=qdrant` (the default, and the absence of the variable) is
+  today's path byte-for-byte; `VECTOR_BACKEND=milvus` runs the same pipeline
+  against Milvus Standalone (`docker compose --profile milvus up -d` plus
+  `MILVUS_URL`/`MILVUS_TOKEN`; Helm: `vectorBackend` + `milvus.*`). One
+  backend per deployment — never both. The FR-26 mandatory filter is built
+  as a Milvus boolean expression with the exact clause-for-clause semantics
+  of the Qdrant filter, applied to both hybrid legs, with string values
+  escaped so a hostile claim value cannot widen the filter. The sparse leg
+  deliberately reuses the same client-side fastembed BM25 vectors as Qdrant
+  (not Milvus's server-side BM25 Function) so an A/B measures the engine,
+  not the tokenizer. The collection uses Strong consistency because the
+  curation flow relies on read-your-writes — surfaced by live validation,
+  where bounded staleness made an approve flip invisible to the next query.
+  Validated against a real Milvus v2.4.17 container: approved-only,
+  classification ceiling, releasability holdings, cross-org isolation,
+  curation status flip, provenance stamp, and chunk deletion all pass; not
+  yet exercised by the golden-query e2e (the comparison harness run is the
+  follow-up the issue defines). For local inspection (issue #163), Qdrant
+  keeps its bundled dashboard while the Milvus profile adds the compatible
+  Apache-2.0 Attu v2.4.12 UI; neither UI is exposed beyond host loopback.
 - **Distributed tracing across the queue and the retrieval fan-out
   (issue #134)** — every service emits OpenTelemetry spans when
   `OTEL_EXPORTER_OTLP_ENDPOINT` points at an OTLP/HTTP collector

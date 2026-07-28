@@ -42,8 +42,6 @@ from time import perf_counter
 
 import httpx
 import jwt
-from qdrant_client.http.exceptions import UnexpectedResponse
-from qdrant_client.models import Fusion, FusionQuery, Prefetch
 
 from app import metrics
 from app.reranking import rerank
@@ -51,16 +49,9 @@ from common.claims import UserClaims, parse_claims
 from common.classification import allowed_classifications
 from common.db import get_session
 from common.models import AuditLogEntry
-from common.qdrant_filters import build_access_filter
-from common.qdrant_store import (
-    DENSE_VECTOR,
-    QDRANT_COLLECTION,
-    SPARSE_VECTOR,
-    collection_embedding_model,
-    get_qdrant_client,
-)
 from common.sparse_embedding import embed_sparse
 from common.tracing import get_tracer
+from common.vector_store import VectorStoreUnavailable, backend_name, get_store
 
 logger = logging.getLogger("orchestration-mcp")
 
@@ -160,23 +151,25 @@ def _embedding_model_mismatch() -> str | None:
     """
     global _embedding_model_checked  # noqa: PLW0603 -- log-once flag, see below
     try:
-        stored = collection_embedding_model(get_qdrant_client())
+        stored = get_store().stored_embedding_model()
     except Exception:  # never let a provenance check break retrieval
-        logger.warning("could not read embedding-model provenance from Qdrant", exc_info=True)
+        logger.warning(
+            "could not read embedding-model provenance from the vector store", exc_info=True
+        )
         return None
     if stored is None:
         if not _embedding_model_checked:
             logger.info(
-                "no embedding-model provenance on collection %s (empty, or ingested "
-                "before issue #122); mismatch detection is inactive until it is "
-                "re-ingested",
-                QDRANT_COLLECTION,
+                "no embedding-model provenance on the %s collection (empty, or "
+                "ingested before issue #122); mismatch detection is inactive until "
+                "it is re-ingested",
+                backend_name(),
             )
             _embedding_model_checked = True
         return None
     if stored != EMBEDDING_MODEL:
         return (
-            f"embedding model mismatch: collection '{QDRANT_COLLECTION}' was built with "
+            f"embedding model mismatch: the {backend_name()} collection was built with "
             f"'{stored}' but this service is configured to query with "
             f"'{EMBEDDING_MODEL}'. Dense retrieval would compare vectors from different "
             "embedding spaces and silently return noise, so the query is refused. "
@@ -287,8 +280,11 @@ async def _run_rag_search(
     with next(get_session()) as session:
         allowed = allowed_classifications(session, claims.clearance)
 
-    access_filter = build_access_filter(claims, allowed_classifications=allowed)
-    filter_summary = access_filter.model_dump(exclude_none=True)
+    # #160: the mandatory FR-26 filter is built and applied inside the
+    # backend's hybrid_query (both legs, server-side, from verified claims);
+    # the summary is what lands in the response and the FR-31 audit detail.
+    store = get_store()
+    filter_summary = store.access_filter_summary(claims, allowed)
 
     result: dict = {
         "query": query,
@@ -331,41 +327,29 @@ async def _run_rag_search(
         timings["embed"] = perf_counter() - started
         retrieval_started = perf_counter()
         with tracer.start_as_current_span(
-            "qdrant.query", attributes={"qdrant.prefetch_limit": hybrid_limit}
-        ) as qdrant_span:
-            hits = (
-                get_qdrant_client()
-                .query_points(
-                    collection_name=QDRANT_COLLECTION,
-                    prefetch=[
-                        Prefetch(
-                            query=dense_vector,
-                            using=DENSE_VECTOR,
-                            filter=access_filter,
-                            limit=hybrid_limit,
-                        ),
-                        Prefetch(
-                            query=sparse_vector,
-                            using=SPARSE_VECTOR,
-                            filter=access_filter,
-                            limit=hybrid_limit,
-                        ),
-                    ],
-                    query=FusionQuery(fusion=Fusion.RRF),
-                    limit=hybrid_limit,
-                )
-                .points
+            "vector.query",
+            attributes={
+                "vector.backend": backend_name(),
+                "vector.prefetch_limit": hybrid_limit,
+            },
+        ) as query_span:
+            hits = store.hybrid_query(
+                dense=dense_vector,
+                sparse=sparse_vector,
+                claims=claims,
+                allowed_classifications=allowed,
+                limit=hybrid_limit,
             )
-            qdrant_span.set_attribute("qdrant.candidates", len(hits))
+            query_span.set_attribute("vector.candidates", len(hits))
         timings["retrieve"] = perf_counter() - retrieval_started
-    except (UnexpectedResponse, httpx.HTTPError) as exc:
+    except (VectorStoreUnavailable, httpx.HTTPError) as exc:
         result["hybrid_retrieval"] = "dense+bm25 RRF fusion (FR-24)"
         result["reranking"] = "skipped, no candidates"
         result["results"] = []
         result["note"] = (
-            f"Qdrant collection '{QDRANT_COLLECTION}' not queryable ({exc}); it's "
-            "created lazily on first ingestion (common.qdrant_store.ensure_collection), "
-            "so this is expected if no document has been submitted yet"
+            f"the {backend_name()} vector collection is not queryable ({exc}); it's "
+            "created lazily on first ingestion, so this is expected if no document "
+            "has been submitted yet"
         )
         metrics.queries_total.labels(outcome="unavailable").inc()
         _audit(

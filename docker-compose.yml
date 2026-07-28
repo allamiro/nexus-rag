@@ -5,6 +5,7 @@ networks:
     name: nexus-rag-net
 
 volumes:
+  milvus-data:
   postgres-data:
   qdrant-data:
   ollama-data:
@@ -228,6 +229,11 @@ services:
       SIEM_SYSLOG_PORT: ${SIEM_SYSLOG_PORT:-514}
       SIEM_SYSLOG_PROTOCOL: ${SIEM_SYSLOG_PROTOCOL:-udp}
       SIEM_SYSLOG_FACILITY: ${SIEM_SYSLOG_FACILITY:-13}
+      # #160: either/or vector backend -- qdrant (default) or milvus. One
+      # backend per deployment; enabling milvus requires the milvus profile.
+      VECTOR_BACKEND: ${VECTOR_BACKEND:-qdrant}
+      MILVUS_URL: ${MILVUS_URL:-http://milvus:19530}
+      MILVUS_TOKEN: ${MILVUS_TOKEN:-root:Milvus}
       # #134: distributed tracing -- disabled unless an OTLP endpoint is set
       # (e.g. a Tempo/otel-collector on the compose network). Dev default
       # samples everything when enabled; production should stay low.
@@ -310,6 +316,11 @@ services:
       SIEM_SYSLOG_PORT: ${SIEM_SYSLOG_PORT:-514}
       SIEM_SYSLOG_PROTOCOL: ${SIEM_SYSLOG_PROTOCOL:-udp}
       SIEM_SYSLOG_FACILITY: ${SIEM_SYSLOG_FACILITY:-13}
+      # #160: either/or vector backend -- qdrant (default) or milvus. One
+      # backend per deployment; enabling milvus requires the milvus profile.
+      VECTOR_BACKEND: ${VECTOR_BACKEND:-qdrant}
+      MILVUS_URL: ${MILVUS_URL:-http://milvus:19530}
+      MILVUS_TOKEN: ${MILVUS_TOKEN:-root:Milvus}
       # #134: distributed tracing -- disabled unless an OTLP endpoint is set
       # (e.g. a Tempo/otel-collector on the compose network). Dev default
       # samples everything when enabled; production should stay low.
@@ -364,6 +375,11 @@ services:
       SIEM_SYSLOG_PORT: ${SIEM_SYSLOG_PORT:-514}
       SIEM_SYSLOG_PROTOCOL: ${SIEM_SYSLOG_PROTOCOL:-udp}
       SIEM_SYSLOG_FACILITY: ${SIEM_SYSLOG_FACILITY:-13}
+      # #160: either/or vector backend -- qdrant (default) or milvus. One
+      # backend per deployment; enabling milvus requires the milvus profile.
+      VECTOR_BACKEND: ${VECTOR_BACKEND:-qdrant}
+      MILVUS_URL: ${MILVUS_URL:-http://milvus:19530}
+      MILVUS_TOKEN: ${MILVUS_TOKEN:-root:Milvus}
       # #134: distributed tracing -- disabled unless an OTLP endpoint is set
       # (e.g. a Tempo/otel-collector on the compose network). Dev default
       # samples everything when enabled; production should stay low.
@@ -449,6 +465,57 @@ services:
       - "${SIEM_DEBUG_HOST_IP:-127.0.0.1}:${SIEM_DEBUG_UDP_PORT:-5514}:514/udp"
       - "${SIEM_DEBUG_HOST_IP:-127.0.0.1}:${SIEM_DEBUG_TCP_PORT:-5514}:514/tcp"
       - "${SIEM_DEBUG_HOST_IP:-127.0.0.1}:${SIEM_DEBUG_TLS_PORT:-6514}:6514/tcp"
+
+  milvus:
+    # #160: optional Milvus Standalone for the either/or vector-backend
+    # comparison. Opt-in via the milvus profile; the default stack keeps
+    # running Qdrant only. Standalone with embedded etcd and local storage --
+    # one container, no etcd/minio sidecars. Milvus Lite is NOT used: it
+    # lacks the sparse-vector path this project's hybrid retrieval needs.
+    #
+    #   VECTOR_BACKEND=milvus docker compose --profile milvus up -d
+    profiles: ["milvus"]
+    image: milvusdb/milvus:v2.4.17
+    command: ["milvus", "run", "standalone"]
+    environment:
+      ETCD_USE_EMBED: "true"
+      ETCD_DATA_DIR: /var/lib/milvus/etcd
+      COMMON_STORAGETYPE: local
+      # NFR-15: authenticated access in every environment; the services'
+      # MILVUS_TOKEN carries user:password. Milvus's bootstrap credentials
+      # are root:Milvus -- override both sides together in production.
+      COMMON_SECURITY_AUTHORIZATIONENABLED: "true"
+    volumes:
+      - milvus-data:/var/lib/milvus
+    ports:
+      - "19530:19530"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9091/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  attu:
+    # #163: Milvus-only inspection UI, enabled with the same opt-in profile.
+    # Attu does not support Qdrant; Qdrant's Apache-2.0 dashboard is already
+    # bundled in its server image at http://127.0.0.1:6333/dashboard.
+    #
+    # v2.4.12 deliberately matches the Milvus 2.4.x compatibility line and
+    # is Apache-2.0 licensed. Attu v2.6.0+ uses a proprietary Zilliz license
+    # and must not be adopted without a separate dependency/license review.
+    profiles: ["milvus"]
+    image: zilliz/attu:v2.4.12
+    environment:
+      # Attu v2 expects host:port without a URL scheme. Credentials are
+      # entered in its connection form rather than embedded in Compose.
+      MILVUS_URL: milvus:19530
+    ports:
+      # This UI can inspect and mutate vector data, so keep it host-local.
+      - "127.0.0.1:${ATTU_PORT:-8000}:3000"
+    depends_on:
+      milvus:
+        condition: service_healthy
 
   harden-audit-log:
     # NFR-2: audit_log must be append-only from the app's own DB credentials
