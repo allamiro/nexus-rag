@@ -170,6 +170,24 @@ def upload_page(
     return templates.TemplateResponse(request, "upload.html", ctx)
 
 
+@app.get("/admin", response_class=HTMLResponse)
+def admin_page(
+    request: Request,
+    session: Session = Depends(get_session),
+    current_user: UserClaims | None = Depends(get_current_user_optional),
+) -> HTMLResponse:
+    """Issue #166: the UI for the settings /admin/* already exposed as an API.
+
+    Deliberately not gated here. The page renders for anyone; every action on
+    it goes through /admin/*, which is behind require_admin, and the page shows
+    the resulting 403 rather than pretending the route does not exist.
+    Authorization belongs on the endpoints that change state, not on the HTML
+    that describes them -- and a 404 for a non-admin would be a worse lie than
+    an honest "you do not hold this role".
+    """
+    return templates.TemplateResponse(request, "admin.html", _page_context(session, current_user))
+
+
 @app.get("/curate", response_class=HTMLResponse)
 def curate_page(
     request: Request,

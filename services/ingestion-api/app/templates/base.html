@@ -41,7 +41,7 @@
        aria-label="Classification banner: none configured">
     <span class="banner-text">No label set</span>
     {% if current_user and current_user.is_admin %}
-    <span class="banner-note">Set one in Admin &rsaquo; Banner</span>
+    <a class="banner-note" href="/admin">Set one in Admin &rsaquo;</a>
     {% endif %}
   </div>
   {% endif %}
@@ -103,6 +103,15 @@
           </svg>
           Notifications
         </a>
+        {% if current_user and current_user.is_admin %}
+        <a class="{% if request.url.path == '/admin' %}active{% endif %}" href="/admin">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M12 3.5v2.2M12 18.3v2.2M20.5 12h-2.2M5.7 12H3.5M18 6l-1.6 1.6M7.6 16.4 6 18M18 18l-1.6-1.6M7.6 7.6 6 6"></path>
+          </svg>
+          Admin
+        </a>
+        {% endif %}
         <a class="{% if request.url.path == '/search' %}active{% endif %}" href="/search">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="10.5" cy="10.5" r="6.5"></circle>

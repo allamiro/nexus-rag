@@ -4,14 +4,23 @@
      the association is the point, and it reads as instrument rather than
      decoration. Every value below is a token so the palette can be swapped
      without touching a single rule. */
-  --page: #05130c;
-  --page-deep: #020a06;
-  --surface: rgba(10, 32, 21, 0.82);
-  --surface-muted: rgba(8, 26, 17, 0.7);
-  --text: #dcf5e4;
-  --muted: #7ea992;
-  --line: rgba(94, 214, 143, 0.16);
-  --line-strong: rgba(94, 214, 143, 0.32);
+  /* The page sits a step lighter than the first pass, and the surfaces a step
+     lighter again. The first version put near-black panels on a near-black
+     page: technically high contrast for text, but the panels read as holes
+     rather than as cards, and the form looked severe rather than legible.
+     Panels should be *of* the background, one step above it. */
+  --page: #0a1a12;
+  --page-deep: #061009;
+  --surface: rgba(22, 47, 34, 0.9);
+  --surface-muted: rgba(17, 38, 27, 0.85);
+  --text: #e4f4ea;
+  /* Lifted from #7ea992: secondary text was technically passing AA and still
+     reading as disabled, which is the wrong signal on a form label. */
+  --muted: #9dbfad;
+  /* Borders were nearly invisible at 0.16 alpha, so fields had no edge and the
+     eye had nothing to follow down the form. */
+  --line: rgba(120, 200, 158, 0.22);
+  --line-strong: rgba(120, 200, 158, 0.4);
 
   /* One accent, used for every interactive affordance. The previous theme had
      a separate blue for links, a cyan for accents, and a third colour on
@@ -454,6 +463,9 @@ h1 {
   color: var(--danger);
 }
 
+/* The FR-2 badge read as washed out: a translucent tint over a dark page left
+   it neither a chip nor plain text. Solid muted surface, a real border, and
+   full-strength label text. */
 .policy-badge {
   display: inline-flex;
   flex: 0 0 auto;
@@ -462,7 +474,7 @@ h1 {
   padding: 9px 12px;
   border: 1px solid var(--line-strong);
   border-radius: 12px;
-  background: rgba(237, 244, 255, 0.85);
+  background: var(--surface-muted);
   color: var(--text);
   font-size: 0.75rem;
   font-weight: 760;
@@ -1889,6 +1901,68 @@ button[type="submit"]:hover {
 @media (max-width: 560px) {
   .btn-block-mobile,
   button[type="submit"] {
+    width: 100%;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Admin page (issue #166)
+   --------------------------------------------------------------------------- */
+.admin-card {
+  max-width: 640px;
+  margin-top: 18px;
+  padding: 22px 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-card h2 {
+  margin: 0 0 6px;
+  font-size: 1.12rem;
+}
+
+.admin-card label {
+  display: block;
+  margin-top: 16px;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.admin-card .hint {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.banner-preview-wrap {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+/* The preview is an inline sample, not the page's own sticky marking. */
+.banner-preview-wrap .classification-banner {
+  position: static;
+  margin-top: 8px;
+  border-radius: var(--radius-sm);
+}
+
+.admin-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 22px;
+}
+
+@media (max-width: 560px) {
+  .admin-actions {
+    flex-direction: column-reverse;
+  }
+  .admin-actions button {
     width: 100%;
   }
 }

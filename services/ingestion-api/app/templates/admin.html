@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Administration — Document Portal{% endblock %}
+{% block content %}
+<section class="page-intro">
+  <p class="eyebrow">Administration</p>
+  <h1>Portal settings</h1>
+  <p class="lede">
+    Requires the <code>rag-admin</code> role. Note what that role does <em>not</em>
+    grant: no document access, no query, no curation — managing the vocabulary a
+    document is tagged from is a different authority from seeing anything tagged
+    with it.
+  </p>
+</section>
+
+<form class="admin-card" id="bannerForm" autocomplete="off">
+  <h2>Classification banner</h2>
+  <p class="lede">
+    Shown at the top and bottom of every portal page. It states what this
+    <strong>system</strong> is accredited to hold — a deployment decision, not a
+    per-user one, so the same page carries the same marking for everyone.
+  </p>
+
+  <label for="bannerText">Banner text</label>
+  <input
+    type="text"
+    id="bannerText"
+    name="text"
+    maxlength="120"
+    placeholder="e.g. CUI//SP-CTI  or  SECRET//NOFORN"
+  />
+  <p class="hint">
+    The full marking line as your accreditation words it. Leave empty and save to
+    remove the banner — pages then read <strong>No label set</strong> rather than
+    falling back to UNCLASSIFIED, which is a real marking meaning
+    “reviewed and found releasable”.
+  </p>
+
+  <label for="bannerLevel">Colour</label>
+  <select id="bannerLevel" name="level">
+    <option value="">Neutral (no CAPCO colour)</option>
+    <option value="UNCLASSIFIED">UNCLASSIFIED — green</option>
+    <option value="CUI">CUI — purple</option>
+    <option value="CONFIDENTIAL">CONFIDENTIAL — blue</option>
+    <option value="SECRET">SECRET — red</option>
+    <option value="TOP SECRET">TOP SECRET — orange</option>
+  </select>
+  <p class="hint">
+    CAPCO register colours. An unrecognised value renders neutral rather than
+    guessing — a wrong colour on a marking is worse than no colour.
+  </p>
+
+  <div class="banner-preview-wrap">
+    <span class="hint">Preview</span>
+    <div class="classification-banner banner-unset" id="bannerPreview">
+      <span class="banner-text">No label set</span>
+    </div>
+  </div>
+
+  <div class="admin-actions">
+    <button type="button" class="btn-ghost" id="clearBanner">Clear banner</button>
+    <button type="submit" class="btn-primary">Save banner</button>
+  </div>
+
+  <div class="msg" id="bannerResult" hidden></div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const form = document.getElementById('bannerForm');
+  const textEl = document.getElementById('bannerText');
+  const levelEl = document.getElementById('bannerLevel');
+  const preview = document.getElementById('bannerPreview');
+  const result = document.getElementById('bannerResult');
+
+  // Mirrors base.html's macro: an empty marking is not "active", because a
+  // coloured bar with nothing in it reads as a marking rather than the absence
+  // of one.
+  function renderPreview() {
+    const text = textEl.value.trim();
+    const level = levelEl.value.trim().toLowerCase().replace(/\s+/g, '-');
+    preview.className =
+      'classification-banner ' + (text ? 'banner-' + (level || 'unset') : 'banner-unset');
+    preview.firstElementChild.textContent = text || 'No label set';
+  }
+
+  textEl.addEventListener('input', renderPreview);
+  levelEl.addEventListener('change', renderPreview);
+
+  function report(ok, message) {
+    result.hidden = false;
+    result.className = 'msg ' + (ok ? 'ok' : 'err');
+    result.textContent = message;
+  }
+
+  async function save(text, level) {
+    const res = await fetch('/admin/banner', {
+      method: 'POST',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, level, active: true }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      report(false, body.detail || `Failed: HTTP ${res.status}`);
+      return;
+    }
+    report(
+      true,
+      body.text
+        ? `Saved. Every page now shows “${body.text}”. Reload to see it here.`
+        : 'Banner cleared. Pages now show “No label set”. Reload to see it here.'
+    );
+  }
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    save(textEl.value.trim(), levelEl.value.trim());
+  });
+
+  document.getElementById('clearBanner').addEventListener('click', () => {
+    textEl.value = '';
+    levelEl.value = '';
+    renderPreview();
+    save('', '');
+  });
+
+  // Load whatever is currently set, so the form shows the live value rather
+  // than an empty box that looks like "nothing is configured".
+  (async () => {
+    const res = await fetch('/admin/banner', { headers: authHeaders() });
+    if (!res.ok) {
+      report(false, res.status === 403 ? 'You do not hold the rag-admin role.' : `HTTP ${res.status}`);
+      form.querySelectorAll('input, select, button').forEach((el) => (el.disabled = true));
+      return;
+    }
+    const banner = await res.json();
+    textEl.value = banner.text || '';
+    levelEl.value = banner.level || '';
+    renderPreview();
+  })();
+</script>
+{% endblock %}
