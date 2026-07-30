@@ -33,7 +33,7 @@ Capability roles, deliberately small and non-overlapping:
 | `rag-query` | `rag_search` retrieval | anything above the FR-26 filter |
 | `rag-curate:<org>` | curation queue **for that org only** | curating other orgs; approving above own clearance/releasability |
 | `rag-admin` | classification/releasability vocabulary routes | **any document or query access at all** — a boundary `claims.py` and `deps.py` state in code comments, on purpose |
-| `rag-purge` | audited destruction (#123) | deliberately separate from `rag-admin` so vocabulary admin and destruction can be different people (`deps.require_purge` docstring) |
+| `rag-purge` | audited destruction (#123); in a two-person deployment (#279, gap G3), only *requesting* — a second, different `rag-purge` holder must independently hold it too, to *confirm* | deliberately separate from `rag-admin` so vocabulary admin and destruction can be different people (`deps.require_purge` docstring); confirming your own request (`common.purge.purge_confirmation_authorized`) |
 
 ## 2. Role × capability matrix (human identities)
 
@@ -44,12 +44,14 @@ Capability roles, deliberately small and non-overlapping:
 |---|---|---|---|---|---|---|
 | Upload + tag document (`ingestion-api` `POST /documents`) | ✖ 401 | ✔ tags validated against **own** claims, FR-18 (`upload.py` → `validate_against_claims`) | ✖ 403 | ✖ 403 | ✖ 403 | ✖ 403 |
 | List/poll documents (`GET /documents/mine`, `/{id}`) | ✖ | ✔ **own uploads only** — `uploader_sub == sub`, else 404 (`upload.py:get_document`) | ✖ | ✖ (own queue view instead) | ✖ | ✖ |
-| See curation queue (`GET /curate`) | ✖ | ✖ | ✖ | ✔ **filtered to `owner_org ∈ curatable_orgs`**, plus classification, releasability, and — for a pending document — `access_scope` (`curate.py:list_queue`/`list_documents`; issue #277, gap G1 closed for the read path) | ✖ | ✖ |
+| See curation queue (`GET /curate`) | ✖ | ✖ | ✖ | ✔ **filtered to `owner_org ∈ curatable_orgs`**, plus classification, releasability, and — for a pending document — `access_scope` (`curate.py:list_queue`/`list_documents`; issue #277, gap G1 closed for the read path) | ✖ | ✖ 403 (`require_curator` only — the Queue is curation workflow, not something purge authority extends to) |
+| See the curation List, any status (`GET /curate/documents`) | ✖ | ✖ | ✖ | ✔ same scoping as the Queue row above | ✖ | ✔ **unscoped** — every document regardless of org/clearance/releasability, matching `rag-purge`'s own unscoped destruction authority (#279, gap G3; `require_curator_or_purge`); a caller holding both roles gets the curator-scoped view, not the wider one |
 | Read a pending document's content | ✖ | own only | ✖ | ✔ within org + clearance + releasability + `access_scope` (`_check_curator_authority`) — issue #277 added the last of these; see gap G1 for what's still not covered | ✖ | ✖ |
 | Approve / reject / correct tags (`POST /curate/{id}/approve\|reject`) | ✖ | ✖ | ✖ | ✔ org (else **404**, not 403 — existence-oracle fix #215) + clearance ceiling (403) + releasability held (403, FR-14.1); re-checked against the *old* doc on supersession (FR-7, `_validate_supersede`) | ✖ | ✖ |
 | Query the corpus (`orchestration-mcp` `rag_search` / `/debug/rag_search`) | ✖ | ✖ | ✔ under the mandatory FR-26 filter (§4) | ✖ | ✖ | ✖ |
 | Edit classification/releasability vocabulary (`ingestion-api` admin routes) | ✖ | ✖ | ✖ | ✖ | ✔ (`deps.require_admin`) | ✖ |
-| Purge a document everywhere (`DELETE /documents/{id}`) | ✖ | ✖ | ✖ | ✖ | ✖ 403 | ✔ audited, reason required (#123) |
+| Purge a document everywhere (`DELETE /documents/{id}`) | ✖ | ✖ | ✖ | ✖ | ✖ 403 | ✔ audited, reason required (#123) -- **only** when `PURGE_TWO_PERSON_REQUIRED` is unset (dev default); returns 409 otherwise (#279, gap G3) |
+| File / confirm a purge request (`POST .../purge-request`, `.../confirm`) | ✖ | ✖ | ✖ | ✖ | ✖ 403 | ✔ file: any holder; confirm: **a different** holder only -- same `sub` as the requester gets 409 (#279, gap G3; `common.purge.purge_confirmation_authorized`) |
 | Read the audit log | — | — | — | — | — | — (no route exists for anyone; see gap G2) |
 | Download original uploaded bytes | — | — | — | — | — | — (no route exists; originals are write-only from the app, NFR-12) |
 
@@ -176,10 +178,44 @@ roles (`ingestion_api`, `orchestration_mcp`) with explicit grants; audit_log
 INSERT-only for the query path; SELECT on audit_log granted to no application
 role at all.
 
-**G3 — Destruction is single-person.** `rag-purge` is separate from
-`rag-admin` (good), but one person holding it can irreversibly destroy alone.
-Usual production expectation for destruction is a two-person rule: a purge
-*request* row plus an independent confirmation before execution.
+**G3 — Destruction is single-person — narrowed by #279.** `rag-purge` was
+separate from `rag-admin` already (good), but one person holding it could
+irreversibly destroy a document alone. `POST /documents/{id}/purge-request`
+now records intent only (`common.purge.request_purge`); nothing is destroyed
+until a **different** `rag-purge` holder confirms via
+`POST .../purge-request/{request_id}/confirm`
+(`common.purge.confirm_purge`) -- same-`sub` confirmation is refused
+server-side (`purge_confirmation_authorized`), and an unconfirmed request
+stops being confirmable once `PURGE_REQUEST_EXPIRY_HOURS` (default 24) has
+passed, so a stale request can't sit as a loaded gun. Whether the two-person
+path is *mandatory* is a deployment flag: `PURGE_TWO_PERSON_REQUIRED`
+defaults true in code and in the Helm chart; `docker-compose.yml` sets it
+false for the dev loop, since `seed-sample-data` and the dev realm only ever
+provisioned one purge-capable identity (`dave-admin`) until now. The seeded
+realm also gained a second, independent purge-only user (`eve-purge`,
+`infra/keycloak/realm-export/nexus-rag-realm.json`) specifically so the
+two-person path has someone to confirm with in dev, addressing the issue's
+second point -- `dave-admin` holding `rag-purge` alongside every other role
+still collapses the separation on its own account, but that account is
+otherwise exercised by too much of `docs/dev-setup.md` and `scripts/` to
+narrow here without a wider, separate change.
+
+A `rag-purge` holder without any `rag-curate:<org>` role now reaches
+`curate_list.html` too (nav link goes straight to `/curate/list`, the Queue
+tab hidden since that stays curator-only): `list_documents`
+(`require_curator_or_purge`) gives them an unscoped list -- matching
+`require_purge`'s own unscoped destruction authority, rather than the
+curator-scoped org/clearance/releasability view -- with Edit hidden
+(`CAN_EDIT_METADATA`, since `PATCH /curate/documents/{id}` stays
+require_curator-only) and only Delete available. A caller holding both roles
+still gets the curator-scoped view -- narrower, and the one they're already
+used to; holding `rag-purge` never widens what an existing curator sees.
+
+Narrowed, not closed: there is still no UI for the *confirm* step of the
+two-person flow itself (the List's delete button only exercises the
+single-person path, unaffected in dev since that path stays on there). No
+expiry sweep job either; see `PurgeRequest`'s own docstring for why that's
+deliberate rather than deferred.
 
 **G4 — Conflicting `rag-clearance:*` roles — resolved (#280).** A token
 carrying two or more distinct `rag-clearance:<value>` roles is now rejected
