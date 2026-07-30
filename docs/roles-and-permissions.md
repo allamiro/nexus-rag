@@ -44,8 +44,8 @@ Capability roles, deliberately small and non-overlapping:
 |---|---|---|---|---|---|---|
 | Upload + tag document (`ingestion-api` `POST /documents`) | ✖ 401 | ✔ tags validated against **own** claims, FR-18 (`upload.py` → `validate_against_claims`) | ✖ 403 | ✖ 403 | ✖ 403 | ✖ 403 |
 | List/poll documents (`GET /documents/mine`, `/{id}`) | ✖ | ✔ **own uploads only** — `uploader_sub == sub`, else 404 (`upload.py:get_document`) | ✖ | ✖ (own queue view instead) | ✖ | ✖ |
-| See curation queue (`GET /curate`) | ✖ | ✖ | ✖ | ✔ **filtered to `owner_org ∈ curatable_orgs`** (`curate.py:_pending_documents`) | ✖ | ✖ |
-| Read a pending document's content | ✖ | own only | ✖ | ✔ within org + clearance + releasability (`_check_curator_authority`) — **`access_scope` is NOT checked: see gap G1** | ✖ | ✖ |
+| See curation queue (`GET /curate`) | ✖ | ✖ | ✖ | ✔ **filtered to `owner_org ∈ curatable_orgs`**, plus classification, releasability, and — for a pending document — `access_scope` (`curate.py:list_queue`/`list_documents`; issue #277, gap G1 closed for the read path) | ✖ | ✖ |
+| Read a pending document's content | ✖ | own only | ✖ | ✔ within org + clearance + releasability + `access_scope` (`_check_curator_authority`) — issue #277 added the last of these; see gap G1 for what's still not covered | ✖ | ✖ |
 | Approve / reject / correct tags (`POST /curate/{id}/approve\|reject`) | ✖ | ✖ | ✖ | ✔ org (else **404**, not 403 — existence-oracle fix #215) + clearance ceiling (403) + releasability held (403, FR-14.1); re-checked against the *old* doc on supersession (FR-7, `_validate_supersede`) | ✖ | ✖ |
 | Query the corpus (`orchestration-mcp` `rag_search` / `/debug/rag_search`) | ✖ | ✖ | ✔ under the mandatory FR-26 filter (§4) | ✖ | ✖ | ✖ |
 | Edit classification/releasability vocabulary (`ingestion-api` admin routes) | ✖ | ✖ | ✖ | ✖ | ✔ (`deps.require_admin`) | ✖ |
@@ -60,7 +60,7 @@ The same facts inverted: **which document content can each identity read?**
 | Document state | Uploader | Same-org curator (cleared) | Curator, *not* in the doc's `access_scope` group | `rag-query` user (cleared + caveats + in scope) | `rag-query` user outside any one dimension | `rag-admin` |
 |---|---|---|---|---|---|---|
 | `queued`/`processing`/`embedded` | metadata only (status poll) | not yet in queue | — | ✖ | ✖ | ✖ |
-| `pending_review` | metadata only | **full content** (review requires it) | **full content — gap G1** | ✖ (FR-11/FR-26: only `approved` matches) | ✖ | ✖ |
+| `pending_review` | metadata only | **full content** (review requires it) | ✖ — hard-denied, no fallback (issue #277, gap G1) | ✖ (FR-11/FR-26: only `approved` matches) | ✖ | ✖ |
 | `approved` | metadata only | full content via queue history? — no: once decided it leaves the queue | ✖ | ✔ retrievable chunks | ✖ (fails closed) | ✖ |
 | `rejected` / `superseded` | metadata only | ✖ | ✖ | ✖ (validated live: golden-query harness asserts non-retrievability regardless of persona, FR-26) | ✖ | ✖ |
 | `purged` | metadata (scrubbed row) | ✖ | ✖ | ✖ — chunks swept from **every** collection (#267 fix) | ✖ | ✖ |
@@ -126,16 +126,46 @@ Documented so each can become its own issue; none is hidden behind a green
 checkmark above. Ordered by how much they matter in a
 documents-must-not-be-broadly-viewable deployment.
 
-**G1 — Curators are not bound by `access_scope` (need-to-know).**
-`_check_curator_authority` checks org, clearance ceiling, and releasability —
-but not membership in the document's `access_scope` groups. A Signal-Corps
-document pending review is readable by any same-org curator with the clearance
-and caveats, whether or not they are in Signal-Corps. Arguably inherent
-(curation requires reading), but it is the largest privacy delta in the system
-and is currently an *unrecorded* decision. Options, in increasing cost:
-record it as accepted risk in this file; restrict queue visibility to
-scope-matching curators when a scope-matching curator exists; metadata-only
-review for out-of-scope curators; dual-control approval for scoped documents.
+**G1 — Curators are not bound by `access_scope` (need-to-know) — closed by
+#277.** `_check_curator_authority` (approve/reject/supersede) and
+`curate.py:list_queue`/`list_documents` now check `access_scope` the same
+way they already checked clearance and releasability: a hard requirement for
+reading, approving, or rejecting a *pending* document, with **no fallback
+and no grace period**. A curator outside a document's `access_scope` never
+sees it in the queue and cannot act on it directly by id either, no matter
+how long it has sat in `pending_review`.
+
+An earlier version of this fix used a time-based grace period (prefer a
+scope-matching curator for N hours, then open the document to every
+org-authorized curator) to guarantee a document could never sit unreviewed
+for want of a scope-matching curator. That was deliberately reverted: a
+fallback that widens access on a timer defeats the purpose of a
+need-to-know control — it just delays the same leak G1 exists to prevent,
+and would have left `access_scope` unenforced at the actual approve/reject
+call the whole time regardless.
+
+The consequence, accepted on purpose rather than an oversight: **if no
+curator in a document's owning org holds a group/org/sub that matches its
+`access_scope`, that document has no one who can review it.** There is no
+system-level fallback for this — it is an admin/provisioning problem (assign
+the right group to a curator, or correct the document's `access_scope` tag,
+which itself requires whoever submitted it or an admin to notice and fix)
+rather than something the software works around by widening access. A
+deployment that hands out narrow `access_scope` values should make sure at
+least one curator per org actually holds each group in use, the same way it
+already has to make sure at least one curator per org holds each
+classification/releasability combination in use.
+
+There is still no curator directory in this system (identity is
+per-request, decoded from that request's own OIDC token —
+`common/claims.py` has no concept of "every user who holds
+`rag-curate:<org>`"), so nothing here can proactively warn an admin that a
+document has no eligible reviewer; it can only be discovered by the document
+staying in `pending_review`. A Keycloak admin API integration (new service
+credential, admin REST calls, caching, a failure mode for an unreachable
+admin API) could support that kind of proactive check, or a "documents with
+no eligible curator" report. Not done here — deferred as its own, larger
+decision if the lack of one proves painful in practice.
 
 **G2 — One Postgres identity reads everything, including the audit log.**
 Stated in `rag_search`'s own #125 docstring: no *route* exposes the audit log,

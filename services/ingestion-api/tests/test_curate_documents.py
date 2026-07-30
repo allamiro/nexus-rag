@@ -27,6 +27,17 @@ CURATOR = UserClaims(
     rag_roles=["rag-curate:USAREUR-AF", "rag-clearance:SECRET", "rag-releasability:NONE"],
 )
 
+# Issue #277: a same-org curator who additionally holds the Signal-Corps
+# group -- CURATOR above deliberately holds neither that group nor sub, so
+# it stands in for an org-authorized-but-out-of-scope curator.
+SIGNAL_CORPS_CURATOR = UserClaims(
+    sub="signal-corps-curator-sub",
+    preferred_username="sam-curator",
+    org="USAREUR-AF",
+    groups=["Signal-Corps"],
+    rag_roles=["rag-curate:USAREUR-AF", "rag-clearance:SECRET", "rag-releasability:NONE"],
+)
+
 OTHER_ORG_CURATOR = UserClaims(
     sub="other-curator-sub",
     preferred_username="oscar-curator",
@@ -135,6 +146,91 @@ class TestListQueue:
         docs = curate.list_queue(user=CURATOR, session=session)
 
         assert [d.id for d in docs] == [mine.id]
+
+
+class TestScopeGating:
+    """Issue #277 (gap G1): access_scope is a hard requirement for seeing a
+    *pending* document, on par with clearance/releasability -- no grace
+    period, no fallback. A curator outside a document's access_scope simply
+    never sees it in the queue; there is no time after which visibility
+    opens up to them regardless."""
+
+    def test_out_of_scope_curator_never_sees_it(self, session: Session) -> None:
+        doc = _document(status="pending_review", access_scope=["Signal-Corps"])
+        session.add(doc)
+        session.commit()
+
+        docs = curate.list_queue(user=CURATOR, session=session)
+
+        assert docs == []
+
+    def test_in_scope_curator_sees_it(self, session: Session) -> None:
+        doc = _document(status="pending_review", access_scope=["Signal-Corps"])
+        session.add(doc)
+        session.commit()
+
+        docs = curate.list_queue(user=SIGNAL_CORPS_CURATOR, session=session)
+
+        assert [d.id for d in docs] == [doc.id]
+
+    def test_all_authenticated_scope_is_never_gated(self, session: Session) -> None:
+        doc = _document(status="pending_review", access_scope=["ALL_AUTHENTICATED"])
+        session.add(doc)
+        session.commit()
+
+        docs = curate.list_queue(user=CURATOR, session=session)
+
+        assert [d.id for d in docs] == [doc.id]
+
+    def test_approved_documents_are_never_scope_gated(self, session: Session) -> None:
+        # _visible_to_curator only applies the access_scope check to
+        # pending_review rows -- list_documents (the "any status" master
+        # list) must not start hiding already-decided documents.
+        doc = _document(status="approved", access_scope=["Signal-Corps"])
+        session.add(doc)
+        session.commit()
+
+        docs = curate.list_documents(
+            status_filter=None, classification=None, q=None, user=CURATOR, session=session
+        )
+
+        assert [d.id for d in docs] == [doc.id]
+
+    def test_out_of_scope_curator_cannot_approve_directly(self, session: Session) -> None:
+        # Not just hidden from the queue -- the actual access-control point
+        # (approve/reject) has to refuse it too, or hiding it from the list
+        # would be security theater against a curator who already has the id.
+        doc = _document(status="pending_review", access_scope=["Signal-Corps"])
+        session.add(doc)
+        session.commit()
+
+        with pytest.raises(Exception) as excinfo:
+            curate.approve(doc.id, corrections=None, user=CURATOR, session=session, _csrf=None)
+
+        assert excinfo.value.status_code == 403  # type: ignore[attr-defined]
+
+    def test_out_of_scope_curator_cannot_reject_directly(self, session: Session) -> None:
+        doc = _document(status="pending_review", access_scope=["Signal-Corps"])
+        session.add(doc)
+        session.commit()
+
+        with pytest.raises(Exception) as excinfo:
+            curate.reject(
+                doc.id, curate.Rejection(reason="no"), user=CURATOR, session=session, _csrf=None
+            )
+
+        assert excinfo.value.status_code == 403  # type: ignore[attr-defined]
+
+    def test_in_scope_curator_can_approve(self, session: Session) -> None:
+        doc = _document(status="pending_review", access_scope=["Signal-Corps"])
+        session.add(doc)
+        session.commit()
+
+        approved = curate.approve(
+            doc.id, corrections=None, user=SIGNAL_CORPS_CURATOR, session=session, _csrf=None
+        )
+
+        assert approved.status == "approved"
 
 
 class TestListDocuments:

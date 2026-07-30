@@ -634,6 +634,19 @@ the docs, not a silent "it works" — flag it if you find one.
   tokens instead of a hardcoded light-mode color. **Tested against mocks only** (unit
   tests covering scoping/filters/authority/NFR-13-revert against an in-memory SQLite
   session) — not yet exercised against a live Postgres/Qdrant pair or a browser.
+- **Curators bound by access_scope (issue #277, gap G1)** — a same-org, cleared,
+  releasability-holding curator whose groups/org/sub don't match a *pending* document's
+  `access_scope` no longer sees it in the queue (`GET /curate/queue`/`/curate/documents`)
+  and can't approve or reject it directly by id either (`_check_curator_authority`) — a
+  hard requirement, the same as clearance and releasability, with no fallback and no
+  grace period. If no curator in an org happens to hold the right group/org/sub for a
+  document's `access_scope`, that document has no one who can review it until an admin
+  fixes the provisioning (adds the right group to a curator, or corrects the tag) — a
+  deliberate choice, not a gap: an automatic fallback was considered and rejected as
+  defeating the purpose of need-to-know. **Tested against mocks only** (unit tests
+  against the shared `access_scope_authorized` predicate, plus service-level tests
+  covering queue visibility and the approve/reject hard block against an in-memory
+  SQLite session) — not yet exercised against a live Postgres pair or a browser.
 - **Uploader notifications on curator decisions (FR-15)** — approving or rejecting a
   document writes an in-app `Notification` row for the uploader
   (`common/models.py`/`app/routes/notifications.py`), with the rejection reason
