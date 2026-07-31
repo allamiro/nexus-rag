@@ -434,6 +434,39 @@ def _validate_supersede(user: UserClaims, new_doc: Document, session: Session) -
     return old_doc
 
 
+def _tagging_advisory_outcome(doc: Document) -> dict | None:
+    """Issue #306 gap 1: link the curator's decision back to the ingestion-time
+    marking-mismatch advisory (issue #138), if one was flagged for this
+    document. Without this, recovering "did the curator agree with the flag"
+    means diffing the `document.tagging_advisory` and `document.approve`/
+    `document.reject` audit rows by document ID after the fact -- embedding the
+    flagged values and the curator's final tags directly in the decision's own
+    audit entry makes that row self-contained instead.
+
+    Deliberately reads only `doc.tagging_advisory` (a Document column
+    ingestion-api already has SELECT on), not the audit_log table itself --
+    issue #278's per-service DB grants make audit_log INSERT-only for every
+    application role, including this one (see
+    infra/postgres/apply-service-grants.sh), specifically so no route needs
+    read access to the trail. A `select(AuditLogEntry)` lookup here would
+    violate that boundary and fail against the real grant (caught live: it
+    raised `psycopg.errors.InsufficientPrivilege` against the dev stack).
+
+    Returns None when nothing was flagged (the common case), so approve/reject
+    audit entries stay unchanged for documents the advisory had no findings
+    for.
+    """
+    advisory = doc.tagging_advisory or {}
+    if not (advisory.get("under_classified") or advisory.get("unassigned_caveats")):
+        return None
+    return {
+        "flagged_classification": advisory.get("detected_classification"),
+        "flagged_caveats": advisory.get("unassigned_caveats"),
+        "final_classification": doc.classification,
+        "final_releasability": doc.releasability,
+    }
+
+
 def _execute_supersede(
     user: UserClaims, old_doc: Document, new_doc: Document, session: Session
 ) -> None:
@@ -536,7 +569,10 @@ def approve(
                 actor_username=user.preferred_username,
                 action="document.approve",
                 target_id=str(doc.id),
-                detail={"corrections": corrections.model_dump() if corrections else None},
+                detail={
+                    "corrections": corrections.model_dump() if corrections else None,
+                    "tagging_advisory": _tagging_advisory_outcome(doc),
+                },
             )
         )
         # FR-15: notify the uploader of the decision.
@@ -598,7 +634,10 @@ def reject(
                 actor_username=user.preferred_username,
                 action="document.reject",
                 target_id=str(doc.id),
-                detail={"reason": body.reason},
+                detail={
+                    "reason": body.reason,
+                    "tagging_advisory": _tagging_advisory_outcome(doc),
+                },
             )
         )
         # FR-15: notify the uploader of the decision, with the stated reason.
