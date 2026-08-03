@@ -140,6 +140,9 @@ def _live_controlled_vocab(session: Session) -> dict:
         "classifications": [(c.value, c.rank) for c in classifications],
         "releasability": [r.value for r in releasability],
         "no_releasability_restriction": NO_RELEASABILITY_RESTRICTION,
+        # Issue #356: surfaced on the upload page so the batch-file cap shown
+        # to the uploader can't drift from what POST /documents/batch enforces.
+        "max_batch_files": upload.MAX_BATCH_FILES,
     }
 
 
@@ -349,4 +352,9 @@ def kb_page(
     prose, not a document or an action."""
     if current_user is None:
         return _login_page(request, session)
-    return templates.TemplateResponse(request, "kb.html", _page_context(session, current_user))
+    # Issue #356: the ingest-role article references the batch file-count cap,
+    # same reasoning as upload_page below -- can't drift from what
+    # POST /documents/batch enforces.
+    ctx = _live_controlled_vocab(session)
+    ctx.update(_page_context(session, current_user))
+    return templates.TemplateResponse(request, "kb.html", ctx)

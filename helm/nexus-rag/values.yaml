@@ -384,6 +384,11 @@ ingestionApi:
   replicas: 2
   # FR-9/NFR-7: upload size guard in bytes.
   maxUploadBytes: 52428800
+  # FR-34/issue #356: batch-submission file-count cap (POST /documents/batch).
+  # See the ingress.annotations comment below -- a batch's aggregate request
+  # body can be up to maxBatchFiles x maxUploadBytes, which the ingress
+  # proxy-body-size annotation does not currently account for.
+  maxBatchFiles: 25
   service:
     type: ClusterIP
     port: 8001
@@ -397,13 +402,18 @@ ingestionApi:
     # MAX_UPLOAD_BYTES check (app/routes/upload.py) can only run after
     # Starlette has already consumed and spooled the whole request body, so
     # it bounds that service's memory, not bytes transferred or written to
-    # disk. Rendered as annotations rather than a typed field because the key
-    # is ingress-controller specific -- the default below is nginx's; for
-    # Traefik or HAProxy, replace it with that controller's equivalent.
-    # Keep the value at or above ingestionApi.maxUploadBytes, or the edge
-    # will reject uploads the application would have accepted.
-    annotations:
-      nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    # disk.
+    #
+    # nginx.ingress.kubernetes.io/proxy-body-size is deliberately *not* set
+    # here as a static value -- POST /documents/batch (FR-34/#356) sends
+    # every file in a batch as one multipart request, so the aggregate body
+    # can be as large as maxBatchFiles x maxUploadBytes, not just
+    # maxUploadBytes. The ingress template computes that product and injects
+    # it as the default; set it explicitly in this map only to override that
+    # computed value for your environment (e.g. a different ingress
+    # controller needs its own annotation key). See
+    # templates/ingestion-api-ingress.yaml.
+    annotations: {}
   # Browser OIDC login callback URL (ARCHITECTURE.md Section 4.4), passed
   # through as OIDC_REDIRECT_URI. Empty (default) derives it from
   # ingress.host above -- https if ingress.tls is set, http otherwise (see
