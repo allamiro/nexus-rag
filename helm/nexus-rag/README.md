@@ -35,7 +35,7 @@ combination you're about to deploy before trusting it.
   `orchestration-mcp`, `reranker-service`) mirrored into it (NFR-1), plus
   `qdrant/qdrant`, `milvus`, `ollama/ollama`, and/or `nats` for whichever of
   those this chart is self-deploying — skip mirroring the ones you've
-  pointed at an `external.host` instead (issue #401)
+  pointed at an `external.host` instead
 - A pre-created Secret matching `externalPostgres.existingSecret` /
   `externalPostgres.secretKey`, containing a full SQLAlchemy
   `DATABASE_URL` (`postgresql+psycopg://user:pass@host:5432/dbname`)
@@ -84,15 +84,14 @@ combination you're about to deploy before trusting it.
   below. Left empty by default, so the chart renders and runs without it,
   same as before that issue.
 
-## External backing services (issue #401)
+## External backing services
 
 Every non-custom backing service this chart touches now supports the same
 choice: deploy it (default) or connect to one that already exists.
 `externalPostgres`, `externalKeycloak`, and `externalObjectStore` have always
-been connect-only (REQUIREMENTS.md's NFR-10 doesn't scope Postgres/Keycloak/
-object-store deployment into this chart at all — see the assumption called
-out above). `qdrant`, `milvus`, `nats`, and `embeddingService` now support
-both:
+been connect-only — this chart doesn't deploy Postgres, Keycloak, or an
+object store at all (see the assumption called out above). `qdrant`,
+`milvus`, `nats`, and `embeddingService` now support both:
 
 | Component | Self-deploy (default) | Connect to existing |
 |---|---|---|
@@ -113,22 +112,29 @@ fails the render with a specific message (`_helpers.tpl`'s
 `nexus-rag.qdrantUrl`/`milvusUrl`/`natsUrl`/`embeddingUrl`) rather than
 silently deploying a broken URL, same pattern as `oidcRedirectUri` below.
 
-Two things `external` mode does **not** change:
+One thing `external` mode does **not** change: `networkPolicy`'s ingress
+rules for that component stop rendering entirely — they select this chart's
+own pod, which no longer exists. Protecting an external instance's ingress
+is that cluster's own concern.
 
-- `networkPolicy`'s ingress rules for that component stop rendering
-  entirely — they select this chart's own pod, which no longer exists.
-  Protecting an external instance's ingress is that cluster's own concern.
-- `embeddingService.external` speaks Ollama's native API, same as the
-  self-deployed default (`ollama/ollama`) — any Ollama-compatible endpoint
-  works. It does **not** yet support an OpenAI-API-compliant hosted model
-  (vLLM, TGI, a cloud embedding endpoint): `services/ingestion-worker/app/
-  embedding.py` and `services/orchestration-mcp/app/rag_search.py` both call
-  Ollama's `/api/embeddings`, not OpenAI's `/v1/embeddings`, so that's a
-  separate client-abstraction change, not just a values.yaml toggle (issue
-  #401's Phase 2, not yet implemented). Also note this same instance serves
-  `ingestionWorker.visionModel`/`classificationModel`/`piiLlmModel` when
-  those are set — an external endpoint needs every model this deployment
-  actually uses provisioned on it, not just `embeddingService.model`.
+`embeddingService.external.apiCompatibility` selects which wire protocol the
+endpoint speaks: `"ollama"` (default) is Ollama's native
+`/api/embeddings`, unauthenticated — what the self-deployed instance
+(`enabled: true`) always speaks, and what any Ollama-*compatible* external
+endpoint speaks too. `"openai"` targets an OpenAI-API-compliant hosted model
+instead (vLLM, TGI, a cloud embedding endpoint) via `/v1/embeddings`,
+authenticated with a bearer token from
+`embeddingService.external.apiKey.existingSecret` — same `existingSecret`
+pattern as everywhere else in this chart, and, like the reranker-service
+shared secret above, only sent as a header when that Secret is actually
+configured. `common/embedding_client.py` is the shared client both
+`ingestion-worker` and `orchestration-mcp` use for this.
+
+Also note this same instance serves
+`ingestionWorker.visionModel`/`classificationModel`/`piiLlmModel` when those
+are set (still Ollama-native calls, `common/embedding_client.py` doesn't
+cover those) — an external endpoint needs every model this deployment
+actually uses provisioned on it, not just `embeddingService.model`.
 
 ## Network policy (issue #110)
 
@@ -161,9 +167,9 @@ than an obvious outage. `helm install` prints both warnings.
 
 `networkPolicy.denyEgressByDefault` is **off** by default: every custom service
 needs the external Postgres and Keycloak, two also need the external object
-store, and (issue #401) any of Qdrant/Milvus/NATS/the embedding service running
-in `external` mode adds another address this chart doesn't know either.
-Turning it on without populating `networkPolicy.egressAllow` will break the
+store, and any of Qdrant/Milvus/NATS/the embedding service running in
+`external` mode adds another address this chart doesn't know either. Turning
+it on without populating `networkPolicy.egressAllow` will break the
 deployment.
 
 ## reranker-service shared secret (issue #216)
