@@ -41,12 +41,15 @@ SERVICES = [
     "reranker-service",
 ]
 
-# The chart's first-party components, as their values.yaml keys.
+# The chart's first-party components, as their values.yaml keys. auditReporting
+# is the scripts image (#527) -- built from scripts/Dockerfile and released in
+# lockstep with the four service images.
 CHART_IMAGE_COMPONENTS = {
     "ingestionApi": "ingestion-api",
     "ingestionWorker": "ingestion-worker",
     "orchestrationMcp": "orchestration-mcp",
     "rerankerService": "reranker-service",
+    "auditReporting": "scripts",
 }
 
 SEMVER = re.compile(r"^\d+\.\d+\.\d+$")

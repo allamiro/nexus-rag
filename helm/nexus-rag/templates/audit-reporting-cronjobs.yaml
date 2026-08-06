@@ -1,0 +1,114 @@
+{{- /*
+Issue #527: CronJobs for the two offline audit-reporting jobs. Both run the
+scripts image (published per release next to the four service images), connect
+to the external Postgres as the SELECT-only audit-reporting role via a
+pre-created DSN Secret, and publish content-free gauges to Pushgateway so the
+NexusRagQueryAnomalyDetectionStale / NexusRagTaggingCalibrationStale alerts
+can tell a stopped job from a quiet one. Off by default -- see the
+auditReporting block in values.yaml.
+*/ -}}
+{{- if .Values.auditReporting.anomalyDetection.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "nexus-rag.fullname" . }}-audit-anomaly-detection
+  labels:
+    {{- include "nexus-rag.labels" . | nindent 4 }}
+    app.kubernetes.io/component: audit-reporting
+spec:
+  schedule: {{ .Values.auditReporting.anomalyDetection.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            {{- include "nexus-rag.labels" . | nindent 12 }}
+            app.kubernetes.io/component: audit-reporting
+        spec:
+          restartPolicy: Never
+          {{- with .Values.global.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            {{- include "nexus-rag.podSecurityContext" . | nindent 12 }}
+          containers:
+            - name: detect-query-anomalies
+              image: {{ include "nexus-rag.image" (dict "global" .Values.global "image" .Values.auditReporting.image) }}
+              securityContext:
+                {{- include "nexus-rag.containerSecurityContext" . | nindent 16 }}
+              command: ["python3", "detect_query_anomalies.py"]
+              env:
+                - name: AUDIT_REPORTING_DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.auditReporting.existingSecret | quote }}
+                      key: {{ .Values.auditReporting.secretKey | quote }}
+                {{- if .Values.auditReporting.pushgatewayUrl }}
+                - name: RAG_ANOMALY_PUSHGATEWAY_URL
+                  value: {{ .Values.auditReporting.pushgatewayUrl | quote }}
+                {{- end }}
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir: {}
+{{- end }}
+{{- if .Values.auditReporting.taggingCalibration.enabled }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "nexus-rag.fullname" . }}-audit-tagging-calibration
+  labels:
+    {{- include "nexus-rag.labels" . | nindent 4 }}
+    app.kubernetes.io/component: audit-reporting
+spec:
+  schedule: {{ .Values.auditReporting.taggingCalibration.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            {{- include "nexus-rag.labels" . | nindent 12 }}
+            app.kubernetes.io/component: audit-reporting
+        spec:
+          restartPolicy: Never
+          {{- with .Values.global.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            {{- include "nexus-rag.podSecurityContext" . | nindent 12 }}
+          containers:
+            - name: calibrate-tagging-advisory
+              image: {{ include "nexus-rag.image" (dict "global" .Values.global "image" .Values.auditReporting.image) }}
+              securityContext:
+                {{- include "nexus-rag.containerSecurityContext" . | nindent 16 }}
+              command: ["python3", "calibrate_tagging_advisory.py"]
+              env:
+                - name: AUDIT_REPORTING_DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.auditReporting.existingSecret | quote }}
+                      key: {{ .Values.auditReporting.secretKey | quote }}
+                {{- if .Values.auditReporting.pushgatewayUrl }}
+                - name: RAG_CALIBRATION_PUSHGATEWAY_URL
+                  value: {{ .Values.auditReporting.pushgatewayUrl | quote }}
+                {{- end }}
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir: {}
+{{- end }}
