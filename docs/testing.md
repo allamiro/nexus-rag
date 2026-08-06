@@ -474,11 +474,33 @@ The golden set itself covers more than clean admin-persona queries (issue
 queries), an off-topic query with no relevant document at all — feeding an
 advisory `mean_abstention_noise` metric (what comes back when nothing should;
 deliberately not baseline-gated, since lower-is-better inverts the shared
-regression arithmetic) — and `scripts/golden_queries_personas.json`, cases
+regression arithmetic) — two **adversarial phrasings**, one **multi-document
+expectation** (issue 528's remaining checklist items) — and
+`scripts/golden_queries_personas.json`, cases
 that each name their own querying persona so recall and the FR-26 leak check
 run under several claims sets. The persona cases live in their own file
 because `evaluate_rag_quality.py` drives `golden_queries.json` through
 LibreChat as a single user, where a per-case persona would score nonsense.
+
+The two adversarial cases exist to *demonstrate* something the architecture
+already guarantees rather than to discover it. `vpn-superseded-verbatim-adversarial`
+uses network-access-sop-v1.md's text **verbatim**, so BM25 has an exact-sentence
+match on a superseded document, and `vpn-rejected-vocabulary-adversarial` borrows
+the curator-rejected guide's own vocabulary. In both, the lexically closest
+document in the corpus is the one FR-26 must withhold, and the only correct
+answer is the approved VPN SOP. Neither can fail unless the status filter itself
+broke — which is the point: ranking pressure is applied at its maximum and must
+not move the boundary, and if one of these ever fails it is an FR-26 regression,
+not a quality one.
+
+`access-controls-multi-doc` is the only case whose `expect` names two documents.
+Until it existed, `recall_at_k`/`precision_at_k` were 0/1-valued for every
+query, so a partial regression — one of two expected documents dropping out —
+could not be represented at all. It now reads as 0.5 instead of hiding behind a
+still-passing 1.0. The question deliberately spans account credentials
+(password-policy.md) and remote access (network-access-sop-v2.md) so neither
+document alone satisfies it; both are approved CUI/FVEY/USAREUR-AF, so the
+default `dave-admin` persona sees both.
 The bob-query/carol-curator cases assert the *access-scope* leg of the
 mandatory filter live: both hold the clearance and releasability the
 Signal-Corps-scoped SECRET document needs, so group scope is the only thing
