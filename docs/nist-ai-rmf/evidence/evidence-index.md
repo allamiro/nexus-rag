@@ -30,7 +30,7 @@ metadata is what makes a file evidence rather than an artifact.
 
 | Item | Producer | Notes |
 |---|---|---|
-| `injection-probe/` | `scripts/adversarial_injection_probe.py` | Red-team evidence; also closes the live-validation debt on the notice-wording fixes (issue #494) |
+| `injection-probe/` | `scripts/adversarial_injection_probe.py` | Red-team evidence; the live-validation debt itself was closed by PR 541's run (all 5 cases) — this snapshot archives such a run as evidence at rest |
 | `access-matrix/` | `scripts/verify_corpus_access.py` | Multi-persona FR-26 scoping evidence |
 | `rag-quality/` | `scripts/evaluate_rag_quality.py` (default content-free mode) | Q→C→A judged report with config fingerprint |
 | `retrieval-eval/` | copy of the period's `.eval-history` reports | FR-30 trend evidence at rest |
@@ -43,8 +43,8 @@ metadata is what makes a file evidence rather than an artifact.
 ## Known evidence gaps (honest list)
 
 - No snapshot has been captured yet (issue #532).
-- No internal audit or management review has been conducted (governance-policy §9;
-  no tracking issue filed yet).
+- No internal audit or management review has been conducted (governance-policy
+  §9; tracked in issue #542).
 - The SIEM detection sketches have never been executed against a production SIEM
   (`docs/siem-detection-runbook.md` is documentation-only; issue #522).
 - `helm/observability` and the ServiceMonitor path have never run on a real
