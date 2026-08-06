@@ -17,6 +17,19 @@ changed in the running system, with the issue/PR reference for the trail.
 
 ### Added
 
+- Content-Security-Policy on the document portal (#443, found by the same
+  OWASP ZAP scan as #444/#445): `ingestion-api` now sends a per-request-nonce
+  CSP (`script-src 'self' 'nonce-...'`, `object-src 'none'`, `base-uri 'self'`,
+  `frame-ancestors 'none'`) on every response, the defense-in-depth layer
+  behind Jinja2 autoescaping should a future template edit reintroduce an
+  unescaped interpolation. Four inline `onclick="..."` attributes (logout,
+  and three "Refresh" buttons) had to move to `addEventListener` as part of
+  this -- a script-src nonce covers `<script>` elements, not attribute-based
+  event handlers, so those would otherwise have silently stopped firing.
+  Validated against a live environment: a real Chromium session driven
+  through the actual Keycloak OIDC login flow visited every page and
+  exercised the converted buttons with zero CSP violations and zero console
+  errors.
 - Static security response headers on every HTTP-facing service (#444,
   #445, found by an OWASP ZAP scan): `X-Content-Type-Options: nosniff` and
   `Referrer-Policy: no-referrer` on `ingestion-api`, `orchestration-mcp`
@@ -27,9 +40,7 @@ changed in the running system, with the issue/PR reference for the trail.
   (`services/common/common/security_headers.py`); `reranker-service`
   carries its own small inline duplicate rather than taking a new
   dependency on `services/common`, consistent with how it already
-  duplicates its tracing/profiling setup. `Content-Security-Policy`
-  (the third finding from the same scan) is tracked separately as #443 —
-  it needs template-level nonce plumbing, not a static header.
+  duplicates its tracing/profiling setup.
 - A containerized integration test layer (#428): `tests/integration/`, run
   against a live Postgres by a new opt-in `e2e.yml` job (`integration`, same
   `needs-e2e`-label gating as the golden-query/browser-verify jobs). First
