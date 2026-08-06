@@ -25,8 +25,10 @@ from calibrate_tagging_advisory import (
     PiiVerdictTally,
     Tally,
     aggregate,
+    build_exposition,
     latest_prior_report,
     persist_report,
+    publish,
 )
 
 RANKS = {"UNCLASSIFIED": 1, "CUI": 2, "SECRET": 3, "TOP SECRET": 4}
@@ -554,3 +556,111 @@ class TestHistoryStore:
 
     def test_no_prior_reports_returns_none(self, tmp_path: Path) -> None:
         assert latest_prior_report(tmp_path) is None
+
+
+def _report_dict(**overrides: dict) -> dict:
+    """Minimal report shape build_exposition consumes: every suggester key
+    present, nothing resolvable by default."""
+    base: dict = {
+        name: {"agreement_rate": None, "flagged": 0}
+        for name in (
+            "marking_mismatch",
+            "releasability_caveats",
+            "precedent",
+            "llm_classification",
+        )
+    }
+    base["pii_regex_llm_verdict"] = {"agreement_rate": None}
+    for name in ("pii_regex", "pii_llm"):
+        base[name] = {"acted_on_rate": None, "flagged": 0}
+    base.update(overrides)
+    return base
+
+
+class TestExposition:
+    """Issue #527: the content-free Pushgateway export mirroring
+    detect_query_anomalies.py's exposition/publish pair."""
+
+    def test_heartbeat_always_present(self) -> None:
+        payload = build_exposition(_report_dict(), run_timestamp=1_722_000_000.0)
+        assert "nexus_rag_tagging_calibration_last_run_timestamp_seconds 1722000000" in payload
+
+    def test_unresolvable_rates_emit_no_series(self) -> None:
+        payload = build_exposition(_report_dict(), run_timestamp=0.0)
+        assert "agreement_rate" not in payload
+        assert "acted_on_rate" not in payload
+
+    def test_rates_and_flagged_counts_are_labelled_by_suggester(self) -> None:
+        report = _report_dict(
+            precedent={"agreement_rate": 0.75, "flagged": 4},
+            pii_regex={"acted_on_rate": 0.5, "flagged": 2},
+        )
+        payload = build_exposition(report, run_timestamp=0.0)
+        assert 'nexus_rag_tagging_calibration_agreement_rate{suggester="precedent"} 0.75' in payload
+        assert 'nexus_rag_tagging_calibration_acted_on_rate{suggester="pii_regex"} 0.5' in payload
+        assert 'nexus_rag_tagging_calibration_flagged_total{suggester="precedent"} 4' in payload
+
+    def test_payload_is_content_free(self) -> None:
+        """Only fixed suggester names ever appear as label values."""
+        report = _report_dict(
+            llm_classification={"agreement_rate": 1.0, "flagged": 1},
+        )
+        payload = build_exposition(report, run_timestamp=0.0)
+        for line in payload.splitlines():
+            if "{" in line:
+                label_value = line.split('"')[1]
+                assert label_value in {
+                    "marking_mismatch",
+                    "releasability_caveats",
+                    "precedent",
+                    "llm_classification",
+                    "pii_regex_llm_verdict",
+                    "pii_regex",
+                    "pii_llm",
+                }
+
+
+class TestPublish:
+    def test_publish_puts_to_the_job_specific_gateway_path(self, monkeypatch) -> None:
+        import calibrate_tagging_advisory as cta
+        import httpx
+
+        requests: list[httpx.Request] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            requests.append(request)
+            return httpx.Response(202, request=request)
+
+        transport = httpx.MockTransport(handler)
+        real_client = httpx.Client
+
+        def client_factory(*args, **kwargs):
+            kwargs["transport"] = transport
+            return real_client(*args, **kwargs)
+
+        monkeypatch.setattr(cta.httpx, "Client", client_factory)
+
+        publish("http://pushgateway.example.test", "metric 1\n")
+
+        assert len(requests) == 1
+        assert requests[0].method == "PUT"
+        assert requests[0].url.path == "/metrics/job/nexus-rag-tagging-calibration"
+
+    def test_publish_raises_on_gateway_error(self, monkeypatch) -> None:
+        import calibrate_tagging_advisory as cta
+        import httpx
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(500, request=request)
+
+        transport = httpx.MockTransport(handler)
+        real_client = httpx.Client
+
+        def client_factory(*args, **kwargs):
+            kwargs["transport"] = transport
+            return real_client(*args, **kwargs)
+
+        monkeypatch.setattr(cta.httpx, "Client", client_factory)
+
+        with pytest.raises(httpx.HTTPStatusError):
+            publish("http://pushgateway.example.test", "metric 1\n")

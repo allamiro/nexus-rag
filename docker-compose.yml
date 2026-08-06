@@ -1549,6 +1549,74 @@ services:
         condition: service_completed_successfully
     restart: "no"
 
+  # Issue #527: the committed scheduling path for the two one-shots above.
+  # `docker compose --profile scheduling up -d` keeps both audit-reporting
+  # jobs running on an interval instead of leaving cadence to an operator's
+  # memory -- the staleness alerts (NexusRagQueryAnomalyDetectionStale,
+  # NexusRagTaggingCalibrationStale) assume ~hourly detection and ~weekly
+  # calibration, which these defaults match. A failed run warns and waits for
+  # the next interval rather than crash-looping; production uses the Helm
+  # CronJobs (`auditReporting` in helm/nexus-rag/values.yaml), not this.
+  audit-anomaly-scheduler:
+    profiles: ["scheduling"]
+    security_opt: ["no-new-privileges:true"]
+    build:
+      context: .
+      dockerfile: scripts/Dockerfile
+    command:
+      - sh
+      - -c
+      - |
+        while true; do
+          python3 detect_query_anomalies.py \
+            || echo "WARNING: detection run failed; retrying next interval" >&2
+          sleep "$${RAG_ANOMALY_INTERVAL_SECONDS:-3600}"
+        done
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: ${POSTGRES_DB:-nexus_rag}
+      AUDIT_REPORTING_DB_USER: ${AUDIT_REPORTING_DB_USER:-nexus_rag_audit_reporting}
+      AUDIT_REPORTING_DB_PASSWORD: ${AUDIT_REPORTING_DB_PASSWORD:-nexus_rag_audit_reporting}
+      RAG_ANOMALY_PUSHGATEWAY_URL: ${RAG_ANOMALY_PUSHGATEWAY_URL:-http://pushgateway:9091}
+      RAG_ANOMALY_INTERVAL_SECONDS: ${RAG_ANOMALY_INTERVAL_SECONDS:-3600}
+    depends_on:
+      ensure-db-roles:
+        condition: service_completed_successfully
+      lock-down-db-grants:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  audit-calibration-scheduler:
+    profiles: ["scheduling"]
+    security_opt: ["no-new-privileges:true"]
+    build:
+      context: .
+      dockerfile: scripts/Dockerfile
+    command:
+      - sh
+      - -c
+      - |
+        while true; do
+          python3 calibrate_tagging_advisory.py \
+            || echo "WARNING: calibration run failed; retrying next interval" >&2
+          sleep "$${RAG_CALIBRATION_INTERVAL_SECONDS:-604800}"
+        done
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: ${POSTGRES_DB:-nexus_rag}
+      AUDIT_REPORTING_DB_USER: ${AUDIT_REPORTING_DB_USER:-nexus_rag_audit_reporting}
+      AUDIT_REPORTING_DB_PASSWORD: ${AUDIT_REPORTING_DB_PASSWORD:-nexus_rag_audit_reporting}
+      RAG_CALIBRATION_PUSHGATEWAY_URL: ${RAG_CALIBRATION_PUSHGATEWAY_URL:-http://pushgateway:9091}
+      RAG_CALIBRATION_INTERVAL_SECONDS: ${RAG_CALIBRATION_INTERVAL_SECONDS:-604800}
+    depends_on:
+      ensure-db-roles:
+        condition: service_completed_successfully
+      lock-down-db-grants:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
   # The classification-matrix corpus (#198): not started by a plain
   # `docker compose up`. Two on-demand steps, both inside the compose network
   # because a host-side token carries issuer 127.0.0.1:8080 and the services
