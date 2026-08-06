@@ -32,22 +32,41 @@ escaped before entering the expression so a hostile group/org name cannot
 break out of the filter (the injection rule log_safety.py applies to logs,
 applied here to filter expressions).
 
-Issue #229 (recorded "not yet", not a silent gap): QdrantStore splits the
-corpus into one collection per classification level for defence in depth;
-this backend does not. `ensure_ready`/`update_document_payload`/
-`delete_document_chunks` accept the same `classification` parameter the
-Protocol now requires but ignore it, continuing to operate on the single
-`MILVUS_COLLECTION` -- the FR-26 boolean expression above is still the sole
-enforcement point here, exactly as it was before #229. Milvus support for the
-same per-classification split, if wanted, is separate follow-up work: unlike
-Qdrant's collections (cheap, created on demand), Milvus collection creation is
-comparatively heavyweight and its RBAC/partition model would need its own
-design pass rather than a direct port of qdrant_store.py's approach.
+Issue #229 parity (issue #546): QdrantStore splits the corpus into one
+collection per classification level for defence in depth. This backend gets
+the same property Milvus-natively via **one partition per classification**
+inside `MILVUS_COLLECTION` (Milvus collections are heavyweight; partitions
+are cheap and every read/write path accepts partition scoping):
+
+- `ensure_ready` creates the level's partition (`cls_<slug>`, same slug rules
+  as qdrant_store.classification_collection_name) and migrates any legacy
+  rows out of `_default` (paged, routed by the typed `classification`
+  column) -- the same auto-migration posture the Qdrant backend took for its
+  pre-#229 shared collection.
+- `upsert` routes each row to its classification's partition.
+- `hybrid_query` searches only the partitions for classifications the caller
+  is allowed (intersected with the partitions that actually exist; an empty
+  intersection is an empty result, mirroring Qdrant's collection_exists
+  skip). The FR-26 expression stays on BOTH ANN legs: partition scoping is
+  the blast-radius bound, never the filter.
+- A curator's classification correction MOVES a document's rows between
+  partitions with qdrant_store's exact ordering and failure semantics
+  (target written first, corrected fields only on the new copy, source
+  delete failure logged-not-raised because the leftover is never `approved`,
+  upsert failure raised with nothing changed), including both
+  retry-idempotency fallbacks -- see update_document_payload.
+- `find_similar_approved` deliberately stays collection-wide (Protocol
+  semantics: every level searched, no caller identity to scope by).
+
+Until a legacy `_default` row is migrated it is unreachable by the
+partition-scoped query path -- fail closed, never exposure.
 """
 
 from __future__ import annotations
 
+import logging
 import os
+import re
 from functools import lru_cache
 from typing import TYPE_CHECKING
 
@@ -69,6 +88,49 @@ MILVUS_COLLECTION = os.environ.get("MILVUS_COLLECTION", "nexus_rag_chunks")
 
 # FR-26 fields promoted out of the payload into typed, filterable columns.
 _PROMOTED = ("document_id", "status", "classification", "releasability", "access_scope")
+
+logger = logging.getLogger(__name__)
+
+# Fields needed to reconstruct a row for a partition move (vectors included).
+_FULL_ROW_FIELDS = ("id", "dense", "sparse", *_PROMOTED, "payload")
+
+_PARTITION_SLUG_RE = re.compile(r"[^a-z0-9]+")
+_PARTITION_PREFIX = "cls_"
+# Milvus's built-in partition every row lands in when no partition is named --
+# where pre-#546 rows live until ensure_ready migrates them.
+_DEFAULT_PARTITION = "_default"
+_MIGRATION_PAGE_SIZE = 1000
+
+
+def partition_name_for(classification: str) -> str:
+    """The partition that holds one Classification level's chunks -- same
+    slug semantics as qdrant_store.classification_collection_name, same
+    empty-slug fallback, so the two backends agree on which values are
+    distinct."""
+    slug = _PARTITION_SLUG_RE.sub("_", classification.strip().lower()).strip("_")
+    return _PARTITION_PREFIX + (slug or "unspecified")
+
+
+def _existing_classification_partitions(wanted: list[str]) -> list[str]:
+    """`wanted` classifications' partition names, filtered to those that
+    exist -- a level with zero ingested documents is an empty result, not an
+    error (mirrors the Qdrant backend's collection_exists skip)."""
+    client = _client()
+    if not client.has_collection(MILVUS_COLLECTION):
+        return []
+    existing = set(client.list_partitions(collection_name=MILVUS_COLLECTION))
+    return [name for name in (partition_name_for(c) for c in wanted) if name in existing]
+
+
+def _all_classification_partitions() -> list[str]:
+    client = _client()
+    if not client.has_collection(MILVUS_COLLECTION):
+        return []
+    return [
+        name
+        for name in client.list_partitions(collection_name=MILVUS_COLLECTION)
+        if name.startswith(_PARTITION_PREFIX)
+    ]
 
 
 @lru_cache(maxsize=1)
@@ -111,12 +173,12 @@ def _sparse_dict(sparse: SparseVector) -> dict[int, float]:
 
 class MilvusStore:
     def ensure_ready(self, dense_size: int, classification: str) -> None:
-        # classification: unused, see module docstring (#229 not implemented here).
-        del classification
         from pymilvus import DataType
 
         client = _client()
         if client.has_collection(MILVUS_COLLECTION):
+            self._ensure_partition(classification)
+            _migrate_default_partition()
             return
         schema = client.create_schema(auto_id=False, enable_dynamic_field=False)
         schema.add_field("id", DataType.VARCHAR, is_primary=True, max_length=64)
@@ -162,6 +224,12 @@ class MilvusStore:
             index_params=index_params,
             consistency_level="Strong",
         )
+        self._ensure_partition(classification)
+
+    def _ensure_partition(self, classification: str) -> None:
+        """Issue #546 (#229 parity): the level's partition, created on demand
+        the way the Qdrant backend creates a level's collection."""
+        self._ensure_partition_by_name(partition_name_for(classification))
 
     def stored_embedding_model(self) -> str | None:
         client = _client()
@@ -175,9 +243,10 @@ class MilvusStore:
         return (rows[0].get("payload") or {}).get(EMBEDDING_MODEL_KEY)
 
     def upsert(self, points: list[ChunkPoint]) -> None:
-        rows = []
+        by_partition: dict[str, list[dict]] = {}
         for p in points:
             payload = dict(p.payload)
+            classification = str(payload.get("classification", ""))
             row = {
                 "id": p.id,
                 "dense": p.dense,
@@ -188,13 +257,24 @@ class MilvusStore:
                 # same payload shape either backend.
                 "document_id": str(payload.get("document_id", "")),
                 "status": str(payload.get("status", "")),
-                "classification": str(payload.get("classification", "")),
+                "classification": classification,
                 "releasability": list(payload.get("releasability", [])),
                 "access_scope": list(payload.get("access_scope", [])),
                 "payload": payload,
             }
-            rows.append(row)
-        _client().upsert(collection_name=MILVUS_COLLECTION, data=rows)
+            # #546: rows live in their level's partition. ensure_ready has
+            # normally created it already (the worker calls it per document);
+            # _ensure_partition is cheap idempotence for any other caller.
+            by_partition.setdefault(partition_name_for(classification), []).append(row)
+        client = _client()
+        for partition, rows in by_partition.items():
+            self._ensure_partition_by_name(partition)
+            client.upsert(collection_name=MILVUS_COLLECTION, data=rows, partition_name=partition)
+
+    def _ensure_partition_by_name(self, name: str) -> None:
+        client = _client()
+        if not client.has_partition(collection_name=MILVUS_COLLECTION, partition_name=name):
+            client.create_partition(collection_name=MILVUS_COLLECTION, partition_name=name)
 
     def hybrid_query(
         self,
@@ -209,8 +289,16 @@ class MilvusStore:
 
         expr = build_access_expr(claims, allowed_classifications=allowed_classifications)
         try:
+            # #546 (#229 parity): only the allowed levels' partitions are
+            # searched -- the blast-radius bound. The expr on both legs stays
+            # the enforcement point, exactly as the collection split does not
+            # replace the filter on the Qdrant side.
+            partitions = _existing_classification_partitions(allowed_classifications)
+            if not partitions:
+                return []
             results = _client().hybrid_search(
                 collection_name=MILVUS_COLLECTION,
+                partition_names=partitions,
                 reqs=[
                     # FR-26 on BOTH legs, same as the Qdrant Prefetch pair --
                     # neither retrieval path can bypass the filter.
@@ -290,50 +378,63 @@ class MilvusStore:
         document's chunk count, and curation is a human-paced action -- the
         cost is acceptable and stated rather than hidden.
 
-        classification: unused, see module docstring (#229 not implemented
-        here) -- a classification correction is a plain payload patch like
-        any other field, not a move between collections.
+        Issue #546 (#229 parity): `classification` is which partition the
+        chunks are in *before* this call -- the caller's best belief, from a
+        Postgres value that can be stale after a partial failure (NFR-13
+        retries the same API call). Semantics mirror
+        qdrant_store.update_document_payload exactly:
+
+        - fields correcting `classification` -> move the rows to the target
+          partition (_move_document_partition); if the claimed source has
+          nothing, a prior attempt may have completed the move and failed
+          only on cleanup -- patch the target instead of silently no-op'ing.
+        - non-migrating update -> patch in the claimed partition; if nothing
+          is there, search every other classification partition before
+          giving up, since an earlier correction may have moved the rows
+          somewhere this caller doesn't know about.
         """
-        del classification
-        client = _client()
-        rows = client.query(
-            collection_name=MILVUS_COLLECTION,
-            filter=f"document_id == {_quote(document_id)}",
-            output_fields=[
-                "id",
-                "dense",
-                "sparse",
-                *_PROMOTED,
-                "payload",
-            ],
-            limit=16384,
-        )
-        if not rows:
+        current = partition_name_for(classification)
+        new_classification = fields.get("classification")
+
+        if new_classification and new_classification != classification:
+            if _move_document_partition(
+                document_id, current, partition_name_for(str(new_classification)), fields
+            ):
+                return
+            _patch_if_present(document_id, partition_name_for(str(new_classification)), fields)
             return
-        for row in rows:
-            payload = dict(row.get("payload") or {})
-            payload.update(fields)
-            row["payload"] = payload
-            for key in _PROMOTED:
-                if key in fields:
-                    row[key] = fields[key]
-        client.upsert(collection_name=MILVUS_COLLECTION, data=rows)
+
+        if _patch_if_present(document_id, current, fields):
+            return
+        for name in _all_classification_partitions():
+            if name != current and _patch_if_present(document_id, name, fields):
+                return
 
     def delete_document_chunks(self, document_id: str, classification: str) -> None:
-        # classification: unused, see module docstring (#229 not implemented here).
-        del classification
-        _client().delete(
+        # #546: scoped to the level's partition. A document whose rows an
+        # earlier partial failure left elsewhere is the update path's concern
+        # (its fallbacks re-home them); deletion by a stale claim must not
+        # silently reach into other levels' storage.
+        client = _client()
+        name = partition_name_for(classification)
+        if not client.has_partition(collection_name=MILVUS_COLLECTION, partition_name=name):
+            return
+        client.delete(
             collection_name=MILVUS_COLLECTION,
+            partition_name=name,
             filter=f"document_id == {_quote(document_id)}",
         )
 
     def fetch_document_chunks(self, document_id: str, classification: str) -> list[dict]:
-        # classification: unused, see module docstring (#229 not implemented here) --
-        # one collection, so unlike QdrantStore's per-collection lookup there's
-        # nothing to select between.
-        del classification
-        rows = _client().query(
+        # #546: scoped to the level's partition, mirroring QdrantStore's
+        # per-collection lookup.
+        name = partition_name_for(classification)
+        client = _client()
+        if not client.has_partition(collection_name=MILVUS_COLLECTION, partition_name=name):
+            return []
+        rows = client.query(
             collection_name=MILVUS_COLLECTION,
+            partition_names=[name],
             filter=f"document_id == {_quote(document_id)}",
             output_fields=["payload"],
             limit=16384,
@@ -355,12 +456,19 @@ class MilvusStore:
         in the JSON `payload`, like update_document_payload's fields), so the
         stale ids are found the same way that method finds rows to patch:
         query by document_id, inspect `payload` in Python, delete by id.
+
+        #546: the sweep is scoped to the level's partition (upsert already
+        routed the new rows there by their own classification).
         """
-        del classification
         self.upsert(points)
+        name = partition_name_for(classification)
+        client = _client()
+        if not client.has_partition(collection_name=MILVUS_COLLECTION, partition_name=name):
+            return
         new_count = len(points)
-        rows = _client().query(
+        rows = client.query(
             collection_name=MILVUS_COLLECTION,
+            partition_names=[name],
             filter=f"document_id == {_quote(document_id)}",
             output_fields=["id", "payload"],
             limit=16384,
@@ -371,6 +479,145 @@ class MilvusStore:
             if (row.get("payload") or {}).get("chunk_index", 0) >= new_count
         ]
         if stale_ids:
-            _client().delete(
-                collection_name=MILVUS_COLLECTION, filter=f"id in {_string_list(stale_ids)}"
+            client.delete(
+                collection_name=MILVUS_COLLECTION,
+                partition_name=name,
+                filter=f"id in {_string_list(stale_ids)}",
             )
+
+
+def _patch_if_present(document_id: str, partition: str, fields: dict) -> bool:
+    """Patch a document's rows inside one partition, in place. Returns
+    whether anything was there -- the mirror of qdrant_store's
+    _set_payload_if_present, so update_document_payload's retry fallbacks
+    can tell "patched" apart from "nothing at this location"."""
+    client = _client()
+    if not client.has_partition(collection_name=MILVUS_COLLECTION, partition_name=partition):
+        return False
+    rows = client.query(
+        collection_name=MILVUS_COLLECTION,
+        partition_names=[partition],
+        filter=f"document_id == {_quote(document_id)}",
+        output_fields=list(_FULL_ROW_FIELDS),
+        limit=16384,
+    )
+    if not rows:
+        return False
+    for row in rows:
+        payload = dict(row.get("payload") or {})
+        payload.update(fields)
+        row["payload"] = payload
+        for key in _PROMOTED:
+            if key in fields:
+                row[key] = fields[key]
+    client.upsert(collection_name=MILVUS_COLLECTION, data=rows, partition_name=partition)
+    return True
+
+
+def _move_document_partition(document_id: str, source: str, target: str, fields: dict) -> bool:
+    """Issue #546: a curator's classification correction moves a document's
+    rows between partitions -- the partition *is* the classification now, so
+    a corrected value can't stay where it is the way a status/releasability/
+    access_scope correction can.
+
+    Safety argument, verbatim from qdrant_store._migrate_document_classification
+    (and purge.py's rule that a partial failure always leaves the document
+    less exposed, never more): the target partition is written *before* the
+    source is cleared, and every corrected field is written only onto the
+    new copy. The source rows are never payload-mutated, only deleted -- a
+    failed delete leaves an inert duplicate that is not `approved` (curation
+    corrections happen during approval of a still-pending document) and so
+    can never pass FR-26; it is logged rather than raised. A failure during
+    the target upsert, by contrast, is raised: nothing has changed yet, so
+    the caller's NFR-13 revert applies as it would to any patch failure.
+
+    Returns whether anything was actually moved, so update_document_payload
+    can tell "nothing to move" apart from "a prior attempt already moved it".
+    """
+    from pymilvus import MilvusException
+
+    client = _client()
+    if not client.has_partition(collection_name=MILVUS_COLLECTION, partition_name=source):
+        return False
+    rows = client.query(
+        collection_name=MILVUS_COLLECTION,
+        partition_names=[source],
+        filter=f"document_id == {_quote(document_id)}",
+        output_fields=list(_FULL_ROW_FIELDS),
+        limit=16384,
+    )
+    if not rows:
+        return False
+    moved_ids: list[str] = []
+    for row in rows:
+        payload = dict(row.get("payload") or {})
+        payload.update(fields)
+        row["payload"] = payload
+        for key in _PROMOTED:
+            if key in fields:
+                row[key] = fields[key]
+        moved_ids.append(row["id"])
+    if not client.has_partition(collection_name=MILVUS_COLLECTION, partition_name=target):
+        client.create_partition(collection_name=MILVUS_COLLECTION, partition_name=target)
+    client.upsert(collection_name=MILVUS_COLLECTION, data=rows, partition_name=target)
+    try:
+        client.delete(
+            collection_name=MILVUS_COLLECTION,
+            partition_name=source,
+            filter=f"id in {_string_list(moved_ids)}",
+        )
+    except MilvusException:
+        logger.warning(
+            "document %s moved to partition %s but cleanup delete from %s failed; "
+            "the leftover rows are not approved and cannot pass FR-26 -- clean up "
+            "with a retry or re-approval",
+            document_id,
+            target,
+            source,
+        )
+    return True
+
+
+def _migrate_default_partition() -> None:
+    """Issue #546: rows ingested before partitioning live in Milvus's
+    built-in `_default` partition, unreachable by the partition-scoped query
+    path (fail closed, never exposure). Route them to their level's
+    partition by the typed `classification` column -- the same auto-migration
+    posture qdrant_store took for its pre-#229 shared collection. Paged;
+    runs from ensure_ready, so a stack heals on its next ingest without an
+    operator step."""
+    client = _client()
+    if not client.has_collection(MILVUS_COLLECTION):
+        return
+    while True:
+        rows = client.query(
+            collection_name=MILVUS_COLLECTION,
+            partition_names=[_DEFAULT_PARTITION],
+            filter='id != ""',
+            output_fields=list(_FULL_ROW_FIELDS),
+            limit=_MIGRATION_PAGE_SIZE,
+        )
+        if not rows:
+            return
+        by_partition: dict[str, list[dict]] = {}
+        for row in rows:
+            by_partition.setdefault(
+                partition_name_for(str(row.get("classification", ""))), []
+            ).append(row)
+        for partition, batch in by_partition.items():
+            if not client.has_partition(
+                collection_name=MILVUS_COLLECTION, partition_name=partition
+            ):
+                client.create_partition(collection_name=MILVUS_COLLECTION, partition_name=partition)
+            client.upsert(collection_name=MILVUS_COLLECTION, data=batch, partition_name=partition)
+        migrated_ids = [row["id"] for row in rows]
+        client.delete(
+            collection_name=MILVUS_COLLECTION,
+            partition_name=_DEFAULT_PARTITION,
+            filter=f"id in {_string_list(migrated_ids)}",
+        )
+        logger.info(
+            "migrated %d legacy rows out of %s into classification partitions",
+            len(rows),
+            _DEFAULT_PARTITION,
+        )
