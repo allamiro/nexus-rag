@@ -17,6 +17,16 @@ changed in the running system, with the issue/PR reference for the trail.
 
 ### Added
 
+- The golden set gains two **adversarial phrasings** and its first
+  **multi-document expectation**, completing issue #528's checklist. The
+  adversarial cases apply maximum lexical pressure toward a document FR-26 must
+  withhold — one quotes the superseded `network-access-sop-v1.md` verbatim, the
+  other borrows the rejected VPN guide's vocabulary — so a failure there is an
+  FR-26 status-filter regression, not a ranking one. The multi-document case is
+  the first whose `expect` names two documents, so `recall_at_k`/`precision_at_k`
+  stop being 0/1-valued and a partial regression (one of two expected documents
+  dropping out) reads as 0.5 instead of hiding behind a still-passing 1.0.
+
 - The golden-query harness (`scripts/evaluate_retrieval.py`) reports advisory
   rank-aware metrics — MRR, nDCG@K, precision@{1,3,5} — alongside the gated
   recall/precision, and stamps every persisted report with a config fingerprint
