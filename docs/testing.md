@@ -469,6 +469,23 @@ rerank floor, content-type boosts, chunking parameters, golden-set hash,
 persona); a baseline comparison across differing fingerprints still runs but
 is loudly annotated, since its deltas measure the config change too.
 
+The golden set itself covers more than clean admin-persona queries (issue
+514): typo and vague/multi-part phrasings (real operators don't type clean
+queries), an off-topic query with no relevant document at all — feeding an
+advisory `mean_abstention_noise` metric (what comes back when nothing should;
+deliberately not baseline-gated, since lower-is-better inverts the shared
+regression arithmetic) — and `scripts/golden_queries_personas.json`, cases
+that each name their own querying persona so recall and the FR-26 leak check
+run under several claims sets. The persona cases live in their own file
+because `evaluate_rag_quality.py` drives `golden_queries.json` through
+LibreChat as a single user, where a per-case persona would score nonsense.
+The bob-query/carol-curator cases assert the *access-scope* leg of the
+mandatory filter live: both hold the clearance and releasability the
+Signal-Corps-scoped SECRET document needs, so group scope is the only thing
+excluding it. Its appearance for them would surface as `content_overlap`
+(informational, per the issue-226 filename caveat) — a hard identity-based
+scope assertion is an open follow-up under issue 514.
+
 **Trend store + regression gate.** The harness supports this directly:
 
 ```bash

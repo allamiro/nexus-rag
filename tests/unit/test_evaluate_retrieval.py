@@ -5,6 +5,7 @@ cover the pure history/baseline logic that decides pass vs. regression."""
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 from typing import ClassVar
@@ -126,7 +127,7 @@ class TestLeakDetectionIsIdentityNotFilename:
             }
         ]
 
-        report = evaluate(golden_set, token="t", persona="dave-admin")
+        report = evaluate(golden_set, token_for=lambda p: "t", persona="dave-admin")
 
         assert report["total_forbidden_leaks"] == 0
         q = report["queries"][0]
@@ -142,7 +143,7 @@ class TestLeakDetectionIsIdentityNotFilename:
         monkeypatch.setattr(evaluate_retrieval, "run_query", lambda *a, **k: returned)
         golden_set = [{"query": "anything", "expect": [], "forbid": [], "top_k": 5}]
 
-        report = evaluate(golden_set, token="t", persona="dave-admin")
+        report = evaluate(golden_set, token_for=lambda p: "t", persona="dave-admin")
 
         assert report["total_forbidden_leaks"] == 1
         assert report["queries"][0]["unapproved_leaks"] == returned
@@ -340,10 +341,119 @@ class TestAdvisoryMetricsAndConfigMismatch:
         monkeypatch.setattr(evaluate_retrieval, "run_query", lambda *a, **k: returned)
         golden_set = [{"query": "q", "expect": ["hit.md"], "top_k": 5}]
 
-        report = evaluate(golden_set, token="t", persona="dave-admin")
+        report = evaluate(golden_set, token_for=lambda p: "t", persona="dave-admin")
 
         assert report["mean_reciprocal_rank"] == pytest.approx(0.5)
         assert 0 < report["mean_ndcg_at_k"] < 1
         assert report["fingerprint"]
         assert report["config"]["golden_set_sha256"]
         assert report["queries"][0]["precision_at"]["5"] == pytest.approx(0.2)
+
+
+class TestPersonaCases:
+    """Issue #514: a golden case may name its own querying persona, so recall
+    and the FR-26 leak check run under multiple claims sets. Tokens must be
+    fetched for the case's persona, not the run default."""
+
+    def test_case_persona_overrides_the_default_and_gets_its_own_token(self, monkeypatch):
+        used_tokens = []
+
+        def fake_run_query(token, query, top_k):
+            used_tokens.append(token)
+            return []
+
+        monkeypatch.setattr(evaluate_retrieval, "run_query", fake_run_query)
+        golden_set = [
+            {"query": "a", "expect": [], "top_k": 5},
+            {"query": "b", "expect": [], "top_k": 5, "persona": "bob-query"},
+        ]
+
+        report = evaluate(golden_set, token_for=lambda p: f"token-{p}", persona="dave-admin")
+
+        assert used_tokens == ["token-dave-admin", "token-bob-query"]
+        assert [q["persona"] for q in report["queries"]] == ["dave-admin", "bob-query"]
+
+    def test_leak_check_runs_under_the_case_persona(self, monkeypatch):
+        # A scope-filter failure surfacing an unapproved chunk to a
+        # non-default persona must still be a hard FR-26 leak.
+        returned = [{"filename": "x.md", "document_id": "id-x", "status": "pending_review"}]
+        monkeypatch.setattr(evaluate_retrieval, "run_query", lambda *a, **k: returned)
+        golden_set = [{"query": "q", "expect": [], "persona": "bob-query", "top_k": 5}]
+
+        report = evaluate(golden_set, token_for=lambda p: "t", persona="dave-admin")
+
+        assert report["total_forbidden_leaks"] == 1
+        assert report["queries"][0]["persona"] == "bob-query"
+
+
+class TestAbstentionNoise:
+    """Issue #514: what comes back when nothing should. Advisory metric over
+    the empty-`expect` queries; never part of the baseline regression gate
+    (lower is better, which would invert the shared drop-means-regression
+    arithmetic)."""
+
+    def test_mean_returned_count_over_abstention_queries_only(self, monkeypatch):
+        responses = {
+            "on-topic": [
+                {"filename": "hit.md", "document_id": "i1", "status": "approved"},
+            ],
+            "abstain-noisy": [
+                {"filename": "a.md", "document_id": "i2", "status": "approved"},
+                {"filename": "b.md", "document_id": "i3", "status": "approved"},
+            ],
+            "abstain-clean": [],
+        }
+        monkeypatch.setattr(
+            evaluate_retrieval, "run_query", lambda token, query, top_k: responses[query]
+        )
+        golden_set = [
+            {"query": "on-topic", "expect": ["hit.md"], "top_k": 5},
+            {"query": "abstain-noisy", "expect": [], "top_k": 5},
+            {"query": "abstain-clean", "expect": [], "top_k": 5},
+        ]
+
+        report = evaluate(golden_set, token_for=lambda p: "t", persona="dave-admin")
+
+        assert report["mean_abstention_noise"] == pytest.approx(1.0)
+
+    def test_no_abstention_queries_reports_none(self, monkeypatch):
+        monkeypatch.setattr(evaluate_retrieval, "run_query", lambda *a, **k: [])
+        golden_set = [{"query": "q", "expect": ["hit.md"], "top_k": 5}]
+
+        report = evaluate(golden_set, token_for=lambda p: "t", persona="dave-admin")
+
+        assert report["mean_abstention_noise"] is None
+
+    def test_abstention_noise_is_never_baseline_compared(self):
+        assert "mean_abstention_noise" not in evaluate_retrieval._COMPARED_METRICS
+        assert "mean_abstention_noise" not in evaluate_retrieval._ADVISORY_METRICS
+
+
+class TestGoldenFilesAreWellFormed:
+    """The committed golden files are data the harness trusts; catch a broken
+    edit at unit-test speed instead of at the nightly e2e run."""
+
+    GOLDEN_DIR = Path(__file__).resolve().parents[2] / "scripts"
+
+    def _load(self, name: str) -> list[dict]:
+        return json.loads((self.GOLDEN_DIR / name).read_text())
+
+    def test_personas_file_personas_are_query_capable_realm_users(self):
+        # eve-purge/alice-ingest hold no rag-query role: a case naming them
+        # would "pass" its empty expectation via an authorization error.
+        allowed = {"bob-query", "carol-curator", "dave-admin"}
+        for case in self._load("golden_queries_personas.json"):
+            assert case["persona"] in allowed, case["id"]
+
+    def test_every_case_has_query_expect_and_bounded_top_k(self):
+        for name in ("golden_queries.json", "golden_queries_personas.json"):
+            for case in self._load(name):
+                assert case["query"].strip(), case["id"]
+                assert isinstance(case["expect"], list), case["id"]
+                assert 1 <= case.get("top_k", 5) <= 50, case["id"]
+
+    def test_main_set_cases_carry_reference_answers_for_the_judge(self):
+        # evaluate_rag_quality.py hard-fails on a case without one; keep the
+        # constraint visible here rather than discovered at judge runtime.
+        for case in self._load("golden_queries.json"):
+            assert case.get("reference_answer", "").strip(), case["id"]
