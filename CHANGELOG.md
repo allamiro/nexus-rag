@@ -26,6 +26,13 @@ changed in the running system, with the issue/PR reference for the trail.
   `RERANKER_MODEL` through `reranker-service` and mirrors the fingerprint knobs
   into `eval-retrieval`, so a model swap shows up in the report instead of
   reading as quality drift.
+- The golden set grows from 8 to 15 cases (#514): typo and vague multi-part
+  queries, an off-topic no-relevant-document query feeding a new advisory
+  `mean_abstention_noise` metric (what retrieval returns when it should return
+  nothing), and `scripts/golden_queries_personas.json` — per-case querying
+  personas (merged in via `--persona-set`) so recall and the FR-26 leak check
+  run under bob-query/carol-curator claims sets, where the access-scope filter
+  leg is the only thing excluding the Signal-Corps-scoped SECRET document.
 
 - `docs/nist-ai-rmf/` — a NIST AI RMF 1.0 compliance documentation set (governance
   policy, risk register, impact assessment, system/vendor inventory, RMF outcome
