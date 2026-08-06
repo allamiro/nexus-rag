@@ -286,6 +286,13 @@ single-person path, unaffected in dev since that path stays on there). No
 expiry sweep job either; see `PurgeRequest`'s own docstring for why that's
 deliberate rather than deferred.
 
+`eve-purge`'s credentials only import correctly on a **fresh** Keycloak
+Postgres volume (added later than the other four seeded users, #298/#480)
+— a volume created before that user landed silently keeps the old realm and
+never picks it up, so the two-person path above has no second identity to
+confirm with until a `docker compose down -v` + re-`up`; see
+`docs/dev-setup.md`'s seeded-users section.
+
 **Related, not the same gap (#478):** the two-person requirement above is
 correctly strict for *destruction*, but before #478 it was also, by
 omission, the only way to stop *serving* an already-approved document at
