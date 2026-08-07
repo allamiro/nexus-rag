@@ -18,7 +18,7 @@ rather than pre-claiming it.
 |---|---|---|
 | 1.1 Legal/regulatory requirements understood and documented | DoD marking practice drives the metadata schema (`REQUIREMENTS.md` §6.3, CAPCO-style); DISA STIG expectations named in NFR-2; adapted-control mapping with per-control residuals in `docs/governance.md` "DoD classified-information control profile". Residual: application roles are not evidence of clearance adjudication — issue #523 | Implemented; execution TBD (organizational) |
 | 1.2 Trustworthy-AI characteristics in policy | Enforced by construction (server-side claims, mandatory curation, append-only audit) rather than stated as policy; [governance-policy.md](governance-policy.md) is the policy artifact | Draft |
-| 1.3 Risk tolerance defined; activities calibrated to it | Gates exist and are enforced; no declared tolerance or waiver authority. Issue #521; proposed framing in [governance-policy.md](governance-policy.md) §3 | TBD (organizational) |
+| 1.3 Risk tolerance defined; activities calibrated to it | Declared per risk class in [governance-policy.md](governance-policy.md) §3.1, with release-acceptance criteria (§3.2), waiver authority/record (§3.3, [waiver register](evidence/waiver-register.md)), and the R-6 standing acceptance (§3.4). Issue #521 | Implemented (ratification pending owner, issue #519) |
 | 1.4 Risk processes transparent and documented | `docs/testing.md`'s gated-vs-advisory list; `docs/governance.md` practice map with three-level status convention | Validated live (convention actively maintained) |
 | 1.5 Monitoring & periodic review planned | Prometheus rules + dashboards (`docs/observability.md`); nightly golden-query + mutation runs; **but** the alert receiver is a no-op default, no alert rule consumes the published quality gauges, and nothing runs their producer on a schedule — issues #522, #526, #527 | Partial |
 | 1.6 AI system inventory | [ai-system-inventory.md](ai-system-inventory.md), mechanically anchored to the pin checks (`scripts/check_pinned_images.py`, `check_pinned_models.py`) | Draft |
@@ -36,7 +36,7 @@ rather than pre-claiming it.
 |---|---|---|
 | 1.1–1.2 Context, purposes, assumptions established | `REQUIREMENTS.md` §1–3 (purpose, background, constraints C1–C9); `ARCHITECTURE.md` §1 system overview | Implemented |
 | 1.3–1.4 Organizational goals, business value | `REQUIREMENTS.md` §1–2 (grounded answers over org documents; self-hosted rationale) | Implemented |
-| 1.5 Organizational risk tolerance mapped | See GOVERN 1.3 — issue #521 | TBD (organizational) |
+| 1.5 Organizational risk tolerance mapped | See GOVERN 1.3 — [governance-policy.md](governance-policy.md) §3.1 (issue #521) | Implemented (ratification pending owner, issue #519) |
 | 1.6 System requirements incl. performance targets | FR-1..FR-34, NFR-1..NFR-18; **NFR-4 latency budget open** — issue #430 (duplicate #524) | Implemented except NFR-4 |
 | 2.1–2.3 Tasks, methods, data flows documented | `ARCHITECTURE.md` §2 component inventory, §3 data model, §4 sequence flows (ingestion, curation, retrieval, login, supersession, tagging advisory) | Implemented |
 | 3.1–3.5 Benefits, costs, misuse, oversight capacity | Misuse: `docs/threat-model.md` adversary taxonomy + its four attack-surface sections (the fourth is detection-oriented); oversight capacity: curator queue scoping. consolidated impact assessment drafted ([impact-assessment.md](impact-assessment.md)); ratification of its §7 owner questions pending | Partial; assessment Draft — ratification TBD (organizational) |
