@@ -121,7 +121,7 @@ itself the recorded policy.
 
 ## 9. Internal audit and management review — TBD (organizational)
 
-Proposed (no tracking issue filed yet — the one evidence-package item with none):
+Proposed (tracked in issue #542):
 
 - **Management review**: quarterly; inputs are this policy's TBD ledger, the
   [risk register](risk-register.md), the evidence index, and the trend stores;
