@@ -31,6 +31,12 @@ theme:
   name: material
   icon:
     logo: material/database-search
+  # `font: false` stops Material from injecting a Google Fonts <link> --
+  # without it every page load reaches out to fonts.googleapis.com, which
+  # contradicts the "fully offline" claim (mermaid vendored, no CDN) and
+  # would silently degrade in the air-gapped bundle this is meant to ride
+  # in eventually. Falls back to the system font stack.
+  font: false
   # `slate` is Material's dark scheme; docs/assets/dracula.css overrides its
   # CSS variables with the Dracula palette (draculatheme.com/contribute) --
   # this keeps every Material component styled without maintaining a theme.
@@ -108,6 +114,7 @@ nav:
           - Risk register: nist-ai-rmf/risk-register.md
           - AI system inventory: nist-ai-rmf/ai-system-inventory.md
           - Evidence index: nist-ai-rmf/evidence/evidence-index.md
+          - Waiver register: nist-ai-rmf/evidence/waiver-register.md
   - "📖 Reference":
       - Engineering docs (verbatim):
           - Architecture: architecture-overview.md

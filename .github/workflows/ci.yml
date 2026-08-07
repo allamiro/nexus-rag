@@ -163,9 +163,9 @@ jobs:
           python-version: "3.11"
       - run: pip install ruff==0.16.0
       - name: ruff check
-        run: ruff check --output-format=github services scripts tests
+        run: ruff check --output-format=github services scripts tests mkdocs_hooks.py
       - name: ruff format --check
-        run: ruff format --check services scripts tests
+        run: ruff format --check services scripts tests mkdocs_hooks.py
 
   types:
     runs-on: ubuntu-latest
