@@ -108,6 +108,125 @@ jobs:
             exit 1
           fi
           echo "Chart correctly refuses to render an unrestricted LoadBalancer."
+      - name: nexus-rag chart fails closed without an OIDC redirect URI
+        # The mirror of the check above for the other chart that fails closed.
+        # Rendering with no oidcRedirectUri and no ingress host must not
+        # succeed: the OIDC login callback cannot be derived, and guessing one
+        # produces a deployment whose login silently redirects nowhere.
+        run: |
+          if helm template helm/nexus-rag > /dev/null 2>&1; then
+            echo "::error::helm/nexus-rag rendered with no oidcRedirectUri and no ingress host" >&2
+            exit 1
+          fi
+          echo "Chart correctly refuses to render without an OIDC redirect URI."
+      - name: Install kubeconform
+        # helm lint checks chart grammar, not Kubernetes API validity: it will
+        # happily pass a manifest with a misspelled field or a wrong apiVersion,
+        # which then fails at `kubectl apply` time in a cluster. kubeconform
+        # validates each rendered manifest against the real k8s JSON schemas,
+        # offline, which is the part CI was missing.
+        #
+        # Pinned by version AND verified by SHA-256, not just fetched: this is a
+        # binary being installed into a CI job that renders the deployment
+        # manifests, and NFR-16's discipline (no floating references, nothing
+        # trusted purely because a URL returned 200) applies to the toolchain as
+        # much as to the images. A checksum mismatch fails the job rather than
+        # silently running whatever was served.
+        env:
+          KUBECONFORM_VERSION: v0.8.0
+          KUBECONFORM_SHA256: 9bc2bffbf71f261128533edaf912153948b7ff238f9a531ae6d34466ec287883
+        run: |
+          set -euo pipefail
+          curl -fsSL -o /tmp/kubeconform.tar.gz \
+            "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz"
+          echo "${KUBECONFORM_SHA256}  /tmp/kubeconform.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/kubeconform.tar.gz -C /tmp kubeconform
+          sudo install -m 0755 /tmp/kubeconform /usr/local/bin/kubeconform
+          kubeconform -v
+      # `-ignore-missing-schemas` is load-bearing and its output needs reading with
+      # care: the ServiceMonitor combination reports `Skipped: 3` because
+      # ServiceMonitor is a Prometheus-Operator CRD with no core-Kubernetes
+      # schema to check against. Skipped means "not validated", not "valid" --
+      # core resources in the same render are still strictly checked, and a
+      # misspelled field in a core object still fails the build.
+      #
+      # Issue: the chart README states outright that CI "does not exercise every
+      # value combination this chart supports (e.g. vectorBackend: milvus, or any
+      # of the external blocks) -- render locally with the combination you're
+      # about to deploy before trusting it." That caveat is the gap this matrix
+      # closes. Every combination below is one the chart documents as supported;
+      # each is rendered AND schema-validated, so a template that only breaks
+      # under one flag combination breaks the build instead of a deployment.
+      - name: helm render matrix (every documented value combination)
+        run: |
+          set -uo pipefail
+          # An array, not an unquoted string: relying on word-splitting to turn
+          # one variable into two argv entries works in bash but breaks silently
+          # under any shell that does not split, and hides the intent either way.
+          OIDC=(--set "ingestionApi.oidcRedirectUri=https://rag.ci.example/auth/callback")
+          failed=0
+          render() {
+            name="$1"; shift
+            if ! helm template helm/nexus-rag "${OIDC[@]}" "$@" >"/tmp/render.yaml" 2>"/tmp/render.err"; then
+              echo "::error::render failed for combination: $name"
+              sed -n '1,12p' /tmp/render.err >&2
+              failed=1
+              return
+            fi
+            if ! kubeconform -strict -summary -ignore-missing-schemas /tmp/render.yaml; then
+              echo "::error::rendered manifests are not valid Kubernetes for: $name"
+              kubeconform -strict -ignore-missing-schemas /tmp/render.yaml 2>&1 | head -20 >&2
+              failed=1
+              return
+            fi
+            echo "  [ok] $name ($(grep -c '^kind:' /tmp/render.yaml) resources)"
+          }
+
+          render "default (qdrant)"
+          render "vectorBackend=milvus" --set vectorBackend=milvus
+          render "external qdrant" \
+            --set qdrant.enabled=false --set qdrant.external.host=qdrant.example
+          render "external nats" \
+            --set nats.enabled=false --set nats.external.host=nats.example
+          render "external embedding" \
+            --set embeddingService.enabled=false --set embeddingService.external.host=embed.example
+          render "bundled object store" --set objectStore.enabled=true
+          render "external reranker (tei)" \
+            --set rerankerService.enabled=false \
+            --set rerankerService.external.host=tei.example \
+            --set rerankerService.external.apiCompatibility=tei
+          render "serviceMonitor enabled" --set observability.serviceMonitor.enabled=true
+          render "ingress enabled" \
+            --set ingestionApi.ingress.enabled=true --set ingestionApi.ingress.host=rag.example
+
+          if [ "$failed" != "0" ]; then
+            echo "::error::one or more chart value combinations failed to render or validate" >&2
+            exit 1
+          fi
+          echo "All documented value combinations render and validate."
+      - name: Schema-validate the observability chart's widest render
+        run: |
+          helm template helm/observability \
+            --values helm/observability/ci/lint-values.yaml > /tmp/obs.yaml
+          kubeconform -strict -summary -ignore-missing-schemas /tmp/obs.yaml
+      - name: Backends are mutually exclusive (issue #401 regression guard)
+        # #401 fixed `vectorBackend: milvus` also deploying a Qdrant
+        # StatefulSet and demanding its Secret. Nothing asserted it, so the
+        # next refactor could quietly reintroduce provisioning both stores --
+        # which in a classified deployment means chunk payloads sitting in a
+        # second store nobody accounted for.
+        run: |
+          set -uo pipefail
+          OIDC=(--set "ingestionApi.oidcRedirectUri=https://rag.ci.example/auth/callback")
+          helm template helm/nexus-rag "${OIDC[@]}" --set vectorBackend=milvus > /tmp/milvus.yaml
+          if grep -qE 'kind: StatefulSet' /tmp/milvus.yaml && grep -q 'nexus-rag-qdrant' /tmp/milvus.yaml; then
+            echo "::error::vectorBackend=milvus still renders Qdrant resources (#401 regression)" >&2
+            grep -n 'nexus-rag-qdrant' /tmp/milvus.yaml | head >&2
+            exit 1
+          fi
+          grep -q 'MILVUS_URL' /tmp/milvus.yaml || {
+            echo "::error::vectorBackend=milvus rendered no MILVUS_URL" >&2; exit 1; }
+          echo "milvus mode renders Milvus only, with MILVUS_URL wired."
 
   trivy-fs:
     runs-on: ubuntu-latest
