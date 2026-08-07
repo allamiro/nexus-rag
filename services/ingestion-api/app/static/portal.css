@@ -321,7 +321,7 @@ svg {
 
 .main-nav a.active {
   background: var(--primary-soft);
-  color: var(--primary-dark);
+  color: var(--text);
 }
 
 .main-nav svg {
@@ -431,7 +431,7 @@ svg {
 .account-icon-action.active {
   border-color: var(--primary);
   background: var(--primary-soft);
-  color: var(--primary-dark);
+  color: var(--text);
 }
 
 .primary-account-action {
@@ -614,7 +614,7 @@ h1 {
   place-items: center;
   border-radius: 10px;
   background: var(--primary-soft);
-  color: var(--primary-dark);
+  color: var(--text);
   font-size: 0.77rem;
   font-weight: 850;
 }
@@ -1450,7 +1450,7 @@ code {
   place-items: center;
   border-radius: 9px;
   background: var(--primary-soft);
-  color: var(--primary-dark);
+  color: var(--text);
   font-size: 0.68rem;
   font-weight: 850;
 }
@@ -1575,7 +1575,7 @@ code {
   place-items: center;
   border-radius: 10px;
   background: var(--primary-soft);
-  color: var(--primary-dark);
+  color: var(--text);
   font-size: 0.72rem;
   font-weight: 850;
 }
