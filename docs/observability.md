@@ -384,13 +384,25 @@ configuration.
 - **retrieval** — `NexusRagHighQueryLatency`, `NexusRagRerankerFallbackHigh`,
   `NexusRagQueryDeniedSpike`
 - **security** — `NexusRagQueryAnomalyDetected`,
-  `NexusRagQueryAnomalyDetectionStale` (issue #426: fed by
-  `scripts/detect_query_anomalies.py` via Pushgateway, not scraped from a
+  `NexusRagQueryAnomalyDetectionStale`, `NexusRagTaggingCalibrationStale`
+  (issues #426/#527: fed by `scripts/detect_query_anomalies.py` and
+  `scripts/calibrate_tagging_advisory.py` via Pushgateway, not scraped from a
   service -- see `docs/testing.md`'s "Reconnaissance-shaped query detection"
   section). To run the equivalent detection inside the deployment's own SIEM
   instead of, or alongside, that batch job, see
   [docs/siem-detection-runbook.md](siem-detection-runbook.md) (issue #436) --
   the same four signals expressed against the RFC 5424 audit export (#73).
+
+Neither offline job depends on an operator remembering a cadence anymore
+(issue #527): the dev stack schedules both with
+`docker compose --profile scheduling up -d` (hourly detection, weekly
+calibration by default -- `RAG_ANOMALY_INTERVAL_SECONDS` /
+`RAG_CALIBRATION_INTERVAL_SECONDS` override), and production enables the
+chart's default-off CronJobs (`auditReporting` in `values.yaml`, backed by the
+scripts image released in lockstep with the four service images). The
+staleness alerts assume those default cadences; both fire only after a first
+run has published -- a deployment that never enables the jobs sees no series
+and no alert, which is why they stay opt-in rather than silently required.
 
 `NexusRagHighQueryLatency`'s 5 s p95 threshold is a **provisional** number:
 NFR-4's latency budget is still an open question in REQUIREMENTS.md, so this is

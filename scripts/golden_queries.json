@@ -2,22 +2,30 @@
   {
     "id": "password-rotation",
     "query": "how often should passwords be rotated",
-    "expect": ["password-policy.md"],
+    "expect": [
+      "password-policy.md"
+    ],
     "reference_answer": "Passwords must be rotated every 90 days, contain uppercase, lowercase, and numeric characters, and must not reuse any of the previous 12 passwords.",
     "top_k": 5
   },
   {
     "id": "cafeteria-renovation",
     "query": "cafeteria closed for renovations",
-    "expect": ["public-notice.md"],
+    "expect": [
+      "public-notice.md"
+    ],
     "reference_answer": "The cafeteria will close for renovations starting next month, and alternate dining options will be posted on the intranet.",
     "top_k": 5
   },
   {
     "id": "vpn-access-v2",
     "query": "VPN access hardware token requirements",
-    "expect": ["network-access-sop-v2.md"],
-    "forbid": ["network-access-sop-v1.md"],
+    "expect": [
+      "network-access-sop-v2.md"
+    ],
+    "forbid": [
+      "network-access-sop-v1.md"
+    ],
     "reference_answer": "VPN access requires a hardware token, manager approval, and completion of the annual security awareness course.",
     "top_k": 5,
     "note": "v1 was superseded by v2 (FR-7) -- only the current version should ever be found"
@@ -25,14 +33,18 @@
   {
     "id": "network-intrusion-response",
     "query": "network intrusion notification procedure",
-    "expect": ["incident-response-plan.md"],
+    "expect": [
+      "incident-response-plan.md"
+    ],
     "reference_answer": "Notify the Signal Corps duty officer within 15 minutes of detecting a network intrusion and isolate the affected segment.",
     "top_k": 5
   },
   {
     "id": "credential-change-paraphrase",
     "query": "how frequently do login credentials need changing",
-    "expect": ["password-policy.md"],
+    "expect": [
+      "password-policy.md"
+    ],
     "reference_answer": "Passwords must be rotated every 90 days, contain uppercase, lowercase, and numeric characters, and must not reuse any of the previous 12 passwords.",
     "top_k": 2,
     "note": "#397: paraphrase query sharing no content word with any corpus document, so the BM25 leg scores nothing and the dense leg alone must rank the target into the top 2 -- this is the headroom that detects a dense-leg regression"
@@ -40,7 +52,9 @@
   {
     "id": "cyberattack-alert-paraphrase",
     "query": "who should be alerted when a cyberattack is discovered and how quickly",
-    "expect": ["incident-response-plan.md"],
+    "expect": [
+      "incident-response-plan.md"
+    ],
     "reference_answer": "Notify the Signal Corps duty officer within 15 minutes of detecting a network intrusion and isolate the affected segment.",
     "top_k": 2,
     "note": "#397: paraphrase query with no content-word overlap (alerted/cyberattack/discovered vs notified/intrusion/detection) -- dense leg must carry it"
@@ -49,7 +63,9 @@
     "id": "travel-policy-abstention",
     "query": "TDY travel reimbursement procedures",
     "expect": [],
-    "forbid": ["draft-travel-policy.md"],
+    "forbid": [
+      "draft-travel-policy.md"
+    ],
     "reference_answer": "No approved document covering TDY travel reimbursement procedures was found.",
     "expected_abstention": true,
     "top_k": 5,
@@ -59,10 +75,78 @@
     "id": "vpn-guide-abstention",
     "query": "deprecated VPN client setup guide",
     "expect": [],
-    "forbid": ["outdated-vpn-guide.md"],
+    "forbid": [
+      "outdated-vpn-guide.md"
+    ],
     "reference_answer": "No approved document covering the deprecated VPN client setup guide was found.",
     "expected_abstention": true,
     "top_k": 5,
     "note": "rejected -- must not be retrievable (FR-11/FR-26) regardless of clearance"
+  },
+  {
+    "id": "password-rotation-typos",
+    "query": "how offen shoud a pasword be roated",
+    "expect": [
+      "password-policy.md"
+    ],
+    "reference_answer": "Passwords must be rotated every 90 days, contain uppercase, lowercase, and numeric characters, and must not reuse any of the previous 12 passwords.",
+    "top_k": 5,
+    "note": "#514: real operators typo -- BM25 scores little for misspelled terms, so the dense leg must carry this. Saturates in the 7-doc dev corpus at top_k=5; its recall signal grows with corpus size, its rank metrics matter now"
+  },
+  {
+    "id": "incident-vague-multipart",
+    "query": "what do I need to do first if I think my workstation got compromised and who do I tell about it",
+    "expect": [
+      "incident-response-plan.md"
+    ],
+    "reference_answer": "Notify the Signal Corps duty officer within 15 minutes of detecting a network intrusion and isolate the affected segment.",
+    "top_k": 5,
+    "note": "#514: vague, multi-part, conversational phrasing with almost no content-word overlap -- how real users actually ask"
+  },
+  {
+    "id": "off-topic-abstention",
+    "query": "chocolate cake recipe and baking temperature",
+    "expect": [],
+    "reference_answer": "No approved document covering baking or recipes was found.",
+    "expected_abstention": true,
+    "top_k": 5,
+    "note": "#514: nothing relevant exists in the corpus at all (unlike the forbid abstentions, where an unapproved near-match exists) -- measures abstention noise: what the pipeline returns when it should return nothing"
+  },
+  {
+    "id": "vpn-superseded-verbatim-adversarial",
+    "query": "VPN access requires a hardware token and manager approval",
+    "expect": [
+      "network-access-sop-v2.md"
+    ],
+    "forbid": [
+      "network-access-sop-v1.md"
+    ],
+    "reference_answer": "VPN access requires a hardware token, manager approval, and completion of the annual security awareness course.",
+    "top_k": 5,
+    "note": "#528 adversarial: this query is network-access-sop-v1.md's text VERBATIM, so every lexical signal points at the superseded version -- maximum ranking pressure toward a forbidden document. v2 must still be the answer. Stronger than vpn-access-v2, which paraphrases; here BM25 has an exact-sentence match on the document that must never be returned. FR-26 excludes it by status before ranking runs, so this cannot fail unless the status filter itself broke -- which is exactly the assertion worth having"
+  },
+  {
+    "id": "vpn-rejected-vocabulary-adversarial",
+    "query": "deprecated VPN client setup guide that should not be used",
+    "expect": [
+      "network-access-sop-v2.md"
+    ],
+    "forbid": [
+      "outdated-vpn-guide.md"
+    ],
+    "reference_answer": "VPN access requires a hardware token, manager approval, and completion of the annual security awareness course.",
+    "top_k": 5,
+    "note": "#528 adversarial: borrows the curator-REJECTED guide's own vocabulary (deprecated / client / setup guide / should not be used). The lexically closest document in the corpus is the one FR-26 must withhold, and the only correct answer is the approved VPN SOP. Covers the rejected-status leg the way the case above covers superseded"
+  },
+  {
+    "id": "access-controls-multi-doc",
+    "query": "what authentication requirements must personnel meet for accounts and for remote access",
+    "expect": [
+      "password-policy.md",
+      "network-access-sop-v2.md"
+    ],
+    "reference_answer": "Passwords must be rotated every 90 days with mixed character classes and no reuse of the previous 12; VPN access additionally requires a hardware token, manager approval, and completion of the annual security awareness course.",
+    "top_k": 5,
+    "note": "#528 multi-doc: the only case whose expect names two documents, so recall@K and precision@K take intermediate values instead of being 0/1-valued -- a partial regression (one of the two dropping out) becomes visible as 0.5 rather than hiding behind a still-passing 1.0. Both are approved CUI/FVEY/USAREUR-AF, so the default dave-admin persona sees both; the question deliberately spans account credentials (password-policy) and remote access (network-access-sop-v2) so neither alone satisfies it"
   }
 ]
