@@ -63,7 +63,7 @@ date) is what closes it.
 | # | Decision | Recorded in | Tracking |
 |---|---|---|---|
 | 1 | Accountable AI owner; platform-admin tier definition | [governance-policy.md](governance-policy.md) §2 | Issue #519 |
-| 2 | Risk tolerance ratification + waiver authority | [governance-policy.md](governance-policy.md) §3 | Issue #521 |
+| 2 | Risk tolerance ratification (policy, gate mapping, waiver authority/record now written — [governance-policy.md](governance-policy.md) §3 + [waiver register](evidence/waiver-register.md); the remaining decision is the owner's signature, folded into row 1) | [governance-policy.md](governance-policy.md) §3 | Issue #521 → #519 |
 | 3 | Retention periods; audit expiry yes/no; filename minimization | [governance-policy.md](governance-policy.md) §8 | Issue #520 |
 | 4 | Incident response: receiver, response ladder, taxonomy ratification | [governance-policy.md](governance-policy.md) §7 | Issue #522 |
 | 5 | Identity-governance mapping; classified-gate owners | [rmf-mapping.md](rmf-mapping.md) GOVERN 1.1 | Issue #523 |
