@@ -70,6 +70,7 @@ import re
 from functools import lru_cache
 from typing import TYPE_CHECKING
 
+from common.log_safety import log_safe
 from common.metadata import ALL_AUTHENTICATED_ACCESS_SCOPE, NO_RELEASABILITY_RESTRICTION
 from common.qdrant_store import EMBEDDING_MODEL_KEY
 from common.vector_store import Hit, VectorStoreUnavailable
@@ -411,19 +412,34 @@ class MilvusStore:
                 return
 
     def delete_document_chunks(self, document_id: str, classification: str) -> None:
-        # #546: scoped to the level's partition. A document whose rows an
-        # earlier partial failure left elsewhere is the update path's concern
-        # (its fallbacks re-home them); deletion by a stale claim must not
-        # silently reach into other levels' storage.
+        # #547 review: `classification` is accepted for API symmetry but
+        # deliberately NOT used for scoping, mirroring
+        # qdrant_store.delete_document_chunks -- destruction sweeps EVERY
+        # classification partition plus `_default`. A classification-
+        # correction move whose cleanup delete failed (the documented
+        # logged-not-raised path in _move_document_partition) leaves an inert
+        # duplicate in a partition other than the one Postgres currently
+        # names; it can never pass FR-26, but purge (#123) and supersession
+        # (FR-7) exist to make the bytes actually gone, and a single-
+        # partition delete would report success while the old partition's
+        # copy of the chunk text survived indefinitely. `_default` is swept
+        # for the same reason the legacy-migration story exists: pre-#546
+        # rows live there until ensure_ready migrates them.
+        del classification
         client = _client()
-        name = partition_name_for(classification)
-        if not client.has_partition(collection_name=MILVUS_COLLECTION, partition_name=name):
+        # A document that never finished embedding has no collection at all
+        # yet: a no-op, not an error (same as the Qdrant backend).
+        if not client.has_collection(MILVUS_COLLECTION):
             return
-        client.delete(
-            collection_name=MILVUS_COLLECTION,
-            partition_name=name,
-            filter=f"document_id == {_quote(document_id)}",
-        )
+        expr = f"document_id == {_quote(document_id)}"
+        for name in [*_all_classification_partitions(), _DEFAULT_PARTITION]:
+            if not client.has_partition(collection_name=MILVUS_COLLECTION, partition_name=name):
+                continue
+            client.delete(
+                collection_name=MILVUS_COLLECTION,
+                partition_name=name,
+                filter=expr,
+            )
 
     def fetch_document_chunks(self, document_id: str, classification: str) -> list[dict]:
         # #546: scoped to the level's partition, mirroring QdrantStore's
@@ -567,15 +583,29 @@ def _move_document_partition(document_id: str, source: str, target: str, fields:
             filter=f"id in {_string_list(moved_ids)}",
         )
     except MilvusException:
+        # log_safe (#465 pattern): document_id is uuid-typed in every caller,
+        # but the partition names derive from the user-supplied classification
+        # string at upload -- none of the three may inject log lines.
         logger.warning(
             "document %s moved to partition %s but cleanup delete from %s failed; "
             "the leftover rows are not approved and cannot pass FR-26 -- clean up "
             "with a retry or re-approval",
-            document_id,
-            target,
-            source,
+            log_safe(document_id),
+            log_safe(target),
+            log_safe(source),
         )
     return True
+
+
+# #547 review (minor): ensure_ready runs once per ingested document, but the
+# `_default` migration is a one-time healing step -- without this flag every
+# ingest for the process's whole lifetime would pay a query against a long-
+# empty partition. Once a probe confirms `_default` empty, later ensure_ready
+# calls skip it. Per-process, deliberately: a worker restart re-probes once,
+# which is also what makes rows appearing in `_default` later (another
+# pre-#546 writer, a restored volume) heal on the next process's first
+# ingest rather than never.
+_default_migration_state = {"confirmed_empty": False}
 
 
 def _migrate_default_partition() -> None:
@@ -586,6 +616,8 @@ def _migrate_default_partition() -> None:
     posture qdrant_store took for its pre-#229 shared collection. Paged;
     runs from ensure_ready, so a stack heals on its next ingest without an
     operator step."""
+    if _default_migration_state["confirmed_empty"]:
+        return
     client = _client()
     if not client.has_collection(MILVUS_COLLECTION):
         return
@@ -598,6 +630,7 @@ def _migrate_default_partition() -> None:
             limit=_MIGRATION_PAGE_SIZE,
         )
         if not rows:
+            _default_migration_state["confirmed_empty"] = True
             return
         by_partition: dict[str, list[dict]] = {}
         for row in rows:
