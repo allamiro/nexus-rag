@@ -127,3 +127,12 @@ groups:
         annotations:
           summary: "Reconnaissance-pattern detection has not run recently"
           description: "detect_query_anomalies.py has not reported to Pushgateway in over two hours (the default assumes an hourly schedule; adjust this threshold if this deployment runs it less often). A stopped detector is a silent blind spot, not just a missed run."
+
+      - alert: NexusRagTaggingCalibrationStale
+        expr: time() - nexus_rag_tagging_calibration_last_run_timestamp_seconds > 691200
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Tagging-advisory calibration has not run recently"
+          description: "calibrate_tagging_advisory.py has not reported to Pushgateway in over eight days (the default assumes a weekly schedule; adjust this threshold if this deployment runs it less often). Fires only after at least one run has published -- a deployment that never schedules calibration sees no series and no alert (#527)."
