@@ -27,20 +27,86 @@ the bug *or* this policy is — file an issue; do not fork the truth.
   platform") is the de-facto escalation point; this sentence is a statement of
   current fact, not a ratified assignment.
 
-## 3. Risk tolerance — proposed, pending ratification (issue #521)
+## 3. Risk tolerance and release acceptance (GOVERN 1.3/1.4, MANAGE 1.1 — issue #521)
 
-Proposed framing, consistent with what the code already enforces:
+**Status:** written policy, in force as the working rule of this repository;
+formal ratification by the accountable owner is pending issue #519 (no owner is
+yet named to ratify it) and is on the management-review ledger (issue #542).
+Until ratified, deviations from this section are treated as policy violations,
+not as unregulated space.
 
-| Risk class | Tolerance | Enforcement point |
+### 3.1 Declared risk tolerance
+
+The organization's tolerance is declared here and the gates are calibrated to
+it — not inferred backwards from whatever the gates happen to enforce (GOVERN
+1.3). Framing is qualitative, per risk class, because the dominant risks of a
+classification-aware RAG system are categorical (content reaches someone it
+must not) rather than statistical:
+
+| Risk class | Declared tolerance | Enforcement point |
 |---|---|---|
-| Access-control regression (forbidden-status or out-of-scope content reaching a user) | **Zero.** Any FR-26 leak is a security incident, not a quality miss | Golden-harness hard-fail (nightly + labeled PRs only — see risk R-6 / issue #529); BDD scenarios on every PR; mutation gate ≥80% on `claims.py`/`qdrant_filters.py`/`metadata.py`/`versioning.py` |
-| Retrieval-quality regression | **Bounded**: within `--regression-tolerance` of baseline | `evaluate_retrieval.py` fail-closed defaults |
-| Judged answer-quality metrics | **Advisory**: comparative only, same judge/prompt/golden-set | `relative_only_same_judge_and_prompt` stamped in every report |
-| Availability/latency | Undefined until NFR-4 budget agreed (issue #430) | Provisional 5s p95 alert |
+| Access-control regression (forbidden-status or out-of-scope content reaching a user) | **Zero.** Any FR-26 leak is a security incident, never a quality miss. No waiver may be issued against this class | Golden-harness hard-fail (nightly + labeled PRs — see the §3.4 acceptance); BDD scenarios on every PR; mutation gate ≥80% on `claims.py`/`qdrant_filters.py`/`metadata.py`/`versioning.py` |
+| Retrieval-quality regression | **Bounded**: within `--regression-tolerance` of the carried baseline; a drop beyond it blocks | `evaluate_retrieval.py` fail-closed defaults; nightly trend store (#493); cross-config comparisons refuse by default (issue #525) |
+| Judged answer-quality metrics | **Advisory**: comparative only, same judge/prompt/golden-set; never a release blocker | `relative_only_same_judge_and_prompt` stamped in every report |
+| Hallucination / ungrounded answer surface | **Bounded by design**: the system returns evidence with citations, not answers (§4); abstention noise is measured (`mean_abstention_noise`) and tracked toward zero via relevance-floor calibration | Golden abstention cases; §4 prohibited-use rules for consumers |
+| Availability/latency | Undefined until the NFR-4 budget is ratified from the benchmark measurements (issue #430) | Provisional 5s p95 alert; `benchmark_latency.py` artifacts are the evidence base |
 
-**Waiver authority: TBD.** Ruleset admin-bypass exists with no policy around it.
-Proposed: waivers only by the accountable owner, recorded as a PR comment naming
-the gate, reason, and expiry.
+### 3.2 Release-acceptance criteria (MANAGE 1.1)
+
+A change is acceptable for release (merge to `main`; the same bar applies to
+publishing images or the Helm chart, which version in lockstep) when **every
+blocking gate is green or a §3.3 waiver is recorded**. The authoritative,
+maintained enumeration of gates — which are blocking, which advisory, and the
+honest list of what is *not* covered — is
+[`docs/testing.md`](../testing.md)'s gate table; this policy deliberately
+cross-references rather than restates it, so the two cannot drift. In risk
+terms: the 16 required PR checks and the nightly mutation gate enforce the
+zero-tolerance row; the golden-harness regression gate enforces the bounded
+row; everything `docs/testing.md` marks advisory maps to the advisory rows and
+may inform, but never block, a release decision.
+
+### 3.3 Gate waivers
+
+- **Authority:** only the accountable owner (§2) may waive a blocking gate.
+  Until issue #519 names that owner, the de-facto escalation point in §2 holds
+  waiver authority, and every waiver issued in the interim is flagged for
+  retroactive review at the first management review (issue #542).
+- **Never waivable:** the zero-tolerance class — an FR-26 leak, a
+  mutation-gate drop on the four filter modules, or a red BDD access-control
+  scenario. There is no legitimate release that ships an access-control
+  regression.
+- **Mechanism:** ruleset admin-bypass is the only technical bypass and is
+  restricted to waiver-authority holders. Using it without the record below is
+  a policy violation and a §7 reportable event.
+- **Record (required, both halves):**
+  1. a PR comment, posted before or with the merge, following this template:
+
+     ```
+     GATE WAIVER
+     Gate:      <check name, e.g. security/trivy-fs>
+     Reason:    <why the red gate does not represent the risk it guards>
+     Scope:     <this PR only | until <date> | until issue #NNN closes>
+     Risk class:<row from governance-policy §3.1 — must not be the zero-tolerance class>
+     Approved:  <waiver authority, per §3.3>
+     ```
+  2. a row in the waiver register
+     ([`evidence/waiver-register.md`](evidence/waiver-register.md)) linking
+     that comment. The register is the auditable history (GOVERN 1.4); an
+     empty register plus green gates is itself evidence that no bypass
+     occurred.
+- **Expiry:** every waiver names a scope; open-ended waivers are not valid.
+  Expired-but-still-red gates reopen as blocking.
+
+### 3.4 Standing risk acceptances folded into this policy
+
+- **Label-gated golden-query e2e (risk R-6, issue #529):** the only live-stack
+  leak/quality gate runs nightly and on labeled PRs, not on every PR — a
+  deliberate cost tradeoff. Accepted, with conditions: the nightly must stay
+  red-visible (a failed nightly is triaged next working day), the mutation and
+  BDD gates continue to run on every PR as the compensating control, and any
+  PR touching retrieval/filter code gets the `needs-e2e` label before merge.
+  This acceptance is recorded here to close the "accepted pending formal
+  record" status in the risk register.
 
 ## 4. Acceptable use
 
