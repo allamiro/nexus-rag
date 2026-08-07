@@ -1,0 +1,2700 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Air-gapped RAG pipeline for MPNexus: classification-aware ingestion, curation, and claims-filtered retrieval.">
+      
+      
+      
+        <link rel="canonical" href="https://allamiro.gitlab.io/nexus-rag/threat-model/">
+      
+      
+        <link rel="prev" href="../governance/">
+      
+      
+        <link rel="next" href="../roles-and-permissions/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Privacy threat model - Nexus RAG</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/dracula.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="pink">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#privacy-threat-model" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Nexus RAG" class="md-header__button md-logo" aria-label="Nexus RAG" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18.68 12.32a4.49 4.49 0 0 0-6.36.01 4.49 4.49 0 0 0 0 6.36 4.51 4.51 0 0 0 5.57.63L21 22.39 22.39 21l-3.09-3.11c1.13-1.77.87-4.09-.62-5.57m-1.41 4.95c-.98.98-2.56.97-3.54 0-.97-.98-.97-2.56.01-3.54.97-.97 2.55-.97 3.53 0 .97.98.97 2.56 0 3.54M10.9 20.1a6.5 6.5 0 0 1-1.48-2.32C6.27 17.25 4 15.76 4 14v3c0 2.21 3.58 4 8 4-.4-.26-.77-.56-1.1-.9M4 9v3c0 1.68 2.07 3.12 5 3.7v-.2c0-.93.2-1.85.58-2.69C6.34 12.3 4 10.79 4 9m8-6C7.58 3 4 4.79 4 7c0 2 3 3.68 6.85 4h.05c1.2-1.26 2.86-2 4.6-2 .91 0 1.81.19 2.64.56A3.22 3.22 0 0 0 20 7c0-2.21-3.58-4-8-4"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Nexus RAG
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Privacy threat model
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/schuecl/nexus-rag" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    schuecl/nexus-rag
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+    
+  
+  🚀 Get Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../guides/deploy-compose/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  🚢 Production Deployment
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../guides/configuration/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  🛠️ How-to Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../security/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  🛡️ Security & Compliance
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../architecture-overview/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  📖 Reference
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Nexus RAG" class="md-nav__button md-logo" aria-label="Nexus RAG" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18.68 12.32a4.49 4.49 0 0 0-6.36.01 4.49 4.49 0 0 0 0 6.36 4.51 4.51 0 0 0 5.57.63L21 22.39 22.39 21l-3.09-3.11c1.13-1.77.87-4.09-.62-5.57m-1.41 4.95c-.98.98-2.56.97-3.54 0-.97-.98-.97-2.56.01-3.54.97-.97 2.55-.97 3.53 0 .97.98.97 2.56 0 3.54M10.9 20.1a6.5 6.5 0 0 1-1.48-2.32C6.27 17.25 4 15.76 4 14v3c0 2.21 3.58 4 8 4-.4-.26-.77-.56-1.1-.9M4 9v3c0 1.68 2.07 3.12 5 3.7v-.2c0-.93.2-1.85.58-2.69C6.34 12.3 4 10.79 4 9m8-6C7.58 3 4 4.79 4 7c0 2 3 3.68 6.85 4h.05c1.2-1.26 2.86-2 4.6-2 .91 0 1.81.19 2.64.56A3.22 3.22 0 0 0 20 7c0-2.21-3.58-4-8-4"/></svg>
+
+    </a>
+    Nexus RAG
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/schuecl/nexus-rag" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    schuecl/nexus-rag
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href=".." class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🚀 Get Started
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_1" id="__nav_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    🚀 Get Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/quickstart-helm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart on Kubernetes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/understanding-the-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Understanding the architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/connect-chat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Connect the chat plane
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🚢 Production Deployment
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    🚢 Production Deployment
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/deploy-compose/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker Compose
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/deploy-helm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Helm / Kubernetes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/deploy-airgapped/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Air-gapped
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🛠️ How-to Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    🛠️ How-to Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration by use case
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../evaluation-results/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Evaluation & performance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🛡️ Security & Compliance
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    🛡️ Security & Compliance
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../nist-ai-rmf/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NIST AI RMF
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    NIST AI RMF
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nist-ai-rmf/rmf-mapping/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RMF mapping
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nist-ai-rmf/governance-policy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Governance policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nist-ai-rmf/impact-assessment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Impact assessment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nist-ai-rmf/risk-register/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk register
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nist-ai-rmf/ai-system-inventory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI system inventory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nist-ai-rmf/evidence/evidence-index/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Evidence index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    📖 Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    📖 Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5_1" id="__nav_5_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engineering docs (verbatim)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_1_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Engineering docs (verbatim)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture-overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/diagrams/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture diagrams
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../requirements/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Requirements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../governance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data governance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privacy threat model
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privacy threat model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#adversary-taxonomy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adversary taxonomy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#attack-surfaces" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Attack surfaces
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Attack surfaces">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-document-level-membership-inference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Document-level membership inference
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-retrieved-content-leakage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Retrieved-content leakage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-poisoning-content-the-curation-gate-didnt-actually-see" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Poisoning (content the curation gate didn't actually see)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-reconnaissance-shaped-query-patterns-detection-not-prevention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Reconnaissance-shaped query patterns (detection, not prevention)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#owasp-rag-security-cheat-sheet-control-by-control" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OWASP RAG Security Cheat Sheet — control-by-control
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#considered-and-rejected-differentially-private-retrieval" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Considered and rejected: differentially-private retrieval
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-not-yet-resolved" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open / not yet resolved
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../roles-and-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roles and permissions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dev-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dev environment setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../querying-the-corpus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Querying the corpus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing & CI quality gates
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../releasing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Releasing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../credential-rotation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Credential rotation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chat-plane-purge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chat-plane purge runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../siem-detection-runbook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SIEM detection runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#adversary-taxonomy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adversary taxonomy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#attack-surfaces" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Attack surfaces
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Attack surfaces">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-document-level-membership-inference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Document-level membership inference
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-retrieved-content-leakage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Retrieved-content leakage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-poisoning-content-the-curation-gate-didnt-actually-see" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Poisoning (content the curation gate didn't actually see)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-reconnaissance-shaped-query-patterns-detection-not-prevention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Reconnaissance-shaped query patterns (detection, not prevention)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#owasp-rag-security-cheat-sheet-control-by-control" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OWASP RAG Security Cheat Sheet — control-by-control
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#considered-and-rejected-differentially-private-retrieval" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Considered and rejected: differentially-private retrieval
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-not-yet-resolved" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open / not yet resolved
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="privacy-threat-model">Privacy threat model<a class="headerlink" href="#privacy-threat-model" title="Permanent link">&para;</a></h1>
+<p>Authorization and privacy are different questions. <strong>Authorization</strong> asks
+<em>may this user retrieve this document</em> — that model is built, documented in
+<a href="../roles-and-permissions/"><code>roles-and-permissions.md</code></a>, and enforced by the
+mandatory FR-26 filter. <strong>Privacy</strong> asks what a user, an operator, or an
+adversary can infer about the corpus or about other users' activity
+<em>without</em> retrieving anything they are not entitled to. Authorization being
+correct does not make privacy correct — a caller can stay entirely inside
+their own FR-26 filter and still learn things the filter was never designed
+to hide, or the retrieval path can leak to someone who was never subject to
+the filter at all.</p>
+<p>This document is that second model: adversary classes, what each can
+observe, what it can infer, and which control (if any) answers it. It is
+scoped to inference and disclosure, not lifecycle/retention (see
+<a href="../governance/"><code>governance.md</code></a>) or the authorization matrix itself (see
+<a href="../roles-and-permissions/"><code>roles-and-permissions.md</code></a>, which this document
+cross-references rather than repeats).</p>
+<p>Written against <a href="https://github.com/schuecl/nexus-rag/issues/127">#127</a>,
+using the <a href="https://cheatsheetseries.owasp.org/cheatsheets/RAG_Security_Cheat_Sheet.html">OWASP RAG Security Cheat
+Sheet</a>
+as the control checklist and Arzanipour, Behnia, Ebrahimi, Dutta, <em>"RAG
+Security and Privacy: Formalizing the Threat Model and Attack Surface"</em>
+(arXiv:2509.20324) as the adversary taxonomy — the first formal threat model
+for RAG systems in the literature, and a better fit than a from-scratch
+taxonomy for a system that is otherwise ordinary hybrid retrieval.</p>
+<h2 id="adversary-taxonomy">Adversary taxonomy<a class="headerlink" href="#adversary-taxonomy" title="Permanent link">&para;</a></h2>
+<p>The paper's taxonomy is two axes: <strong>model access</strong> (black-box query access
+only, vs. white-box access to internals) crossed with <strong>data knowledge</strong>
+(unaware of the target corpus's contents, vs. aware of specific documents in
+it — the capability membership inference actually tests). That gives four
+classes, instantiated here against this platform's real identities rather
+than left abstract:</p>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>Model access</th>
+<th>Data knowledge</th>
+<th>Instantiated as, on this platform</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A-I</td>
+<td>Black-box (query only)</td>
+<td>Unaware</td>
+<td>An <code>rag-query</code> holder exploring the corpus with no prior knowledge of what it contains</td>
+</tr>
+<tr>
+<td>A-II</td>
+<td>Black-box (query only)</td>
+<td>Aware</td>
+<td>An <code>rag-query</code> holder who suspects or knows a specific document exists and is testing whether it's retrievable</td>
+</tr>
+<tr>
+<td>A-III</td>
+<td>White-box (internals)</td>
+<td>Unaware</td>
+<td>A credential holder below the HTTP layer with no specific document in mind — e.g. anyone who can reach Qdrant/Postgres on the network but isn't targeting a document</td>
+</tr>
+<tr>
+<td>A-IV</td>
+<td>White-box (internals)</td>
+<td>Aware</td>
+<td>The same white-box position, now targeting a specific document or user's activity</td>
+</tr>
+</tbody>
+</table>
+<p>A-I/A-II are <strong>observers</strong>: everything they see comes through <code>rag_search</code>
+(or <code>/debug/rag_search</code>), gated by the FR-26 filter and by holding
+<code>rag-query</code> at all. A-III/A-IV are <strong>insiders</strong>: they hold a credential for
+something the HTTP layer sits in front of — a Qdrant API key, a Postgres
+role, the bootstrap superuser, or a compromised service — and FR-26 never
+runs for them, because it is enforced by the querying service, not the
+store.</p>
+<p>The observer/insider split matters because the controls that answer each are
+almost disjoint. A control that closes an observer channel (e.g. suppressing
+similarity scores) does nothing for an insider who reads the store directly;
+a control that bounds an insider's blast radius (e.g. splitting collections
+by classification) does nothing for an observer who was never going to reach
+the store at all. Treating "membership inference" as one problem obscures
+that it needs two different answers depending on which side of the HTTP
+boundary the adversary is on.</p>
+<h2 id="attack-surfaces">Attack surfaces<a class="headerlink" href="#attack-surfaces" title="Permanent link">&para;</a></h2>
+<p>Three attack surfaces, each read against all four adversary classes where
+that combination is meaningful.</p>
+<h3 id="1-document-level-membership-inference">1. Document-level membership inference<a class="headerlink" href="#1-document-level-membership-inference" title="Permanent link">&para;</a></h3>
+<p><em>Can the adversary determine whether a specific document (or a document
+matching a description) exists in the corpus, without being authorized to
+retrieve it?</em></p>
+<p><strong>A-I / A-II (observers).</strong> The only channel available to a black-box caller
+is the shape of <code>rag_search</code>'s response: which chunks come back, in what
+order, and — until this was fixed — their raw similarity scores. OWASP's
+guidance is direct: <em>"Never return similarity scores to users or agents, as
+scores enable differential analysis."</em> A caller who can see the score
+gradient can probe with crafted queries and read the presence/strength of a
+match even when the returned chunk itself is otherwise unremarkable — and
+the <em>absence</em> of an expected score is informative too, including for
+documents the caller's own FR-26 filter excludes.</p>
+<ul>
+<li><strong>Control:</strong> <code>rag_search.py</code>'s response carries <code>id</code> + <code>payload</code> only,
+  never <code>score</code> — removed by
+  <a href="https://github.com/schuecl/nexus-rag/pull/128">#128</a>, see
+  <code>services/orchestration-mcp/app/rag_search.py</code>'s <code>result["results"]</code>
+  construction, which documents the reasoning inline. Reranking still uses
+  scores internally; they never cross the response boundary. Latencies are
+  written to the audit log, not the response, for the same reason.</li>
+<li><strong>Residual risk:</strong> rank order itself is a (much weaker) signal —
+  consistently high rank for a query naming a specific title/author is still
+  some evidence the document exists. This is inherent to returning ranked
+  results at all and is not separately mitigated; it is the residual channel
+  the second issue comment on #127 discusses (see "Considered and rejected"
+  below).</li>
+<li><strong>Scope boundary that already helps:</strong> an A-I/A-II adversary is, by
+  definition, a <code>rag-query</code> holder — FR-26 already denies them any result
+  for a document outside their own clearance/releasability/scope. The
+  membership-inference question that remains is narrower than "does this
+  document exist at all": it's "does a document I <em>could</em> see, matching
+  this description, exist" — the score-suppression above is what closes
+  that.</li>
+</ul>
+<p><strong>A-III / A-IV (insiders).</strong> FR-26 does not apply to them at all, because it
+is enforced in <code>orchestration-mcp</code>, not in Qdrant. Whether a document exists
+is not inference for an insider who can read the store — it's direct
+observation: <code>SELECT</code> (or <code>scroll</code>/<code>query_points</code> with no filter) against
+the collection returns the payload verbatim, including <code>text</code>, <code>document_id</code>,
+<code>classification</code>, and <code>releasability</code>. The mitigations here are therefore
+about <em>bounding what an insider's credential reaches</em>, not about hiding a
+gradient:</p>
+<ul>
+<li><strong>Per-classification collections</strong> (<a href="https://github.com/schuecl/nexus-rag/issues/229">#229</a>,
+  implemented in <a href="https://github.com/schuecl/nexus-rag/pull/267">#267</a>,
+  <code>common/qdrant_store.py</code>'s <code>classification_collection_name</code>). A store-level
+  reader with a key scoped to (or who only reaches) one collection sees one
+  classification level's corpus, not every level's. This is a structural
+  bound on blast radius, not a claims check — an insider who reaches <em>every</em>
+  collection is unaffected, which is why it's listed under "bounds", not
+  "closes".</li>
+<li><strong>Read-only vs. read-write Qdrant keys</strong> (NFR-15): <code>orchestration-mcp</code>
+  holds a key that can query but not write; only <code>ingestion-api</code> and
+  <code>ingestion-worker</code> hold the read/write key. This narrows what a compromised
+  <code>orchestration-mcp</code> can do (no tampering), not what it can read.</li>
+<li><strong>NetworkPolicy</strong> (<a href="https://github.com/schuecl/nexus-rag/issues/110">#110</a>,
+  <a href="https://github.com/schuecl/nexus-rag/pull/131">#131</a>): default-deny
+  policies restrict which pods can reach Qdrant/Postgres at all in the
+  chart — an A-III/A-IV adversary who isn't one of the RAG services'
+  own pods is denied at the network layer before the store-level bounds
+  above are even relevant. Depends on the cluster's CNI actually enforcing
+  NetworkPolicy, which the chart cannot itself guarantee.</li>
+<li><strong>Per-service Postgres roles</strong> (<a href="https://github.com/schuecl/nexus-rag/issues/278">#278</a>,
+  implemented in <a href="https://github.com/schuecl/nexus-rag/pull/292">PR #292</a>,
+  detailed in <code>roles-and-permissions.md</code> gap G2): <code>orchestration-mcp</code>'s DB
+  role cannot read <code>documents</code> at all; no application role can read
+  <code>audit_log</code>. An insider holding one service's credential doesn't get the
+  others'.</li>
+</ul>
+<h3 id="2-retrieved-content-leakage">2. Retrieved-content leakage<a class="headerlink" href="#2-retrieved-content-leakage" title="Permanent link">&para;</a></h3>
+<p><em>Once content is legitimately retrieved for an authorized caller, where does
+it end up, and who else can reach it there?</em></p>
+<p>This surface is about <strong>provenance-safe cleartext storage</strong>, not
+authorization — the chunk payload itself.</p>
+<ul>
+<li><strong>The core exposure:</strong> <code>ingestion-worker/app/processing.py</code> writes
+  <code>"text": chunk.text</code> into the Qdrant payload alongside the vector. OWASP's
+  position is that embeddings warrant the same access controls and at-rest
+  encryption as source documents; here it applies with more force, because
+  the payload <em>is</em> the document, not a lossy representation of it —
+  embedding inversion is not even the relevant attack when the plaintext
+  sits right next to the vector.</li>
+<li><strong>This is bounded, not eliminated.</strong> The collection split, NetworkPolicy,
+  and RO/RW key separation above all reduce <em>who</em> can reach that cleartext
+  and <em>how much</em> of the corpus a given reach exposes. None of them encrypt
+  the payload at rest — that remains dependent on the deployment's storage
+  layer (an encrypted StorageClass, <code>ARCHITECTURE.md</code>'s noted PyKMIP
+  deferral) rather than anything this application does. Recorded here as an
+  accepted, structural residual rather than a claimed fix.</li>
+<li><strong>Downstream of the store — the chat plane.</strong> Retrieval's job ends at
+  returning content to an authorized caller; what that caller's client does
+  with it is a second boundary. LibreChat persists tool results and
+  generated answers in its own Mongo store, and LiteLLM may log/spend-track
+  the generation request depending on config — both outside this repo's
+  enforcement (<code>roles-and-permissions.md</code> §6 states this plainly). Neither
+  carries classification/releasability tagging or a retention policy this
+  repo controls, and the purge path (<a href="https://github.com/schuecl/nexus-rag/issues/123">#123</a>)
+  cannot reach either. <strong>Decided in
+  <a href="https://github.com/schuecl/nexus-rag/issues/286">#286</a></strong> as accepted risk
+  with an equipped response: the <code>document.purged</code> audit entry carries
+  <code>chat_plane_action_required</code> and the retrievability window, the #73 SIEM
+  export delivers it to chat-plane operators, and
+  <a href="../chat-plane-purge/"><code>chat-plane-purge.md</code></a> is their sweep procedure.
+  Retrieval-side minimization was considered and rejected (shrinks the copy,
+  not the boundary).</li>
+<li><strong>Reranker boundary:</strong> <code>reranker-service</code> receives already-authorized
+  chunk text with no claims check of its own — a deliberate exception,
+  documented in <code>governance.md</code>'s "The reranker-service boundary", bounded
+  by a shared secret plus NetworkPolicy rather than a second FR-26
+  enforcement point. Relevant here because it's one more place retrieved
+  cleartext transits before reaching the caller.</li>
+</ul>
+<h3 id="3-poisoning-content-the-curation-gate-didnt-actually-see">3. Poisoning (content the curation gate didn't actually see)<a class="headerlink" href="#3-poisoning-content-the-curation-gate-didnt-actually-see" title="Permanent link">&para;</a></h3>
+<p><em>Can content that should have been caught by human review reach retrieval
+anyway — not because FR-26 was bypassed, but because the human approving it
+never saw what they were approving?</em></p>
+<p>This is a different failure mode from the first two — not information
+disclosure, but <em>unreviewed influence</em> on what a retrieval-grounded answer
+says. Included here because it's one of the three attack classes the
+Arzanipour et al. taxonomy formalizes for RAG specifically, and because the
+platform's primary anti-poisoning control (mandatory human curation,
+FR-11/FR-12) has the same shape as the other two surfaces: a control that
+looks complete until you check what it actually observes.</p>
+<ul>
+<li><strong>The gap, as found:</strong> for most of this platform's history, no route
+  showed a curator the document content they were approving — only
+  filename, submitted tags, and (once #138 shipped) marking-mismatch
+  advisory fragments. A curator could approve a document with a benign
+  filename and clean tags but an adversarial body (hidden instructions
+  aimed at the generation model, fabricated content) without ever reading
+  it.</li>
+<li><strong>Control:</strong> <code>GET /curate/{id}/content</code> now serves parsed chunk text back
+  to a curator with the same authority checks as approve/reject — org
+  (404), clearance/releasability (403), and <code>access_scope</code> (403) —
+  implemented in <a href="https://github.com/schuecl/nexus-rag/issues/284">#284</a>.
+  The <code>access_scope</code> check matters specifically because a content-viewing
+  route is exactly where the G1 need-to-know gap (<code>roles-and-permissions.md</code>)
+  would have mattered most; #284 and #277 (G1) close together.</li>
+<li><strong>Tamper-evidence:</strong> no cryptographic link previously existed between the
+  object-store original, the parsed text the worker chunks, and the Qdrant
+  chunk payload — a document could be modified between approval and
+  retrieval (store-side access, backup restore, a redelivered NATS job
+  parsing different bytes than were approved) with nothing to detect it.
+  SHA-256 digests computed at upload and re-verified before parsing, refusing
+  on mismatch, close this — <a href="https://github.com/schuecl/nexus-rag/issues/285">#285</a>.</li>
+<li><strong>What remains a mitigation, not a guarantee:</strong> the <code>&lt;untrusted_document_content&gt;</code>
+  delimiter markers (<code>rag_search.py</code>'s module docstring, P1/REQUIREMENTS.md
+  Section 11) reduce prompt-injection risk from retrieved text reaching the
+  generation model, but a sufficiently adversarial document could still try
+  to break out of the delimiter. This surface is about <em>human</em> review
+  actually seeing content; it doesn't claim the generation model is immune
+  to what it reads once reviewed. <strong>Issues #457/#458 (2026-08-06):</strong> a local
+  scan demonstrated the "break out of the delimiter" case predicted above —
+  a document containing a literal <code>&lt;/untrusted_document_content&gt;</code> closed the
+  real boundary early and a forged reopening made injected content read as
+  trusted framing (delimiter forgery, #458), and separately a passage worded
+  as a complete answer got echoed verbatim by the model, canary token
+  included (citation hijack, #457). The delimiter-forgery case is now closed
+  server-side — <code>_delimit_untrusted_text</code> neutralizes a literal marker
+  occurrence in the source text before wrapping it — so at most one real
+  open/close pair exists per delimited passage regardless of document
+  content. Citation hijack has no equivalent structural fix (the model
+  chooses to copy text verbatim); <code>SECURITY_NOTICE</code> gained an explicit
+  warning against it, same notice-only posture as everything else in this
+  bullet.</li>
+</ul>
+<h3 id="4-reconnaissance-shaped-query-patterns-detection-not-prevention">4. Reconnaissance-shaped query patterns (detection, not prevention)<a class="headerlink" href="#4-reconnaissance-shaped-query-patterns-detection-not-prevention" title="Permanent link">&para;</a></h3>
+<p><em>Section 1 above is about closing the membership-inference channel itself
+(score suppression, per-classification collections). This is the
+complementary control OWASP and #127 gap #4 both ask for: since the channel
+can't be fully closed for an A-I/A-II adversary (rank order is a residual
+signal, see "Considered and rejected" below), can an operator at least detect
+that someone is probing it?</em></p>
+<p><a href="https://github.com/schuecl/nexus-rag/issues/426">#426</a> implements this as
+<code>scripts/detect_query_anomalies.py</code>, an offline batch job over the audit log
+— not a Prometheus per-identity label. That deliberately-rejected design is
+worth stating explicitly: <code>orchestration-mcp/app/metrics.py</code>'s own docstring
+already argues a per-user metric label "would rebuild exactly the
+surveillance surface #125 removed from the audit log," and #426's own
+suggested direction flagged the same cardinality risk. The script instead
+authenticates as the same <code>nexus_rag_audit_reporting</code> SELECT-only role
+<code>calibrate_tagging_advisory.py</code> (#309) uses, computes four signals per
+identity over a lookback window —</p>
+<ul>
+<li><strong>high_volume</strong>: raw attempt-rate spike (naive scripted probing);</li>
+<li><strong>high_denial_ratio</strong>: a sustained personal denial rate, distinct from
+  <code>NexusRagQueryDeniedSpike</code>'s global volume threshold, which a slow,
+  methodical single-identity prober can stay under;</li>
+<li><strong>narrow_probe_shaped</strong>: a high share of successful queries resolving to 0
+  or 1 chunks — the substitute for #426's literal "near-duplicate query
+  text" suggestion, since #125 means there is no query text to diff;
+  <code>result_count</code> carries the same probing shape without needing content;</li>
+<li><strong>boundary_mapping</strong>: repeated denial-then-success sequences within a
+  short window — narrower than it sounds, and narrower than #426's own
+  suggested framing: <code>rag_search.py</code>'s only <code>query.denied</code> path is the
+  coarse missing-<code>rag-query</code>-role gate, not a per-query FR-26 mismatch (an
+  out-of-scope query returns a <em>successful</em> empty result, never a denial —
+  confirmed live, see <code>detect_query_anomalies.py</code>'s module docstring), so
+  this actually detects an identity's <code>rag-query</code> grant changing state
+  mid-window and being used immediately after, not filter-boundary probing —</li>
+</ul>
+<p>and publishes only a <strong>count of flagged identities per signal</strong> (plus a
+staleness timestamp) to Prometheus via Pushgateway, gated by two new alert
+rules (<code>NexusRagQueryAnomalyDetected</code>, <code>NexusRagQueryAnomalyDetectionStale</code>).
+Actual <code>actor_sub</code>/<code>actor_username</code> attribution exists only in the script's
+own stdout report — the same audience <code>docs/governance.md</code>'s "Query
+confidentiality and user privacy" already names as able to read <code>audit_log</code>.</p>
+<p><strong>Honest confidence label:</strong> validated against a live environment. The
+aggregation/exposition logic is unit tested against constructed audit rows
+(<code>tests/unit/test_detect_query_anomalies.py</code>); the full path — real
+<code>docker compose up</code>, real <code>bob-query</code>/<code>alice-ingest</code> tokens driving real
+<code>/debug/rag_search</code> calls, the compose job reading real <code>audit_log</code> rows
+through <code>nexus_rag_audit_reporting</code>, a real Pushgateway push, and a real
+Prometheus alert firing on exactly the flagged signals — was exercised end
+to end (<code>docs/dev-setup.md</code>'s "What's stubbed vs working"). That run is also
+what caught <code>boundary_mapping</code>'s original "filter-boundary mapping"
+description as wrong (see above) before merge. <strong>Deliberately not built
+here:</strong>
+detection rules inside the environment's actual SIEM (Splunk/Elastic/
+ArcSight/QRadar query languages are environment-specific and outside this
+repo's testable surface — the audit rows already reach a SIEM via #73's
+export, so a deployment can build the equivalent there); and automated
+scheduling of the batch job itself (it shares this gap with
+<code>calibrate_tagging_advisory.py</code> — both are "run manually or on a schedule"
+with nothing in this repo that schedules them).</p>
+<p><a href="https://github.com/schuecl/nexus-rag/issues/436">#436</a> closes the first of
+those two as far as it can be closed here — as <em>documentation</em>, not code:
+<a href="../siem-detection-runbook/">docs/siem-detection-runbook.md</a> gives the four
+signal definitions, the RFC 5424 message shape a rule has to parse, and
+adaptable Splunk SPL / Elastic ES|QL and EQL sketches, so an operator building
+detection in their own SIEM works from a runbook instead of reverse-engineering
+<code>detect_query_anomalies.py</code>. The rules themselves remain untested by this
+repo's CI for the reason above, which is exactly why they ship as sketches to
+adapt rather than as artifacts to copy.</p>
+<h2 id="owasp-rag-security-cheat-sheet-control-by-control">OWASP RAG Security Cheat Sheet — control-by-control<a class="headerlink" href="#owasp-rag-security-cheat-sheet-control-by-control" title="Permanent link">&para;</a></h2>
+<p>Recorded because the controls that are already right are the expensive ones,
+and because a checklist read makes it easy to see what's covered vs. what
+each attack-surface section above is actually answering.</p>
+<table>
+<thead>
+<tr>
+<th>OWASP control</th>
+<th>Status</th>
+<th>Where</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pre-retrieval filtering, not post-retrieval</td>
+<td><strong>Correct</strong></td>
+<td>FR-26 filter is inside both <code>Prefetch</code> legs — out-of-scope chunks are never scored, not filtered after scoring</td>
+</tr>
+<tr>
+<td>Never expose the vector store without authentication</td>
+<td><strong>Correct</strong></td>
+<td>NFR-15; <code>orchestration-mcp</code> holds a read-only key</td>
+</tr>
+<tr>
+<td>Log queries with the querying identity</td>
+<td><strong>Correct, content-minimized</strong></td>
+<td>FR-31, plus #125/#128: identity/outcome/filter-shape/result-count logged, query text is not</td>
+</tr>
+<tr>
+<td>Never return similarity scores</td>
+<td><strong>Correct</strong></td>
+<td>#127/#128, see membership-inference section above</td>
+</tr>
+<tr>
+<td>Separate vector namespaces per classification/tenant</td>
+<td><strong>Correct</strong></td>
+<td>#229/#267, see membership-inference section above</td>
+</tr>
+<tr>
+<td>Treat embeddings/payloads with the same controls as source documents</td>
+<td><strong>Bounded, not eliminated</strong></td>
+<td>see retrieved-content-leakage section — collection split + NetworkPolicy + RO/RW keys narrow reach; payload is not encrypted at rest</td>
+</tr>
+<tr>
+<td>No third-party prompt egress</td>
+<td><strong>Correct by architecture</strong></td>
+<td>Generation is self-hosted Ollama, not a vendor API</td>
+</tr>
+<tr>
+<td>Monitor for systematic/reconnaissance-shaped queries</td>
+<td><strong>Validated against a live environment</strong></td>
+<td>#426: <code>scripts/detect_query_anomalies.py</code> mines FR-31's audit trail for per-identity query-rate, denial-ratio, narrow-result-probing, and denial-then-success signals, with a content-free/bounded Prometheus alert on top, exercised end to end against a real stack — see "Reconnaissance-shaped query detection" below</td>
+</tr>
+<tr>
+<td>Document integrity / tamper-evidence</td>
+<td><strong>Correct</strong></td>
+<td>#285, see poisoning section above</td>
+</tr>
+<tr>
+<td>Human review of content before it becomes retrievable</td>
+<td><strong>Correct</strong></td>
+<td>FR-11/FR-12 gate, and #284 makes it actually see content, not just metadata</td>
+</tr>
+</tbody>
+</table>
+<h2 id="considered-and-rejected-differentially-private-retrieval">Considered and rejected: differentially-private retrieval<a class="headerlink" href="#considered-and-rejected-differentially-private-retrieval" title="Permanent link">&para;</a></h2>
+<p>Arzanipour et al.'s proposed mitigation for document-level membership
+inference is a differentially-private retriever — Laplace noise added to
+relevance scores before top-k selection, so an adversary's score-based
+distinguisher is bounded by a formal privacy budget.</p>
+<p><strong>Rejected for this platform, and recorded as a deliberate no rather than an
+omission:</strong></p>
+<ul>
+<li><strong>Recall is a hard requirement here, not a tunable one.</strong> The golden-query
+  harness fails CI on any recall miss (FR-26/FR-30,
+  <code>scripts/evaluate_retrieval.py</code>). DP noise trades exact top-k for a
+  privacy guarantee by construction — that is precisely the trade this
+  system's CI gate exists to refuse.</li>
+<li><strong>The adversary the noise defends against is already excluded by
+  architecture.</strong> DP retrieval protects against an <em>unauthorized</em> querier
+  trying to distinguish corpora via the score channel. That adversary is
+  already fully denied here: the FR-26 filter is deterministic, mandatory,
+  and fails closed — an unauthorized caller gets zero candidates from the
+  restricted document regardless of query, no score gradient to add noise
+  to in the first place.</li>
+<li><strong>The adversary noise would actually need to address — an <em>authorized</em>
+  caller inferring within their own clearance — is answered more directly
+  and at no recall cost</strong> by the score-suppression already done (#127/#128,
+  above). Noise on a score the caller never sees adds nothing; noise on rank
+  order (the one thing the caller does see) would degrade the answers every
+  authorized query returns, for a marginal reduction in an already-narrow
+  residual channel (rank-order membership inference, noted in the
+  membership-inference section as unmitigated and accepted).</li>
+</ul>
+<p>Net: DP retrieval is the right answer for a system whose access boundary is
+soft (probabilistic ranking is the only gate). It's the wrong answer for a
+system whose access boundary is a hard, deterministic filter and whose
+remaining privacy question is what a caller can do <em>inside</em> that filter —
+which score-suppression already answers without touching recall.</p>
+<h2 id="open-not-yet-resolved">Open / not yet resolved<a class="headerlink" href="#open-not-yet-resolved" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Retrieved content persisting in the chat plane beyond purge's reach</td>
+<td>Decided (<a href="https://github.com/schuecl/nexus-rag/issues/286">#286</a>): accepted risk; purge event signals it (<a href="../chat-plane-purge/"><code>chat-plane-purge.md</code></a>)</td>
+</tr>
+<tr>
+<td>Qdrant payload cleartext not encrypted at rest</td>
+<td>Bounded by collection split/NetworkPolicy/RO-RW keys, not eliminated; depends on deployment storage layer</td>
+</tr>
+<tr>
+<td>Rank-order residual membership-inference channel</td>
+<td>Accepted, unmitigated — see "Considered and rejected" above</td>
+</tr>
+<tr>
+<td>SIEM-side detection rules for the patterns #426 flags</td>
+<td>Not built here — environment-specific SIEM query languages are outside this repo's testable surface; the flagged-event data already reaches a SIEM via #73's export</td>
+</tr>
+<tr>
+<td>Automated scheduling of the offline audit-reporting jobs (calibration, #426's detector)</td>
+<td>Addressed (#527): the dev stack ships a <code>scheduling</code> compose profile that loops both jobs on an interval, and the Helm chart ships default-off CronJobs (<code>auditReporting</code> in values) backed by the released scripts image; calibration also gained a Pushgateway heartbeat and a <code>NexusRagTaggingCalibrationStale</code> alert to match the detector's. Residual: both are opt-in — a deployment that never enables them still runs neither, and only the detector's staleness alert can notice that (and only after a first run has published)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="related">Related<a class="headerlink" href="#related" title="Permanent link">&para;</a></h2>
+<p><a href="../governance/"><code>governance.md</code></a> (lifecycle/retention, and the
+"Query confidentiality and user privacy" section this document supersedes
+the "not done" framing of), <a href="../roles-and-permissions/"><code>roles-and-permissions.md</code></a>
+(authorization matrix and its own gap analysis, G1–G7),
+<a href="../architecture-overview/"><code>ARCHITECTURE.md</code></a> (component/sequence diagrams),
+<a href="https://github.com/schuecl/nexus-rag/issues/127">#127</a> (the issue this
+document answers), <a href="https://github.com/schuecl/nexus-rag/issues/286">#286</a>
+(chat-plane persistence — decided, see
+<a href="../chat-plane-purge/"><code>chat-plane-purge.md</code></a>), <a href="https://github.com/schuecl/nexus-rag/issues/426">#426</a>
+(reconnaissance-shaped query detection, closing #127 gap #4 — see section 4 above),
+<a href="../observability/"><code>docs/observability.md</code></a> (the alert rules #426 adds).</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../governance/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Data governance">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Data governance
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../roles-and-permissions/" class="md-footer__link md-footer__link--next" aria-label="Next: Roles and permissions">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Roles and permissions
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.footer", "navigation.top", "navigation.indexes", "search.suggest", "search.highlight", "content.code.copy", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../assets/js/mermaid.min.js"></script>
+      
+        <script src="../assets/js/mermaid-init.js"></script>
+      
+        <script src="../assets/js/lightbox.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,2403 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Air-gapped RAG pipeline for MPNexus: classification-aware ingestion, curation, and claims-filtered retrieval.">
+      
+      
+      
+        <link rel="canonical" href="https://allamiro.gitlab.io/nexus-rag/nist-ai-rmf/rmf-mapping/">
+      
+      
+        <link rel="prev" href="../">
+      
+      
+        <link rel="next" href="../governance-policy/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>RMF mapping - Nexus RAG</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/dracula.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="pink">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#nist-ai-rmf-mapping-outcome-by-outcome" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Nexus RAG" class="md-header__button md-logo" aria-label="Nexus RAG" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18.68 12.32a4.49 4.49 0 0 0-6.36.01 4.49 4.49 0 0 0 0 6.36 4.51 4.51 0 0 0 5.57.63L21 22.39 22.39 21l-3.09-3.11c1.13-1.77.87-4.09-.62-5.57m-1.41 4.95c-.98.98-2.56.97-3.54 0-.97-.98-.97-2.56.01-3.54.97-.97 2.55-.97 3.53 0 .97.98.97 2.56 0 3.54M10.9 20.1a6.5 6.5 0 0 1-1.48-2.32C6.27 17.25 4 15.76 4 14v3c0 2.21 3.58 4 8 4-.4-.26-.77-.56-1.1-.9M4 9v3c0 1.68 2.07 3.12 5 3.7v-.2c0-.93.2-1.85.58-2.69C6.34 12.3 4 10.79 4 9m8-6C7.58 3 4 4.79 4 7c0 2 3 3.68 6.85 4h.05c1.2-1.26 2.86-2 4.6-2 .91 0 1.81.19 2.64.56A3.22 3.22 0 0 0 20 7c0-2.21-3.58-4-8-4"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Nexus RAG
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              RMF mapping
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/schuecl/nexus-rag" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    schuecl/nexus-rag
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../.." class="md-tabs__link">
+          
+  
+  
+    
+  
+  🚀 Get Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/deploy-compose/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  🚢 Production Deployment
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/configuration/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  🛠️ How-to Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../security/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  🛡️ Security & Compliance
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../architecture-overview/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  📖 Reference
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Nexus RAG" class="md-nav__button md-logo" aria-label="Nexus RAG" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18.68 12.32a4.49 4.49 0 0 0-6.36.01 4.49 4.49 0 0 0 0 6.36 4.51 4.51 0 0 0 5.57.63L21 22.39 22.39 21l-3.09-3.11c1.13-1.77.87-4.09-.62-5.57m-1.41 4.95c-.98.98-2.56.97-3.54 0-.97-.98-.97-2.56.01-3.54.97-.97 2.55-.97 3.53 0 .97.98.97 2.56 0 3.54M10.9 20.1a6.5 6.5 0 0 1-1.48-2.32C6.27 17.25 4 15.76 4 14v3c0 2.21 3.58 4 8 4-.4-.26-.77-.56-1.1-.9M4 9v3c0 1.68 2.07 3.12 5 3.7v-.2c0-.93.2-1.85.58-2.69C6.34 12.3 4 10.79 4 9m8-6C7.58 3 4 4.79 4 7c0 2 3 3.68 6.85 4h.05c1.2-1.26 2.86-2 4.6-2 .91 0 1.81.19 2.64.56A3.22 3.22 0 0 0 20 7c0-2.21-3.58-4-8-4"/></svg>
+
+    </a>
+    Nexus RAG
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/schuecl/nexus-rag" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    schuecl/nexus-rag
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../.." class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🚀 Get Started
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_1" id="__nav_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    🚀 Get Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/quickstart-helm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart on Kubernetes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/understanding-the-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Understanding the architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/connect-chat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Connect the chat plane
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🚢 Production Deployment
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    🚢 Production Deployment
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/deploy-compose/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker Compose
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/deploy-helm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Helm / Kubernetes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/deploy-airgapped/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Air-gapped
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🛠️ How-to Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    🛠️ How-to Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration by use case
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../evaluation-results/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Evaluation & performance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🛡️ Security & Compliance
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    🛡️ Security & Compliance
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NIST AI RMF
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    NIST AI RMF
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RMF mapping
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RMF mapping
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#govern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GOVERN
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MAP
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#measure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MEASURE
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#manage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MANAGE
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reading-this-honestly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reading this honestly
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../governance-policy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Governance policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../impact-assessment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Impact assessment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../risk-register/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk register
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ai-system-inventory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI system inventory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../evidence/evidence-index/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Evidence index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    📖 Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    📖 Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_1" id="__nav_5_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engineering docs (verbatim)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Engineering docs (verbatim)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/diagrams/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture diagrams
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../requirements/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Requirements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../governance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data governance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../threat-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privacy threat model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../roles-and-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roles and permissions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dev-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dev environment setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../querying-the-corpus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Querying the corpus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing & CI quality gates
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releasing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Releasing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../credential-rotation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Credential rotation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../chat-plane-purge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chat-plane purge runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../siem-detection-runbook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SIEM detection runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#govern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GOVERN
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MAP
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#measure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MEASURE
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#manage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MANAGE
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reading-this-honestly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reading this honestly
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="nist-ai-rmf-mapping-outcome-by-outcome">NIST AI RMF mapping — outcome by outcome<a class="headerlink" href="#nist-ai-rmf-mapping-outcome-by-outcome" title="Permanent link">&para;</a></h1>
+<p>How this system demonstrates (or does not yet demonstrate) each NIST AI RMF 1.0
+outcome. Subcategories are grouped where one artifact serves several. Statuses use
+the repo convention: <strong>Validated live</strong> / <strong>Tested against mocks</strong> / <strong>Implemented</strong>
+(code/docs exist, not exercised here) / <strong>Gap</strong> / <strong>TBD (organizational)</strong> —
+plus <strong>Partial</strong> (some subcategories in the group met, others not) and
+<strong>Draft</strong> (artifact written, ratification pending).</p>
+<p>Assessment date: 2026-08-06, against <code>main</code> at the commit this file was introduced.
+Three open PRs (rank-aware metrics + config fingerprint; golden-set expansion;
+latency benchmark) will improve several MEASURE rows when merged — rows note this
+rather than pre-claiming it.</p>
+<h2 id="govern">GOVERN<a class="headerlink" href="#govern" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Outcome</th>
+<th>Evidence / gap</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.1 Legal/regulatory requirements understood and documented</td>
+<td>DoD marking practice drives the metadata schema (<code>REQUIREMENTS.md</code> §6.3, CAPCO-style); DISA STIG expectations named in NFR-2; adapted-control mapping with per-control residuals in <code>docs/governance.md</code> "DoD classified-information control profile". Residual: application roles are not evidence of clearance adjudication — issue #523</td>
+<td>Implemented; execution TBD (organizational)</td>
+</tr>
+<tr>
+<td>1.2 Trustworthy-AI characteristics in policy</td>
+<td>Enforced by construction (server-side claims, mandatory curation, append-only audit) rather than stated as policy; <a href="../governance-policy/">governance-policy.md</a> is the policy artifact</td>
+<td>Draft</td>
+</tr>
+<tr>
+<td>1.3 Risk tolerance defined; activities calibrated to it</td>
+<td>Gates exist and are enforced; no declared tolerance or waiver authority. Issue #521; proposed framing in <a href="../governance-policy/">governance-policy.md</a> §3</td>
+<td>TBD (organizational)</td>
+</tr>
+<tr>
+<td>1.4 Risk processes transparent and documented</td>
+<td><code>docs/testing.md</code>'s gated-vs-advisory list; <code>docs/governance.md</code> practice map with three-level status convention</td>
+<td>Validated live (convention actively maintained)</td>
+</tr>
+<tr>
+<td>1.5 Monitoring &amp; periodic review planned</td>
+<td>Prometheus rules + dashboards (<code>docs/observability.md</code>); nightly golden-query + mutation runs; <strong>but</strong> the alert receiver is a no-op default, no alert rule consumes the published quality gauges, and nothing runs their producer on a schedule — issues #522, #526, #527</td>
+<td>Partial</td>
+</tr>
+<tr>
+<td>1.6 AI system inventory</td>
+<td><a href="../ai-system-inventory/">ai-system-inventory.md</a>, mechanically anchored to the pin checks (<code>scripts/check_pinned_images.py</code>, <code>check_pinned_models.py</code>)</td>
+<td>Draft</td>
+</tr>
+<tr>
+<td>1.7 Safe decommissioning</td>
+<td>Supersession (FR-7/NFR-13), purge with tombstones, retention design — unratified; issue #520</td>
+<td>Implemented; ratification TBD (organizational)</td>
+</tr>
+<tr>
+<td>2.1–2.3 Roles, responsibilities, executive accountability</td>
+<td>Application roles implemented and covered by BDD/mocks, with retrieval-side enforcement and machine-identity least privilege validated live (<code>docs/roles-and-permissions.md</code>); governance-role table in <code>docs/governance.md</code>; <strong>platform-admin tier undefined, no named accountable owner</strong> — issue #519</td>
+<td>Partial; TBD (organizational)</td>
+</tr>
+<tr>
+<td>3.1 Workforce diversity/capacity</td>
+<td>Single-maintainer repository; team composition is a deployment-owner matter</td>
+<td>TBD (organizational)</td>
+</tr>
+<tr>
+<td>3.2 Human oversight roles</td>
+<td>Mandatory curation gate (FR-10..16) with org-scoped curator authority — validated live; two-person purge and curator suspension (#478) — implemented, tested against mocks (purge confirm step is API-only, no UI: gap G3). Oversight of <em>outputs</em> is out of scope by design (C7) — recorded in <a href="../governance-policy/">governance-policy.md</a> §5</td>
+<td>Partial (labels per mechanism)</td>
+</tr>
+<tr>
+<td>4.1–4.3 Safety-first culture, risk communication</td>
+<td>Honest-labeling convention is the repo's working culture; <code>docs/testing.md</code> documents what is <em>not</em> covered. <code>sec:*</code>/<code>severity:*</code>/<code>tool:*</code> GitHub label taxonomy for tracking security findings; private vulnerability reporting via <code>SECURITY.md</code> (the issue-template config deliberately routes security reports away from public issues)</td>
+<td>Implemented</td>
+</tr>
+<tr>
+<td>5.1–5.2 External feedback mechanisms</td>
+<td>Uploader notification on curation decisions (FR-15); in-app knowledge base (FR-33); no external-stakeholder feedback channel beyond the issue tracker</td>
+<td>Partial</td>
+</tr>
+<tr>
+<td>6.1–6.2 Third-party risk policies</td>
+<td>Origin/license screening (C1/C2) applied to every candidate (<code>REQUIREMENTS.md</code> §7); pinned images/models (NFR-16); pip-audit + trivy-fs blocking on PRs; SBOMs per release. Vendor assessment doc: <a href="../ai-system-inventory/">ai-system-inventory.md</a> §4</td>
+<td>Validated live (mechanisms); assessments draft</td>
+</tr>
+</tbody>
+</table>
+<h2 id="map">MAP<a class="headerlink" href="#map" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Outcome</th>
+<th>Evidence / gap</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.1–1.2 Context, purposes, assumptions established</td>
+<td><code>REQUIREMENTS.md</code> §1–3 (purpose, background, constraints C1–C9); <code>ARCHITECTURE.md</code> §1 system overview</td>
+<td>Implemented</td>
+</tr>
+<tr>
+<td>1.3–1.4 Organizational goals, business value</td>
+<td><code>REQUIREMENTS.md</code> §1–2 (grounded answers over org documents; self-hosted rationale)</td>
+<td>Implemented</td>
+</tr>
+<tr>
+<td>1.5 Organizational risk tolerance mapped</td>
+<td>See GOVERN 1.3 — issue #521</td>
+<td>TBD (organizational)</td>
+</tr>
+<tr>
+<td>1.6 System requirements incl. performance targets</td>
+<td>FR-1..FR-34, NFR-1..NFR-18; <strong>NFR-4 latency budget open</strong> — issue #430 (duplicate #524)</td>
+<td>Implemented except NFR-4</td>
+</tr>
+<tr>
+<td>2.1–2.3 Tasks, methods, data flows documented</td>
+<td><code>ARCHITECTURE.md</code> §2 component inventory, §3 data model, §4 sequence flows (ingestion, curation, retrieval, login, supersession, tagging advisory)</td>
+<td>Implemented</td>
+</tr>
+<tr>
+<td>3.1–3.5 Benefits, costs, misuse, oversight capacity</td>
+<td>Misuse: <code>docs/threat-model.md</code> adversary taxonomy + its four attack-surface sections (the fourth is detection-oriented); oversight capacity: curator queue scoping. consolidated impact assessment drafted (<a href="../impact-assessment/">impact-assessment.md</a>); ratification of its §7 owner questions pending</td>
+<td>Partial; assessment Draft — ratification TBD (organizational)</td>
+</tr>
+<tr>
+<td>4.1–4.2 Third-party risks mapped</td>
+<td>C2 origin screening with named exclusions; <code>REQUIREMENTS.md</code> §7 tables; residual: dev generation/judge model origins — <a href="../ai-system-inventory/">ai-system-inventory.md</a> §4</td>
+<td>Implemented; one open rationale</td>
+</tr>
+<tr>
+<td>5.1–5.2 Impacts to individuals/society characterized</td>
+<td>Privacy threat model (<code>docs/threat-model.md</code>: membership inference, retrieved-content leakage, recon patterns); query-confidentiality analysis in <code>docs/governance.md</code></td>
+<td>Implemented</td>
+</tr>
+</tbody>
+</table>
+<h2 id="measure">MEASURE<a class="headerlink" href="#measure" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Outcome</th>
+<th>Evidence / gap</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.1–1.2 Metrics selected, suitability assessed</td>
+<td>Retrieval: recall@K/precision@K/first-relevant-rank (<code>scripts/evaluate_retrieval.py</code>); Q→C→A: 7 judged metrics incl. faithfulness + deterministic citation validity (<code>scripts/evaluate_rag_quality.py</code>), abstention deliberately diagnostic-only (judge-reliability finding recorded)</td>
+<td>Validated live</td>
+</tr>
+<tr>
+<td>1.3 Assessment by independent parties</td>
+<td>No assessor independent of the developer exists; the planned internal audit (governance-policy §9 — re-running this mapping against current <code>main</code>) is the closest mechanism, and its independence is an owner decision — issue #542</td>
+<td>Gap / TBD (organizational)</td>
+</tr>
+<tr>
+<td>2.1 Test sets representative</td>
+<td>Golden set: 8 queries, 1 persona, single-doc expectations; 4/8 saturated lexically — issue #528 (partially pre-empted by open golden-set PR)</td>
+<td>Gap (known, tracked)</td>
+</tr>
+<tr>
+<td>2.2 Human-subject evaluations</td>
+<td>Not applicable — no human-subject data collection</td>
+<td>N/A (documented)</td>
+</tr>
+<tr>
+<td>2.3 TEVV for the system as deployed</td>
+<td>CI gate chain (<code>docs/testing.md</code>) covers the build; deployed-conditions TEVV shares the 2.4/2.5 gap — issues #526/#527</td>
+<td>Partial</td>
+</tr>
+<tr>
+<td>2.4 Deployed-system performance measured</td>
+<td><strong>Nothing measures a deployed environment</strong> — nightly e2e measures an ephemeral CI stack. Issues #526/#527</td>
+<td>Gap</td>
+</tr>
+<tr>
+<td>2.5 Evaluations representative of deployment conditions</td>
+<td>Single-persona eval; multi-persona machinery exists (<code>scripts/verify_corpus_access.py</code>, advisory) — issue #528</td>
+<td>Partial</td>
+</tr>
+<tr>
+<td>2.6 Performance vs defined targets</td>
+<td>FR-26 leak check: hard-fail, zero-tolerance (validated live). Latency: no agreed target (NFR-4 open)</td>
+<td>Partial</td>
+</tr>
+<tr>
+<td>2.7 Security &amp; resilience (red-team)</td>
+<td>Live prompt-injection probe with dated findings and fix history (<code>REQUIREMENTS.md</code> §11 P1: #97 mixed result → #427 notice fix → #457/#458 delimiter-forgery closed structurally / citation-hijack notice-only); adversarial-input NFR-7 tests. #457/#458 fixes validated against live generation and the PyRIT extraction finding closed as a false positive with live evidence (PR 541); remaining residual is the DAN/roleplay marker echo (#427) and archiving the runs as snapshot evidence (issue #532)</td>
+<td>Validated live (probe); Partial (archived evidence)</td>
+</tr>
+<tr>
+<td>2.8 Transparency/accountability measured</td>
+<td>Append-only audit log proven against live grants (integration layer) — validated live; trace_id correlation on sampled query rows only (tracing opt-in, 5% default sampling, 100% in the dev/CI stack; omitted when disabled)</td>
+<td>Validated live (append-only); Partial (trace coverage)</td>
+</tr>
+<tr>
+<td>2.9–2.11 Model explanation, privacy, fairness probing</td>
+<td>Privacy: content-free metrics allowlist (#127), query text never stored (#125), canary-phrase attribution; fairness/bias probing: not performed — corpus is regulations/SOPs, personas differ by <em>authorization</em>, not protected class; this row is itself the record of that scoping decision, ratified with the rest of the doc set (README ledger)</td>
+<td>Privacy validated live; fairness scoped out (documented)</td>
+</tr>
+<tr>
+<td>2.12 Environmental impact</td>
+<td>Self-hosted on existing GPUs (NFR-8); not otherwise tracked</td>
+<td>Scoped out (documented)</td>
+</tr>
+<tr>
+<td>2.13 Measurement effectiveness evaluated</td>
+<td>Judged-metric reliability finding (#386) led to abstention being de-gated — exactly this outcome; mutation testing measures the <em>tests</em> (≥80% kill gate, baseline 88%); retrieval baseline can silently span config changes — issue #525 (open PR adds the fingerprint)</td>
+<td>Partial</td>
+</tr>
+<tr>
+<td>3.1–3.3 Risk tracking over time</td>
+<td><code>.eval-history</code> trend store carried across CI runs; rolling nightly baseline (release-pinned baseline still open, issue #429 second half); anomaly detector has staleness watchdog; <strong>offline jobs unscheduled</strong> — issue #527</td>
+<td>Partial</td>
+</tr>
+<tr>
+<td>4.1–4.3 Measurement feedback loops</td>
+<td>Regression gates fail closed by default; curation-advisory calibration reports per-suggester agreement (<code>scripts/calibrate_tagging_advisory.py</code>, advisory)</td>
+<td>Implemented</td>
+</tr>
+</tbody>
+</table>
+<h2 id="manage">MANAGE<a class="headerlink" href="#manage" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Outcome</th>
+<th>Evidence / gap</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.1 Deployment decision vs documented criteria</td>
+<td>Gate chain exists; acceptance policy + waiver authority not written — issue #521</td>
+<td>TBD (organizational)</td>
+</tr>
+<tr>
+<td>1.2–1.4 Risk treatment prioritized, documented</td>
+<td>Accepted risks are written decisions with issue numbers (chat-plane #286, rank-order residual, label-gated e2e); consolidated in <a href="../risk-register/">risk-register.md</a></td>
+<td>Draft (register); decisions implemented</td>
+</tr>
+<tr>
+<td>2.1 Resources allocated to mapped risks</td>
+<td>Highest-consequence modules get the strictest gate (mutation testing scoped to <code>claims.py</code>/<code>qdrant_filters.py</code>/<code>metadata.py</code>/<code>versioning.py</code>) — risk-proportionate by construction</td>
+<td>Validated live</td>
+</tr>
+<tr>
+<td>2.2–2.3 Value sustained through change</td>
+<td>Pinned images/models + version lockstep + config-fingerprinted quality eval; retrieval-eval fingerprint pending (issue #525)</td>
+<td>Validated live / one gap</td>
+</tr>
+<tr>
+<td>2.4 Mechanisms to supersede/disengage</td>
+<td>Supersession with no-dead-window property (NFR-13); curator suspension (#478); purge; rollback-by-redeploy — a design property of immutable, never-overwritten tags (release publish flow validated live at v0.1.0; a rollback itself has not been exercised)</td>
+<td>Validated live (supersession/purge); Implemented (rollback)</td>
+</tr>
+<tr>
+<td>3.1–3.2 Third-party risks managed</td>
+<td>Weekly trivy-image + SBOM (non-PR), blocking pip-audit/trivy-fs on PR; third-party images mirrored by documented retag pattern</td>
+<td>Implemented</td>
+</tr>
+<tr>
+<td>4.1 Post-deployment monitoring</td>
+<td>Alert rules + dashboards exist; receiver no-op, no alert consumes the quality gauges and nothing schedules their producer, offline jobs unscheduled — issues #522/#526/#527</td>
+<td>Gap (substrate exists)</td>
+</tr>
+<tr>
+<td>4.2 Measurable improvement activities</td>
+<td>Issue-driven, FR/NFR-traceable changes; golden-set/fingerprint/latency PRs open</td>
+<td>Validated live (process)</td>
+</tr>
+<tr>
+<td>4.3 Incident response</td>
+<td>SIEM runbook + detections + <code>chat_plane_action_required</code> signal; <strong>response ladder and receiver are deployment decisions not yet made</strong> — issue #522</td>
+<td>Partial</td>
+</tr>
+</tbody>
+</table>
+<h2 id="reading-this-honestly">Reading this honestly<a class="headerlink" href="#reading-this-honestly" title="Permanent link">&para;</a></h2>
+<p>The pattern across every Gap/TBD row is the same: <em>capability exists; policy,
+named human, or scheduler missing</em>. No row above claims enforcement that does not
+exist, and several rows record deliberate scope-outs (fairness probing,
+environmental tracking, output-side oversight) as documented decisions — the RMF
+treats a recorded, reasoned scope-out as compliant; an unstated one as a finding.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../" class="md-footer__link md-footer__link--prev" aria-label="Previous: Overview">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Overview
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../governance-policy/" class="md-footer__link md-footer__link--next" aria-label="Next: Governance policy">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Governance policy
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.footer", "navigation.top", "navigation.indexes", "search.suggest", "search.highlight", "content.code.copy", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../../assets/js/mermaid.min.js"></script>
+      
+        <script src="../../assets/js/mermaid-init.js"></script>
+      
+        <script src="../../assets/js/lightbox.js"></script>
+      
+    
+  </body>
+</html>

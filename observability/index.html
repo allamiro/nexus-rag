@@ -1,0 +1,2966 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Air-gapped RAG pipeline for MPNexus: classification-aware ingestion, curation, and claims-filtered retrieval.">
+      
+      
+      
+        <link rel="canonical" href="https://allamiro.gitlab.io/nexus-rag/observability/">
+      
+      
+        <link rel="prev" href="../testing/">
+      
+      
+        <link rel="next" href="../releasing/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Observability - Nexus RAG</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/dracula.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="pink">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#observability" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Nexus RAG" class="md-header__button md-logo" aria-label="Nexus RAG" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18.68 12.32a4.49 4.49 0 0 0-6.36.01 4.49 4.49 0 0 0 0 6.36 4.51 4.51 0 0 0 5.57.63L21 22.39 22.39 21l-3.09-3.11c1.13-1.77.87-4.09-.62-5.57m-1.41 4.95c-.98.98-2.56.97-3.54 0-.97-.98-.97-2.56.01-3.54.97-.97 2.55-.97 3.53 0 .97.98.97 2.56 0 3.54M10.9 20.1a6.5 6.5 0 0 1-1.48-2.32C6.27 17.25 4 15.76 4 14v3c0 2.21 3.58 4 8 4-.4-.26-.77-.56-1.1-.9M4 9v3c0 1.68 2.07 3.12 5 3.7v-.2c0-.93.2-1.85.58-2.69C6.34 12.3 4 10.79 4 9m8-6C7.58 3 4 4.79 4 7c0 2 3 3.68 6.85 4h.05c1.2-1.26 2.86-2 4.6-2 .91 0 1.81.19 2.64.56A3.22 3.22 0 0 0 20 7c0-2.21-3.58-4-8-4"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Nexus RAG
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Observability
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/schuecl/nexus-rag" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    schuecl/nexus-rag
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+    
+  
+  🚀 Get Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../guides/deploy-compose/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  🚢 Production Deployment
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../guides/configuration/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  🛠️ How-to Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../security/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  🛡️ Security & Compliance
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../architecture-overview/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  📖 Reference
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Nexus RAG" class="md-nav__button md-logo" aria-label="Nexus RAG" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18.68 12.32a4.49 4.49 0 0 0-6.36.01 4.49 4.49 0 0 0 0 6.36 4.51 4.51 0 0 0 5.57.63L21 22.39 22.39 21l-3.09-3.11c1.13-1.77.87-4.09-.62-5.57m-1.41 4.95c-.98.98-2.56.97-3.54 0-.97-.98-.97-2.56.01-3.54.97-.97 2.55-.97 3.53 0 .97.98.97 2.56 0 3.54M10.9 20.1a6.5 6.5 0 0 1-1.48-2.32C6.27 17.25 4 15.76 4 14v3c0 2.21 3.58 4 8 4-.4-.26-.77-.56-1.1-.9M4 9v3c0 1.68 2.07 3.12 5 3.7v-.2c0-.93.2-1.85.58-2.69C6.34 12.3 4 10.79 4 9m8-6C7.58 3 4 4.79 4 7c0 2 3 3.68 6.85 4h.05c1.2-1.26 2.86-2 4.6-2 .91 0 1.81.19 2.64.56A3.22 3.22 0 0 0 20 7c0-2.21-3.58-4-8-4"/></svg>
+
+    </a>
+    Nexus RAG
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/schuecl/nexus-rag" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    schuecl/nexus-rag
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href=".." class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🚀 Get Started
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_1" id="__nav_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    🚀 Get Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/quickstart-helm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart on Kubernetes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/understanding-the-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Understanding the architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/connect-chat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Connect the chat plane
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🚢 Production Deployment
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    🚢 Production Deployment
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/deploy-compose/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker Compose
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/deploy-helm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Helm / Kubernetes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/deploy-airgapped/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Air-gapped
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🛠️ How-to Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    🛠️ How-to Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration by use case
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../evaluation-results/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Evaluation & performance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🛡️ Security & Compliance
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    🛡️ Security & Compliance
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../nist-ai-rmf/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NIST AI RMF
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    NIST AI RMF
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nist-ai-rmf/rmf-mapping/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RMF mapping
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nist-ai-rmf/governance-policy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Governance policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nist-ai-rmf/impact-assessment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Impact assessment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nist-ai-rmf/risk-register/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk register
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nist-ai-rmf/ai-system-inventory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI system inventory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nist-ai-rmf/evidence/evidence-index/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Evidence index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    📖 Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    📖 Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5_1" id="__nav_5_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engineering docs (verbatim)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_1_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Engineering docs (verbatim)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture-overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/diagrams/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture diagrams
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../requirements/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Requirements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../governance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data governance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../threat-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privacy threat model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../roles-and-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roles and permissions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dev-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dev environment setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../querying-the-corpus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Querying the corpus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing & CI quality gates
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observability
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-servicemonitor-preferred-on-kubernetes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. ServiceMonitor — preferred on Kubernetes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-helmobservability-external-air-gapped-grafana" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. helm/observability — external, air-gapped Grafana
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. helm/observability — external, air-gapped Grafana">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#three-things-that-bite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Three things that bite
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-compose-profile-local-development" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Compose profile — local development
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-actually-instrumented" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is actually instrumented
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dashboards" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dashboards
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Dashboards">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#q-to-c-to-a-quality-dashboard-384" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Q-to-C-to-A quality dashboard (#384)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#running-it-unattended-388" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running it unattended (#388)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Running it unattended (#388)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-the-evaluator-is-not-schedulable-as-it-stands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why the evaluator is not schedulable as it stands
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#credentials-and-tokens-an-unattended-run-would-need" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Credentials and tokens an unattended run would need
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-cronjob-shape-once-those-are-met" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The CronJob shape, once those are met
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Status
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#periodic-object-store-integrity-re-verification-432" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Periodic object-store integrity re-verification (#432)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Periodic object-store integrity re-verification (#432)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#status-shipped-unlike-the-q-to-c-to-a-cronjob-above" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Status: shipped, unlike the Q-to-C-to-A CronJob above
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alerts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Alerts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#confidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Confidence
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../releasing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Releasing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../credential-rotation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Credential rotation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chat-plane-purge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chat-plane purge runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../siem-detection-runbook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SIEM detection runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-servicemonitor-preferred-on-kubernetes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. ServiceMonitor — preferred on Kubernetes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-helmobservability-external-air-gapped-grafana" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. helm/observability — external, air-gapped Grafana
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. helm/observability — external, air-gapped Grafana">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#three-things-that-bite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Three things that bite
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-compose-profile-local-development" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Compose profile — local development
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-actually-instrumented" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is actually instrumented
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dashboards" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dashboards
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Dashboards">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#q-to-c-to-a-quality-dashboard-384" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Q-to-C-to-A quality dashboard (#384)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#running-it-unattended-388" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running it unattended (#388)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Running it unattended (#388)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-the-evaluator-is-not-schedulable-as-it-stands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why the evaluator is not schedulable as it stands
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#credentials-and-tokens-an-unattended-run-would-need" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Credentials and tokens an unattended run would need
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-cronjob-shape-once-those-are-met" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The CronJob shape, once those are met
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Status
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#periodic-object-store-integrity-re-verification-432" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Periodic object-store integrity re-verification (#432)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Periodic object-store integrity re-verification (#432)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#status-shipped-unlike-the-q-to-c-to-a-cronjob-above" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Status: shipped, unlike the Q-to-C-to-A CronJob above
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alerts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Alerts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#confidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Confidence
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="observability">Observability<a class="headerlink" href="#observability" title="Permanent link">&para;</a></h1>
+<p>Three ways to observe a Nexus RAG deployment, in order of preference. They are
+alternatives, not layers — pick the one that matches the environment.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Where it runs</th>
+<th>Grafana</th>
+<th>Use when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ServiceMonitor</strong></td>
+<td>your existing stack</td>
+<td>yours</td>
+<td>the cluster already has monitoring inside the accreditation boundary</td>
+</tr>
+<tr>
+<td><strong><code>helm/observability</code></strong> (#257)</td>
+<td>this cluster</td>
+<td>external, air-gapped</td>
+<td>the cluster has no monitoring stack, but Grafana exists elsewhere</td>
+</tr>
+<tr>
+<td><strong>Compose profile</strong> (#133)</td>
+<td>a laptop</td>
+<td>deployed by the profile</td>
+<td>local development and the e2e job</td>
+</tr>
+</tbody>
+</table>
+<h2 id="1-servicemonitor-preferred-on-kubernetes">1. ServiceMonitor — preferred on Kubernetes<a class="headerlink" href="#1-servicemonitor-preferred-on-kubernetes" title="Permanent link">&para;</a></h2>
+<p><code>helm/nexus-rag</code> deploys no monitoring stack on purpose (NFR-10). A DoD cluster
+usually already runs one, and shipping a second would duplicate it and put the
+corpus's operational telemetry somewhere the platform team does not control.
+What the chart owes that stack is a way to find the <code>/metrics</code> endpoints:</p>
+<div class="highlight"><pre><span></span><code>helm<span class="w"> </span>upgrade<span class="w"> </span>nexus-rag<span class="w"> </span>./helm/nexus-rag<span class="w"> </span>--set<span class="w"> </span>observability.serviceMonitor.enabled<span class="o">=</span><span class="nb">true</span>
+</code></pre></div>
+<p>Off by default because rendering a <code>ServiceMonitor</code> into a cluster with no
+Prometheus Operator fails on an unknown API kind. Note what it does <em>not</em> do: it
+makes the endpoints scrapeable, not reachable. The chart's default-deny
+NetworkPolicies (#110) block the scrape until the monitoring namespace is
+allowed through.</p>
+<p>Covers <code>ingestion-api</code>, <code>orchestration-mcp</code>, and <code>reranker-service</code>.
+<code>ingestion-worker</code> is <strong>not</strong> covered — it is queue-driven, nothing calls it, so
+<code>helm/nexus-rag</code> gives it no Service for a ServiceMonitor to select even though
+it serves <code>/metrics</code> on :8004. Its nine metrics are visible through the
+<code>helm/observability</code> chart's pod discovery, or not at all.</p>
+<h2 id="2-helmobservability-external-air-gapped-grafana">2. <code>helm/observability</code> — external, air-gapped Grafana<a class="headerlink" href="#2-helmobservability-external-air-gapped-grafana" title="Permanent link">&para;</a></h2>
+<p>For the topology where the cluster has no monitoring stack and Grafana lives
+outside it on the air-gapped network. The chart deploys the four stores Grafana
+reads on LoadBalancer addresses, vendors the dashboards as importable files, and
+deploys <strong>no Grafana</strong>.</p>
+<p>Full install walkthrough, the fail-closed defaults, the pinned-UID constraint,
+and the pre-staged-plugin prerequisite: <a href="https://github.com/schuecl/nexus-rag/blob/main/helm/observability/README.md"><code>helm/observability/README.md</code></a>.</p>
+<p>The short version:</p>
+<div class="highlight"><pre><span></span><code>cp<span class="w"> </span>helm/observability/examples/airgapped-values.yaml<span class="w"> </span>my-values.yaml<span class="w">   </span><span class="c1"># replace every CHANGEME</span>
+helm<span class="w"> </span>install<span class="w"> </span>nexus-rag-obs<span class="w"> </span>./helm/observability<span class="w"> </span>-n<span class="w"> </span>observability<span class="w"> </span>--create-namespace<span class="w"> </span>-f<span class="w"> </span>my-values.yaml
+kubectl<span class="w"> </span>get<span class="w"> </span>svc<span class="w"> </span>-n<span class="w"> </span>observability<span class="w"> </span>-l<span class="w"> </span>app.kubernetes.io/instance<span class="o">=</span>nexus-rag-obs<span class="w">   </span><span class="c1"># the addresses</span>
+kubectl<span class="w"> </span>get<span class="w"> </span>cm<span class="w"> </span>-n<span class="w"> </span>observability<span class="w"> </span>nexus-rag-obs-observability-grafana-datasources<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">&#39;{.data.datasources\.yaml}&#39;</span><span class="w"> </span>&gt;<span class="w"> </span>datasources.yaml<span class="w">                   </span><span class="c1"># → external Grafana</span>
+<span class="c1"># then import helm/observability/dashboards/*.json in Grafana&#39;s UI</span>
+</code></pre></div>
+<h3 id="three-things-that-bite">Three things that bite<a class="headerlink" href="#three-things-that-bite" title="Permanent link">&para;</a></h3>
+<p><strong>The dashboards hard-code datasource UIDs.</strong> None has an <code>__inputs</code> block;
+the quality dashboard has one Prometheus-backed <code>profile</code> selector and the
+others have an empty <code>templating.list</code>. They reference the literal UIDs
+<code>prometheus</code>, <code>loki</code>, <code>tempo</code>, <code>alertmanager</code>, <code>documents-pg</code>. Rename one in
+Grafana and every panel bound to it imports broken — no error at import, nothing
+at panel time beyond "No data". The generated provisioning file uses exactly
+those UIDs.</p>
+<p><strong>Three dashboards need plugins that cannot be downloaded.</strong>
+<code>nexus-rag-system-flow.json</code> needs <code>andrewbmchugh-flow-panel</code>,
+<code>grafana-graphviz-panel</code>, and <code>jdbranham-diagram-panel</code>. Compose installs them
+via <code>GF_INSTALL_PLUGINS</code>, which is an internet fetch — impossible air-gapped and
+an NFR-1 violation regardless. Pre-stage them in the external Grafana, or those
+panels render blank in a dashboard that imported "successfully".</p>
+<p><strong>Four unauthenticated services on public addresses.</strong> Prometheus, Loki, Tempo,
+and Alertmanager carry no authentication (Loki's config sets <code>auth_enabled:
+false</code>, inherited from Compose where everything is loopback-bound). The chart
+refuses to render a LoadBalancer with no
+<code>externalAccess.loadBalancerSourceRanges</code> for that reason. Aggregate query
+volume and denial counts are operational signal about the corpus even though the
+metrics themselves carry no user, query, or document identifiers (#127 keeps
+label cardinality content-free deliberately).</p>
+<h2 id="3-compose-profile-local-development">3. Compose profile — local development<a class="headerlink" href="#3-compose-profile-local-development" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>compose<span class="w"> </span>--profile<span class="w"> </span>observability<span class="w"> </span>up<span class="w"> </span>-d
+</code></pre></div>
+<p>Grafana at <a href="http://localhost:3000">http://localhost:3000</a> (<code>admin</code> / <code>nexus-rag-admin</code>), dashboards
+pre-provisioned. Every other port is loopback-only. See
+<a href="../dev-setup/#observability-stack-optional-133">dev-setup.md</a> for the socket-proxy
+rationale, the Postgres monitoring role, and the trace-correlation walkthrough.</p>
+<p>The profile alone does not enable tracing, JSON logs, or profiling — set
+<code>OTEL_EXPORTER_OTLP_ENDPOINT</code>, <code>LOG_FORMAT=json</code>, and <code>PYROSCOPE_SERVER_ADDRESS</code>
+too, or Tempo/Pyroscope stay empty and the correlation links never appear.</p>
+<p>Pyroscope (continuous CPU profiling, #349) is also in the profile, at
+<a href="http://127.0.0.1:4040">http://127.0.0.1:4040</a> and wired as a Grafana datasource with
+trace-to-profiles correlation on the Tempo datasource. All four services push
+100Hz CPU samples once <code>PYROSCOPE_SERVER_ADDRESS</code> is set — continuous, not
+triggered, matching Prometheus/Tempo's always-on posture in this stack. Memory
+profiling stays off. Not (yet) part of <code>helm/observability</code>: that's a
+separate, larger surface (StatefulSet/Service topology, NetworkPolicy,
+dashboard-sync script) worth its own change now that there's real data to
+validate a deployment against, rather than folding it into this one.</p>
+<h2 id="what-is-actually-instrumented">What is actually instrumented<a class="headerlink" href="#what-is-actually-instrumented" title="Permanent link">&para;</a></h2>
+<p>All four services expose <code>/metrics</code>, all <code>nexus_rag_*</code>, all with deliberately
+content-free labels — stage and outcome names, never a user, query, or document
+id (#127).</p>
+<table>
+<thead>
+<tr>
+<th>Service</th>
+<th>Port</th>
+<th>Notable metrics</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ingestion-api</td>
+<td>8001</td>
+<td>submissions, upload bytes, queue publish + reconciliation lag, curation decisions</td>
+</tr>
+<tr>
+<td>orchestration-mcp</td>
+<td>8002</td>
+<td>per-stage query latency, query outcomes, reranker fallback rate, result counts</td>
+</tr>
+<tr>
+<td>reranker-service</td>
+<td>8003</td>
+<td>request counts, model predict latency, batch sizes, model-loaded gauge</td>
+</tr>
+<tr>
+<td>ingestion-worker</td>
+<td>8004</td>
+<td>job outcomes + duration, per-stage duration, chunks produced, delivery attempts, consumer-running gauge, last-success timestamp</td>
+</tr>
+</tbody>
+</table>
+<p>Issue #384 adds a fifth, batch-oriented source: sanitized Q-to-C-to-A report
+metrics published through Pushgateway. It is not a fifth application service and
+does not accept corpus content. The publisher allowlists numeric scores/counts,
+hashes case and configuration identities, and rejects malformed reports rather
+than serializing arbitrary labels.</p>
+<p>The reranker fallback rate matters more than it looks: FR-25 degrades to fused
+order rather than failing, so a ranking-quality drop is otherwise invisible.</p>
+<p>Tracing is opt-in and off by default —
+<code>services/common/common/tracing.py</code> returns early when
+<code>OTEL_EXPORTER_OTLP_ENDPOINT</code> is unset, so a deployment with no collector pays
+nothing. Default head-sampling ratio is 0.05.</p>
+<p>Continuous CPU profiling is opt-in and off by default, same posture as
+tracing — <code>services/common/common/profiling.py</code>'s <code>setup_profiling()</code>
+(and reranker-service's inline equivalent, which doesn't depend on
+<code>services/common</code>) is a no-op when <code>PYROSCOPE_SERVER_ADDRESS</code> is unset. When
+set, all four services push 100Hz CPU-only samples continuously for the life
+of the process (#349) — memory profiling is off. <code>application_name</code> is
+deliberately the same string tracing uses for <code>service.name</code>
+(<code>nexus-rag-&lt;service&gt;</code>), which Pyroscope stores as the <code>service_name</code> label —
+that agreement is what lets Grafana jump from a trace span straight to the
+flame graph for the same service.</p>
+<h2 id="dashboards">Dashboards<a class="headerlink" href="#dashboards" title="Permanent link">&para;</a></h2>
+<p>14 dashboards, in <code>infra/observability/grafana/dashboards/</code> (Compose) and
+<code>helm/observability/dashboards/</code> (chart). The two copies are kept byte-identical
+by <code>scripts/check_observability_assets_sync.py</code>, which runs in CI's <code>pin-check</code>
+job — the same arrangement #212 uses for <code>nats.conf</code>, and for the same reason:
+a duplicated source of truth is only safe if something enforces it.</p>
+<table>
+<thead>
+<tr>
+<th>Dashboard</th>
+<th>Reads</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nexus RAG Operations</td>
+<td>prometheus + loki</td>
+</tr>
+<tr>
+<td>System flow</td>
+<td>prometheus (needs the three flow plugins)</td>
+</tr>
+<tr>
+<td>Ingestion pipeline</td>
+<td>prometheus</td>
+</tr>
+<tr>
+<td>Retrieval and reranking</td>
+<td>prometheus</td>
+</tr>
+<tr>
+<td>RAG quality evaluation</td>
+<td>prometheus (via Pushgateway; issue #384)</td>
+</tr>
+<tr>
+<td>Messaging (NATS JetStream)</td>
+<td>prometheus (via nats-exporter <code>-jsz=all</code>)</td>
+</tr>
+<tr>
+<td>Datastores (Postgres)</td>
+<td>prometheus (via postgres-exporter)</td>
+</tr>
+<tr>
+<td>Vector store (Qdrant)</td>
+<td>prometheus</td>
+</tr>
+<tr>
+<td>Milvus</td>
+<td>prometheus (#160, only on a Milvus deployment)</td>
+</tr>
+<tr>
+<td>Identity (Keycloak)</td>
+<td>prometheus</td>
+</tr>
+<tr>
+<td>Chat plane (LibreChat, LiteLLM, Ollama)</td>
+<td>prometheus + loki</td>
+</tr>
+<tr>
+<td>Logs and traces</td>
+<td>prometheus + loki</td>
+</tr>
+<tr>
+<td>Component logs</td>
+<td>loki</td>
+</tr>
+<tr>
+<td>Documents</td>
+<td><strong>postgres directly</strong> — needs <code>document_metrics</code> + <code>grafana_ro</code></td>
+</tr>
+</tbody>
+</table>
+<p>The Documents dashboard is the odd one out: Grafana queries Postgres directly
+rather than going through Prometheus, so it needs
+<code>infra/postgres/document-metrics-view.sql</code> applied and <code>grafana_ro</code> granted
+<code>SELECT</code> on the view. Without those it reads "No data" while everything else
+works.</p>
+<h3 id="q-to-c-to-a-quality-dashboard-384">Q-to-C-to-A quality dashboard (#384)<a class="headerlink" href="#q-to-c-to-a-quality-dashboard-384" title="Permanent link">&para;</a></h3>
+<p><a href="https://github.com/schuecl/nexus-rag/blob/main/scripts/publish_rag_quality_metrics.py"><code>scripts/publish_rag_quality_metrics.py</code></a>
+turns a completed issue #74/#383 evaluation report into an allowlisted Prometheus
+payload. The separation is deliberate: <code>evaluate_rag_quality.py</code> remains the
+fail-closed evaluator and its JSON remains the local audit artifact; publishing
+is an explicit second action that can be omitted where the approved monitoring
+boundary is different.</p>
+<p>For Compose, Pushgateway is part of the opt-in <code>observability</code> profile and its
+write port is bound to host loopback on <code>127.0.0.1:9092</code> (container port 9091).
+Host port 9092 avoids a collision with Milvus's host-side health/metrics port.</p>
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>compose<span class="w"> </span>--profile<span class="w"> </span>observability<span class="w"> </span>up<span class="w"> </span>-d<span class="w"> </span>pushgateway<span class="w"> </span>prometheus<span class="w"> </span>grafana
+
+<span class="c1"># First create a content-free report with #383&#39;s evaluator.</span>
+python<span class="w"> </span>scripts/evaluate_rag_quality.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--agent-id<span class="w"> </span>&lt;librechat-agent-id&gt;<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--output<span class="w"> </span>eval-history/qca-current.json
+
+<span class="c1"># Publish latest state. Add --baseline for delta/regression panels.</span>
+python<span class="w"> </span>scripts/publish_rag_quality_metrics.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--report<span class="w"> </span>eval-history/qca-current.json<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--baseline<span class="w"> </span>eval-history/qca-baseline.json<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--profile<span class="w"> </span>nightly
+</code></pre></div>
+<p><code>--dry-run</code> prints the exact exposition payload without making a request. The
+publisher supports an HTTPS gateway through <code>--ca-file</code> and a reverse proxy's
+bearer token through <code>--bearer-token-file</code>; credentials are never accepted in
+the URL. Keep the endpoint inside the accreditation boundary. Pushgateway is a
+metrics cache for ephemeral/batch jobs, not an event store; Prometheus's TSDB is
+what provides the 30-day trend displayed by the dashboard.</p>
+<p>The Helm observability chart deploys its gateway as ClusterIP only. Publish from
+an allowed namespace, use the environment's existing approved Pushgateway, or
+use a controlled <code>kubectl port-forward</code> for administrative validation. The chart
+does not create an unauthenticated public write endpoint. With
+<code>networkPolicy.enabled=true</code>, writer namespaces come from
+<code>networkPolicy.allowedNamespaces</code>; Prometheus in the observability release is
+always allowed to scrape it.</p>
+<p>Dashboard panels include latest aggregate gauges, score time series, comparable
+baseline deltas, run-validity/regression/error/coverage stats, a hashed case-ID
+table, a hashed configuration table, and configuration-fingerprint annotations.
+The aggregate gauges are intentionally neutral blue. Judge scores are relative,
+so only the publisher's same-configuration baseline decision is rendered as a
+red/green regression state.</p>
+<h3 id="running-it-unattended-388">Running it unattended (#388)<a class="headerlink" href="#running-it-unattended-388" title="Permanent link">&para;</a></h3>
+<p>Everything above is a manual two-step: an admin runs <code>evaluate_rag_quality.py</code>,
+then <code>publish_rag_quality_metrics.py</code>, usually through a <code>kubectl port-forward</code>.
+That is the right shape for validation and the wrong one for a steady state —
+the trend, baseline-delta, and regression panels only advance when someone
+remembers to run both scripts.</p>
+<p><strong>Scheduling the publisher alone would not fix that.</strong> Pushgateway holds what it
+is given until something overwrites it, and Prometheus scrapes it on the normal
+interval, so a single push already yields a continuous series. Re-pushing an
+unchanged report on a timer produces a newer push timestamp over the same
+measurement, not a new measurement. The step worth scheduling is the <em>evaluator</em>;
+publishing is its last line.</p>
+<h4 id="why-the-evaluator-is-not-schedulable-as-it-stands">Why the evaluator is not schedulable as it stands<a class="headerlink" href="#why-the-evaluator-is-not-schedulable-as-it-stands" title="Permanent link">&para;</a></h4>
+<p><code>evaluate_rag_quality.py</code> is host-side by construction, not by oversight. It
+imports its login and generation path from
+<a href="https://github.com/schuecl/nexus-rag/blob/main/scripts/adversarial_injection_probe.py"><code>adversarial_injection_probe.py</code></a>,
+whose docstring already explains why <em>that</em> script cannot run as a container on
+the Compose network. The same facts block an in-cluster CronJob:</p>
+<table>
+<thead>
+<tr>
+<th>What</th>
+<th>Where</th>
+<th>Why it blocks an unattended run</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Endpoints are literals, not configuration</td>
+<td><code>adversarial_injection_probe.py</code>'s <code>KEYCLOAK_URL</code>, <code>KEYCLOAK_HTTPS_URL</code>, <code>LIBRECHAT_URL</code>, <code>INGESTION_API_URL</code></td>
+<td>Module constants pointing at <code>localhost</code> and the <code>keycloak</code> <code>/etc/hosts</code> alias, with no environment override. <code>evaluate_rag_quality.py</code> makes only <code>ORCHESTRATION_MCP_URL</code>/<code>OLLAMA_URL</code> overridable — contrast <code>evaluate_retrieval.py</code>, which reads every endpoint from the environment and is exactly why <em>it</em> runs as a one-shot container.</td>
+</tr>
+<tr>
+<td>Both redirect URIs are <code>https://localhost:3080</code></td>
+<td><code>infra/librechat/librechat.yaml</code>'s <code>DOMAIN_SERVER</code></td>
+<td>LibreChat's OIDC redirect and the <code>rag</code> MCP server's OAuth redirect resolve only from the host running the stack, and the scripted login follows that exact chain. A real deployment's LibreChat has its own URI, which nothing here reads.</td>
+</tr>
+<tr>
+<td>Login is a Keycloak password grant as a seeded user</td>
+<td><code>scripts/_keycloak.py</code>'s <code>SEED_PASSWORD</code></td>
+<td>A dev constant, and a human password grant is the wrong credential to put on a timer (below).</td>
+</tr>
+<tr>
+<td>The LibreChat session JWT is minted directly</td>
+<td>same technique as <code>create_librechat_agent.sh</code></td>
+<td>Needs LibreChat's JWT signing secret at run time.</td>
+</tr>
+<tr>
+<td><code>--agent-id</code> refers to a manually created agent</td>
+<td><code>scripts/create_librechat_agent.sh</code></td>
+<td>Nothing creates or discovers it automatically. This is the same prerequisite that keeps #383's harness out of CI.</td>
+</tr>
+<tr>
+<td>No published image carries these scripts</td>
+<td><code>scripts/Dockerfile</code>, built from context by Compose</td>
+<td>The chart publishes four images and this is not one of them, so the job's image must be built, pushed to the environment's registry, and pinned (NFR-16) first.</td>
+</tr>
+</tbody>
+</table>
+<p>Making those endpoints configurable is the smallest real unblocking step, and it
+is deliberately <strong>not</strong> done here — it changes a security-probe script that
+cannot be re-validated against a live LibreChat from this repo, and it would
+still leave the credential questions below open.</p>
+<h4 id="credentials-and-tokens-an-unattended-run-would-need">Credentials and tokens an unattended run would need<a class="headerlink" href="#credentials-and-tokens-an-unattended-run-would-need" title="Permanent link">&para;</a></h4>
+<p>The issue asks what provisioning is required. Concretely:</p>
+<ul>
+<li><strong>A non-interactive identity.</strong> The evaluator authenticates as <code>EVAL_PERSONA</code>
+  (default <code>dave-admin</code>) — an admin persona chosen so access filtering does not
+  truncate golden-set coverage. That is defensible for an operator-run
+  measurement and a broad standing credential to hand a timer: it can read every
+  classification in the corpus. A scheduled run should use a dedicated
+  evaluation account carrying exactly the clearance and releasability the golden
+  set needs, provisioned as the environment's approved non-interactive
+  credential — not a password grant against a person's account.</li>
+<li><strong>LibreChat's JWT signing secret</strong>, mounted as a Secret, for the session JWT.</li>
+<li><strong>The per-user MCP OAuth consent.</strong> The probe automates the browser "Connect"
+  step by reusing the Keycloak SSO cookie from its own login; the scheduled
+  identity still needs that consent to exist, or to be re-established each run,
+  before <code>rag_search</code> is callable at all.</li>
+<li><strong>Token lifetime shorter than the run.</strong> <code>accessTokenLifespan</code> is 900 s in
+  dev and a CPU-bound judge run outlives it, which is why the evaluator
+  re-mints before every case. Any scheduled wrapper must keep that behavior
+  rather than authenticating once up front.</li>
+<li><strong>For the publish step only:</strong> <code>--bearer-token-file</code> and <code>--ca-file</code> where the
+  gateway sits behind an authenticating proxy. Credentials are never accepted in
+  the URL.</li>
+</ul>
+<h4 id="the-cronjob-shape-once-those-are-met">The CronJob shape, once those are met<a class="headerlink" href="#the-cronjob-shape-once-those-are-met" title="Permanent link">&para;</a></h4>
+<p>Publishing goes straight to the ClusterIP Service — no port-forward. The job's
+namespace must appear in the observability release's
+<code>networkPolicy.allowedNamespaces</code>, which is what its Pushgateway policy admits.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">batch/v1</span>
+<span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CronJob</span>
+<span class="nt">metadata</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rag-quality-evaluation</span>
+<span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nexus-rag</span><span class="w">          </span><span class="c1"># must be in networkPolicy.allowedNamespaces</span>
+<span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">schedule</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;0</span><span class="nv"> </span><span class="s">2</span><span class="nv"> </span><span class="s">*</span><span class="nv"> </span><span class="s">*</span><span class="nv"> </span><span class="s">*&quot;</span><span class="w">         </span><span class="c1"># the --profile nightly example above</span>
+<span class="w">  </span><span class="nt">concurrencyPolicy</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Forbid</span><span class="w">     </span><span class="c1"># a judge run can outlast its own interval</span>
+<span class="w">  </span><span class="nt">startingDeadlineSeconds</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3600</span>
+<span class="w">  </span><span class="nt">successfulJobsHistoryLimit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
+<span class="w">  </span><span class="nt">failedJobsHistoryLimit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
+<span class="w">  </span><span class="nt">jobTemplate</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">spec</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">backoffLimit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span><span class="w">           </span><span class="c1"># a re-run is a new measurement, not a retry</span>
+<span class="w">      </span><span class="nt">template</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">spec</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">restartPolicy</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Never</span>
+<span class="w">          </span><span class="nt">containers</span><span class="p">:</span>
+<span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">evaluate-and-publish</span>
+<span class="w">              </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">registry.example/nexus-rag-scripts:&lt;pinned-tag&gt;</span>
+<span class="w">              </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;/bin/sh&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;-c&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">              </span><span class="nt">args</span><span class="p">:</span>
+<span class="w">                </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">                  </span><span class="no">set -e</span>
+<span class="w">                  </span><span class="no">python3 evaluate_rag_quality.py \</span>
+<span class="w">                    </span><span class="no">--agent-id &quot;$AGENT_ID&quot; \</span>
+<span class="w">                    </span><span class="no">--no-fail-on-regression \</span>
+<span class="w">                    </span><span class="no">--history-dir /var/lib/qca \</span>
+<span class="w">                    </span><span class="no">--baseline /var/lib/qca/baseline.json \</span>
+<span class="w">                    </span><span class="no">--output /var/lib/qca/current.json</span>
+<span class="w">                  </span><span class="no">python3 publish_rag_quality_metrics.py \</span>
+<span class="w">                    </span><span class="no">--report /var/lib/qca/current.json \</span>
+<span class="w">                    </span><span class="no">--baseline /var/lib/qca/baseline.json \</span>
+<span class="w">                    </span><span class="no">--profile nightly \</span>
+<span class="w">                    </span><span class="no">--pushgateway-url &quot;$RAG_QUALITY_PUSHGATEWAY_URL&quot;</span>
+<span class="w">              </span><span class="nt">env</span><span class="p">:</span>
+<span class="w">                </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">RAG_QUALITY_PUSHGATEWAY_URL</span>
+<span class="w">                  </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">                    </span><span class="no">http://nexus-rag-obs-observability-pushgateway.observability.svc.cluster.local:9091</span>
+<span class="w">                </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">AGENT_ID</span>
+<span class="w">                  </span><span class="nt">valueFrom</span><span class="p">:</span>
+<span class="w">                    </span><span class="nt">secretKeyRef</span><span class="p">:</span>
+<span class="w">                      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rag-quality-eval</span>
+<span class="w">                      </span><span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">agent-id</span>
+<span class="w">              </span><span class="nt">volumeMounts</span><span class="p">:</span>
+<span class="w">                </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">history</span>
+<span class="w">                  </span><span class="nt">mountPath</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/var/lib/qca</span>
+<span class="w">          </span><span class="nt">volumes</span><span class="p">:</span>
+<span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">history</span>
+<span class="w">              </span><span class="nt">persistentVolumeClaim</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">claimName</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rag-quality-eval-history</span>
+</code></pre></div>
+<p>Two things in there are load-bearing and easy to get wrong:</p>
+<ul>
+<li><strong><code>--no-fail-on-regression</code> is deliberate.</strong> The evaluator is fail-closed by
+  default: a regression against the baseline makes it exit non-zero. Under
+  <code>set -e</code> that skips the publish step, so the one run whose numbers most need
+  to reach the dashboard is the one that never publishes them. The publisher
+  computes its own same-configuration regression verdict, and the dashboard
+  renders <em>that</em>, so let the evaluation report land and read the verdict there.
+  Keep the fail-closed default for interactive and gating use.</li>
+<li><strong>The volume is not optional.</strong> <code>--history-dir</code>/<code>--baseline</code> have to survive
+  between runs. On an <code>emptyDir</code> every run is baseline-less, the delta and
+  regression panels stay empty, and the result is the reported problem with a
+  schedule attached.</li>
+</ul>
+<h4 id="status">Status<a class="headerlink" href="#status" title="Permanent link">&para;</a></h4>
+<p>Documented pattern, not a shipped template. The chart does not include this
+CronJob, on purpose: the evaluator cannot run unattended until at least the
+endpoint-configuration and credential items above are resolved, and a chart
+template that renders cleanly while being unable to work would read as a
+supported feature. That is the same reasoning <code>docs/governance.md</code> applies to
+the retention job it also declines to ship. None of the manifest above has been
+run against a cluster — it is the shape the pieces imply, checked against the
+chart's actual Service name, port, and NetworkPolicy, not an executed
+configuration.</p>
+<h3 id="periodic-object-store-integrity-re-verification-432">Periodic object-store integrity re-verification (#432)<a class="headerlink" href="#periodic-object-store-integrity-re-verification-432" title="Permanent link">&para;</a></h3>
+<p>NFR-18 shipped event-triggered content-integrity verification (#285): every
+time a document's original is fetched for parsing or re-embedding,
+ingestion-worker re-hashes it against <code>documents.content_sha256</code> and refuses
+to proceed on a mismatch. That never runs for a document that's simply
+sitting approved in the object store, untouched, for months — the common
+case, not an edge case — so NFR-18's own text named a scheduled,
+event-independent sweep as a follow-on. <code>services/ingestion-worker/app/
+integrity_sweep.py</code> (<code>python -m app.integrity_sweep</code>) is that sweep: each run
+re-hashes a bounded rolling window of documents (<code>--batch-size</code>, default
+500), ordered oldest-<code>last_verified_at</code>-first so a corpus larger than one
+run's batch is covered incrementally across successive runs rather than
+paying a full-corpus re-hash's I/O cost every time.</p>
+<p>A mismatch or an unreadable original is deliberately <strong>not</strong> an automatic
+status change -- unlike the event-triggered check, there's no processing in
+flight to refuse, and the cause (bit rot, a backup-restore artifact, or real
+tampering) needs a human to triage. Each finding becomes a
+<code>document.integrity_check_failed</code> audit_log entry (<code>reason</code>:
+<code>digest_mismatch</code> or <code>original_unreadable</code>, no digest values in <code>detail</code> --
+same re-identification reasoning <code>common/purge.py</code> already applies to a
+purge tombstone) and is counted toward the <code>nexus_rag_integrity_check_
+failures_total</code> Pushgateway metric, alongside a <code>nexus_rag_integrity_check_
+last_run_timestamp_seconds</code> heartbeat -- same flagged-count/heartbeat shape
+as <code>detect_query_anomalies.py</code>'s pair above.</p>
+<p>Locally: <code>docker compose run --rm ingestion-worker python -m
+app.integrity_sweep</code> (reuses the ingestion-worker image/role, same pattern
+<code>app/reembed.py</code>'s CLI already uses -- no new DB grant needed, since
+<code>worker_role</code> already holds <code>SELECT, UPDATE</code> on <code>documents</code> and <code>INSERT</code> on
+<code>audit_log</code>). <code>RAG_INTEGRITY_PUSHGATEWAY_URL</code> (<code>docker-compose.yml</code>) points
+it at the <code>observability</code> profile's Pushgateway; pass <code>--no-push</code> (or leave
+that env var unset without the <code>observability</code> profile running) to skip
+publishing and just see the stdout report.</p>
+<h4 id="status-shipped-unlike-the-q-to-c-to-a-cronjob-above">Status: shipped, unlike the Q-to-C-to-A CronJob above<a class="headerlink" href="#status-shipped-unlike-the-q-to-c-to-a-cronjob-above" title="Permanent link">&para;</a></h4>
+<p><code>helm/nexus-rag/templates/ingestion-worker-integrity-sweep-cronjob.yaml</code>
+(<code>ingestionWorker.integritySweep.enabled</code>, default <code>true</code>, nightly by
+default) <strong>is</strong> an actual chart template, not a documented-but-declined
+pattern -- the blockers that keep the Q-to-C-to-A CronJob doc-only
+(hardcoded <code>localhost</code> endpoints, dev-only OIDC redirect URIs, a
+password-grant login, a manually-created LibreChat agent-id, no published
+image containing <code>scripts/</code>) don't apply here: the sweep reuses the
+<code>ingestion-worker</code> image the chart already publishes, authenticates with the
+same Postgres/object-store credentials that image's Deployment already
+holds, and needs no browser-facing OIDC round trip at all. <code>Values.
+ingestionWorker.integritySweep.pushgatewayUrl</code> is left empty by default
+(same "cluster-specific, don't guess" posture as
+<code>networkPolicy.ingressControllerSelectors</code>) -- the sweep still runs and
+still writes <code>audit_log</code> findings without it, just without the
+Prometheus-visible metrics, until an operator points it at their
+observability release's Pushgateway Service.</p>
+<h2 id="alerts">Alerts<a class="headerlink" href="#alerts" title="Permanent link">&para;</a></h2>
+<p>14 rules in four groups, in <code>infra/observability/prometheus/rules/nexus-rag.yml</code>
+(and the chart's vendored copy):</p>
+<ul>
+<li><strong>availability</strong> — <code>NexusRagServiceDown</code>, <code>NexusRagWorkerConsumerStopped</code>,
+  <code>NexusRagDependencyDown</code></li>
+<li><strong>ingestion</strong> — <code>NexusRagQueuePublishFailure</code>,
+  <code>NexusRagUnpublishedDocumentStale</code>, <code>NexusRagWorkerTransientFailures</code>,
+  <code>NexusRagWorkerDeliveryExhausted</code></li>
+<li><strong>retrieval</strong> — <code>NexusRagHighQueryLatency</code>, <code>NexusRagRerankerFallbackHigh</code>,
+  <code>NexusRagQueryDeniedSpike</code></li>
+<li><strong>security</strong> — <code>NexusRagQueryAnomalyDetected</code>,
+  <code>NexusRagQueryAnomalyDetectionStale</code>, <code>NexusRagTaggingCalibrationStale</code>
+  (issues #426/#527: fed by <code>scripts/detect_query_anomalies.py</code> and
+  <code>scripts/calibrate_tagging_advisory.py</code> via Pushgateway, not scraped from a
+  service -- see <code>docs/testing.md</code>'s "Reconnaissance-shaped query detection"
+  section). To run the equivalent detection inside the deployment's own SIEM
+  instead of, or alongside, that batch job, see
+  <a href="../siem-detection-runbook/">docs/siem-detection-runbook.md</a> (issue #436) --
+  the same four signals expressed against the RFC 5424 audit export (#73).
+  <code>NexusRagIntegrityCheckFailureDetected</code>, <code>NexusRagIntegritySweepStale</code>
+  (issue #432: fed by <code>app/integrity_sweep.py</code> via Pushgateway, same
+  flagged-count/heartbeat shape -- see "Periodic object-store integrity
+  re-verification" above).</li>
+</ul>
+<p>Neither offline job depends on an operator remembering a cadence anymore
+(issue #527): the dev stack schedules both with
+<code>docker compose --profile scheduling up -d</code> (hourly detection, weekly
+calibration by default -- <code>RAG_ANOMALY_INTERVAL_SECONDS</code> /
+<code>RAG_CALIBRATION_INTERVAL_SECONDS</code> override), and production enables the
+chart's default-off CronJobs (<code>auditReporting</code> in <code>values.yaml</code>, backed by the
+scripts image released in lockstep with the four service images). The
+staleness alerts assume those default cadences; both fire only after a first
+run has published -- a deployment that never enables the jobs sees no series
+and no alert, which is why they stay opt-in rather than silently required.</p>
+<p><code>NexusRagHighQueryLatency</code>'s 5 s p95 threshold is a <strong>provisional</strong> number:
+NFR-4's latency budget is still an open question in REQUIREMENTS.md, so this is
+a stand-in, not an agreed target.</p>
+<p>The default Alertmanager receiver is a no-op (<code>local-ui</code>) in both Compose and the
+chart. Alerts are visible in Alertmanager and Grafana and page nobody. Replace it
+with the environment's approved integration — a plausible-looking email receiver
+would be worse, since it would look configured while delivering nowhere.</p>
+<h2 id="confidence">Confidence<a class="headerlink" href="#confidence" title="Permanent link">&para;</a></h2>
+<p>Per CLAUDE.md's labelling:</p>
+<ul>
+<li><strong>Validated against a live environment</strong>: the Compose profile. Dashboards
+  render, trace correlation works, the service map populates, and Pyroscope
+  itself comes up and is reachable from Grafana as a datasource. <strong>Not
+  independently re-confirmed live since #349 landed the actual profile
+  push</strong> — that run predates #349; <code>setup_profiling()</code> itself is
+  unit-tested (<code>tests/unit/common/test_profiling.py</code>), but whether flame
+  graphs actually populate end to end for all four services against a real
+  Pyroscope instance has not yet been re-validated against a live stack.</li>
+<li><strong>Implemented, configs validated against their upstream binaries</strong>:
+  <code>helm/observability</code>. <code>helm lint</code>/<code>helm template</code> render every component, the
+  dashboards' datasource UIDs are asserted to match the generated provisioning
+  file, and each rendered config is checked by the tool that consumes it at the
+  pinned version — <code>promtool check config</code>, <code>amtool check-config</code>,
+  <code>loki -verify-config</code>, <code>tempo -config.verify</code>, <code>otelcol validate</code>,
+  <code>alloy validate</code>. Not run on a cluster: no real LoadBalancer provider, no
+  external-Grafana import, no pod-log line observed arriving in Loki.</li>
+<li><strong>Implemented</strong>: the ServiceMonitor path. It renders; it has not been run
+  against a real Prometheus Operator.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../testing/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Testing &amp; CI quality gates">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Testing & CI quality gates
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../releasing/" class="md-footer__link md-footer__link--next" aria-label="Next: Releasing">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Releasing
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.footer", "navigation.top", "navigation.indexes", "search.suggest", "search.highlight", "content.code.copy", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../assets/js/mermaid.min.js"></script>
+      
+        <script src="../assets/js/mermaid-init.js"></script>
+      
+        <script src="../assets/js/lightbox.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,2869 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Air-gapped RAG pipeline for MPNexus: classification-aware ingestion, curation, and claims-filtered retrieval.">
+      
+      
+      
+        <link rel="canonical" href="https://allamiro.gitlab.io/nexus-rag/architecture-overview/">
+      
+      
+        <link rel="prev" href="../nist-ai-rmf/evidence/evidence-index/">
+      
+      
+        <link rel="next" href="../architecture/diagrams/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Architecture - Nexus RAG</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/dracula.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="pink">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#architecture" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Nexus RAG" class="md-header__button md-logo" aria-label="Nexus RAG" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18.68 12.32a4.49 4.49 0 0 0-6.36.01 4.49 4.49 0 0 0 0 6.36 4.51 4.51 0 0 0 5.57.63L21 22.39 22.39 21l-3.09-3.11c1.13-1.77.87-4.09-.62-5.57m-1.41 4.95c-.98.98-2.56.97-3.54 0-.97-.98-.97-2.56.01-3.54.97-.97 2.55-.97 3.53 0 .97.98.97 2.56 0 3.54M10.9 20.1a6.5 6.5 0 0 1-1.48-2.32C6.27 17.25 4 15.76 4 14v3c0 2.21 3.58 4 8 4-.4-.26-.77-.56-1.1-.9M4 9v3c0 1.68 2.07 3.12 5 3.7v-.2c0-.93.2-1.85.58-2.69C6.34 12.3 4 10.79 4 9m8-6C7.58 3 4 4.79 4 7c0 2 3 3.68 6.85 4h.05c1.2-1.26 2.86-2 4.6-2 .91 0 1.81.19 2.64.56A3.22 3.22 0 0 0 20 7c0-2.21-3.58-4-8-4"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Nexus RAG
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Architecture
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/schuecl/nexus-rag" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    schuecl/nexus-rag
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+    
+  
+  🚀 Get Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../guides/deploy-compose/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  🚢 Production Deployment
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../guides/configuration/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  🛠️ How-to Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../security/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  🛡️ Security & Compliance
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+  
+    
+  
+  📖 Reference
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Nexus RAG" class="md-nav__button md-logo" aria-label="Nexus RAG" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18.68 12.32a4.49 4.49 0 0 0-6.36.01 4.49 4.49 0 0 0 0 6.36 4.51 4.51 0 0 0 5.57.63L21 22.39 22.39 21l-3.09-3.11c1.13-1.77.87-4.09-.62-5.57m-1.41 4.95c-.98.98-2.56.97-3.54 0-.97-.98-.97-2.56.01-3.54.97-.97 2.55-.97 3.53 0 .97.98.97 2.56 0 3.54M10.9 20.1a6.5 6.5 0 0 1-1.48-2.32C6.27 17.25 4 15.76 4 14v3c0 2.21 3.58 4 8 4-.4-.26-.77-.56-1.1-.9M4 9v3c0 1.68 2.07 3.12 5 3.7v-.2c0-.93.2-1.85.58-2.69C6.34 12.3 4 10.79 4 9m8-6C7.58 3 4 4.79 4 7c0 2 3 3.68 6.85 4h.05c1.2-1.26 2.86-2 4.6-2 .91 0 1.81.19 2.64.56A3.22 3.22 0 0 0 20 7c0-2.21-3.58-4-8-4"/></svg>
+
+    </a>
+    Nexus RAG
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/schuecl/nexus-rag" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    schuecl/nexus-rag
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href=".." class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🚀 Get Started
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_1" id="__nav_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    🚀 Get Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/quickstart-helm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart on Kubernetes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/understanding-the-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Understanding the architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/connect-chat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Connect the chat plane
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🚢 Production Deployment
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    🚢 Production Deployment
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/deploy-compose/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker Compose
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/deploy-helm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Helm / Kubernetes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/deploy-airgapped/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Air-gapped
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🛠️ How-to Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    🛠️ How-to Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration by use case
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../evaluation-results/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Evaluation & performance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🛡️ Security & Compliance
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    🛡️ Security & Compliance
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../nist-ai-rmf/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NIST AI RMF
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    NIST AI RMF
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nist-ai-rmf/rmf-mapping/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RMF mapping
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nist-ai-rmf/governance-policy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Governance policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nist-ai-rmf/impact-assessment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Impact assessment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nist-ai-rmf/risk-register/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk register
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nist-ai-rmf/ai-system-inventory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI system inventory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nist-ai-rmf/evidence/evidence-index/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Evidence index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    📖 Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    📖 Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5_1" id="__nav_5_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engineering docs (verbatim)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_1_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Engineering docs (verbatim)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-system-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. System overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-component-inventory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Component inventory
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-data-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Data model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-major-flows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Major flows
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Major flows">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-ingestion-fr-1fr-9-durable-via-nfr-11nfr-12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 Ingestion (FR-1..FR-9, durable via NFR-11/NFR-12)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-curation-fr-10fr-16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 Curation (FR-10..FR-16)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-query-retrieval-fr-24fr-29" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 Query / retrieval (FR-24..FR-29)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/diagrams/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture diagrams
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../requirements/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Requirements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../governance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data governance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../threat-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privacy threat model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../roles-and-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roles and permissions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dev-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dev environment setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../querying-the-corpus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Querying the corpus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing & CI quality gates
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../releasing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Releasing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../credential-rotation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Credential rotation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chat-plane-purge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chat-plane purge runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../siem-detection-runbook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SIEM detection runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-system-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. System overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-component-inventory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Component inventory
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-data-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Data model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-major-flows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Major flows
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Major flows">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-ingestion-fr-1fr-9-durable-via-nfr-11nfr-12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 Ingestion (FR-1..FR-9, durable via NFR-11/NFR-12)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-curation-fr-10fr-16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 Curation (FR-10..FR-16)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-query-retrieval-fr-24fr-29" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 Query / retrieval (FR-24..FR-29)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h1>
+<p>A visual companion to <a href="../requirements/">REQUIREMENTS.md</a> — this document shows how the
+pieces fit together and how data moves through them. For rendered Mermaid diagrams of
+the full system — every running application, the ingestion and retrieval pipelines, the
+classification/tagging model, the document lifecycle, and the Helm topology — see
+<a href="../architecture/diagrams/">docs/architecture/diagrams.md</a> (issue #129). It describes what's actually built
+(see <code>docs/dev-setup.md</code>'s "What's stubbed vs working" for the authoritative, current
+list) plus one flow that's designed but not yet implemented, called out explicitly where
+it appears.</p>
+<h2 id="1-system-overview">1. System overview<a class="headerlink" href="#1-system-overview" title="Permanent link">&para;</a></h2>
+<pre class="mermaid"><code>flowchart LR
+    subgraph existing["Existing MPNexus (not built by this project)"]
+        LibreChat["LibreChat&lt;br/&gt;(chat UI)"]
+        LiteLLM["LiteLLM&lt;br/&gt;(gateway)"]
+        VLLM["vLLM/Ollama&lt;br/&gt;(generation)"]
+        Keycloak["Keycloak&lt;br/&gt;(OIDC IdP)"]
+    end
+
+    subgraph new["Built by this project"]
+        IngestUI["ingestion-api&lt;br/&gt;(upload + curation UI/API)"]
+        Worker["ingestion-worker&lt;br/&gt;(durable parse/chunk/embed/store)"]
+        NATS[("NATS JetStream&lt;br/&gt;(durable job queue)")]
+        ObjStore[("object store&lt;br/&gt;(original files)")]
+        MCP["orchestration-mcp&lt;br/&gt;(rag_search MCP tool)"]
+        Reranker["reranker-service"]
+        EmbedOllama["embedding Ollama&lt;br/&gt;(dedicated instance)"]
+        Qdrant[("Qdrant&lt;br/&gt;(vectors)")]
+        Postgres[("Postgres&lt;br/&gt;(documents, audit, lists)")]
+    end
+
+    User(("Uploader / Curator")) --&gt;|OIDC login| IngestUI
+    Analyst(("Analyst")) --&gt; LibreChat
+    LibreChat --&gt;|OBO-exchanged JWT| MCP
+    LibreChat --&gt; LiteLLM --&gt; VLLM
+    IngestUI --&gt;|validate token| Keycloak
+    MCP --&gt;|validate token| Keycloak
+    IngestUI --&gt; ObjStore
+    IngestUI --&gt;|publish job| NATS
+    IngestUI --&gt; Postgres
+    IngestUI --&gt; Qdrant
+    NATS --&gt;|durable consume| Worker
+    Worker --&gt; ObjStore
+    Worker --&gt; EmbedOllama
+    Worker --&gt; Qdrant
+    Worker --&gt; Postgres
+    MCP --&gt; Qdrant
+    MCP --&gt; Reranker
+    MCP --&gt; EmbedOllama
+    MCP --&gt; Postgres</code></pre>
+<p>Everything in the <code>new</code> box is what this repo adds; everything in <code>existing</code> is assumed
+already deployed and managed separately (NFR-10). The dev Compose stack (NFR-9) stands up
+throwaway copies of the <code>existing</code> box too, so the whole diagram runs on a laptop.</p>
+<h2 id="2-component-inventory">2. Component inventory<a class="headerlink" href="#2-component-inventory" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Built here?</th>
+<th>Tech</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ingestion-api</code></td>
+<td>Yes</td>
+<td>FastAPI + Jinja2/HTMX</td>
+<td>Upload, mandatory tagging, curation queue, admin lists, notifications — both the browser UI and its REST API. Validates and durably stages a submission (Postgres row + object-store write), then publishes a job rather than processing it itself</td>
+</tr>
+<tr>
+<td><code>ingestion-worker</code></td>
+<td>Yes</td>
+<td>FastAPI (health-check only) + a NATS JetStream pull consumer</td>
+<td>Durable parse/chunk/embed/store pipeline (FR-3..FR-6), moved out of <code>ingestion-api</code>'s request path (NFR-11)</td>
+</tr>
+<tr>
+<td><code>orchestration-mcp</code></td>
+<td>Yes</td>
+<td>MCPServer (Python MCP SDK 2.x, #288)</td>
+<td>Exposes <code>rag_search</code> to LibreChat; builds the claims-based Qdrant filter, runs hybrid retrieval + rerank</td>
+</tr>
+<tr>
+<td><code>reranker-service</code></td>
+<td>Yes</td>
+<td>FastAPI + sentence-transformers <code>CrossEncoder</code></td>
+<td>Scores/reorders fused retrieval candidates</td>
+</tr>
+<tr>
+<td><code>common</code></td>
+<td>Yes</td>
+<td>Python package</td>
+<td>Shared claims parsing, metadata schema, Qdrant filter builder, DB models, object-store abstraction (NFR-12), NATS job-queue helpers (NFR-11) — the single source of truth every service imports rather than reimplements</td>
+</tr>
+<tr>
+<td>NATS JetStream</td>
+<td>Config only</td>
+<td>NATS</td>
+<td>Durable, token-authenticated ingestion job queue between <code>ingestion-api</code> and <code>ingestion-worker</code> (NFR-11)</td>
+</tr>
+<tr>
+<td>object store</td>
+<td>Config only</td>
+<td>Filesystem (dev) / any S3-compatible endpoint (prod)</td>
+<td>Durable storage for original uploaded files, independent of Qdrant/Postgres (NFR-12)</td>
+</tr>
+<tr>
+<td>embedding Ollama</td>
+<td>Config only</td>
+<td>Ollama</td>
+<td>Dedicated embedding-serving instance (NFR-8: separate GPU allocation from generation)</td>
+</tr>
+<tr>
+<td>Qdrant</td>
+<td>Config only</td>
+<td>Qdrant</td>
+<td>Vector store — dense + BM25 named vectors per chunk, access-control payload fields, one collection per Classification level (#229)</td>
+</tr>
+<tr>
+<td>Postgres</td>
+<td>Config only</td>
+<td>Postgres</td>
+<td>System of record: document status, audit log, notifications, admin-configurable classification/releasability lists</td>
+</tr>
+<tr>
+<td>Keycloak</td>
+<td>External</td>
+<td>Keycloak</td>
+<td>OIDC IdP — realm/users/roles seeded for dev, external in prod</td>
+</tr>
+<tr>
+<td>LibreChat / LiteLLM / generation vLLM/Ollama</td>
+<td>External</td>
+<td>—</td>
+<td>Existing MPNexus chat + generation stack this project layers onto</td>
+</tr>
+</tbody>
+</table>
+<h2 id="3-data-model">3. Data model<a class="headerlink" href="#3-data-model" title="Permanent link">&para;</a></h2>
+<pre class="mermaid"><code>erDiagram
+    documents ||--o{ audit_log : "target_id"
+    documents ||--o{ notifications : "document_id"
+    documents |o--o| documents : "supersedes_document_id"
+
+    documents {
+        uuid id PK
+        string uploader_sub
+        string owner_org
+        string classification
+        string releasability
+        json access_scope
+        string status "queued|processing|embedded|pending_review|approved|rejected|superseded|failed"
+        uuid supersedes_document_id FK
+        string original_object_key "NFR-12: key into the object store, set at submission time"
+    }
+    audit_log {
+        uuid id PK
+        string actor_sub
+        string action
+        string target_id
+        json detail
+    }
+    notifications {
+        uuid id PK
+        string recipient_sub
+        uuid document_id FK
+        string decision
+        bool read
+    }
+    classification_levels {
+        int id PK
+        string value
+        int rank
+        bool active
+    }
+    releasability_values {
+        int id PK
+        string value
+        bool active
+    }</code></pre>
+<p>Postgres is the transactional system of record (status, audit, admin lists). Qdrant holds
+the actual chunk vectors — one point per chunk, two named vectors (<code>dense</code>, <code>bm25</code>) — plus
+a copy of the access-control fields (<code>status</code>, <code>classification</code>, <code>releasability</code>,
+<code>access_scope</code>) as payload, so retrieval can filter without a round trip to Postgres. The
+object store (NFR-12) holds the original uploaded bytes, keyed by <code>original_object_key</code> on
+the <code>documents</code> row — independent of both, so the source file survives regardless of what
+happens to either the vector or metadata copy.</p>
+<p><strong>Issue #229: one Qdrant collection per Classification level, not one collection for the
+whole corpus.</strong> <code>common/qdrant_store.py</code> derives a collection name from each admin-configured
+Classification value (created on demand, so the code makes no assumption about a fixed set of
+levels — C9) and every read/write path is scoped to it. This is defence in depth on top of
+FR-26's mandatory claims-derived filter, which stays exactly as it was and still applies
+inside every per-collection query — per-collection separation bounds a store-level reader (or
+a retrieval path that forgot the filter) to one compartment; it does not replace the filter.
+Retrieval fans out over one collection per classification the caller is cleared for and fuses
+the per-collection results by rank (Reciprocal Rank Fusion, <code>common/vector_store.fuse_ranked</code>)
+rather than by score, because each collection's BM25 IDF is computed server-side from that
+collection's own — now classification-skewed — document statistics, so scores from different
+collections are not comparable. A curator's classification correction moves a document's
+chunks from one collection to another (<code>qdrant_store._migrate_document_classification</code>)
+instead of writing the correction in place. The Milvus backend (#160) does not implement this
+split — see <code>common/milvus_store.py</code>'s module docstring for the explicit, recorded reason —
+so a <code>VECTOR_BACKEND=milvus</code> deployment keeps the single-collection FR-26 filter as its only
+separation, same as Qdrant before #229.</p>
+<h2 id="4-major-flows">4. Major flows<a class="headerlink" href="#4-major-flows" title="Permanent link">&para;</a></h2>
+<h3 id="41-ingestion-fr-1fr-9-durable-via-nfr-11nfr-12">4.1 Ingestion (FR-1..FR-9, durable via NFR-11/NFR-12)<a class="headerlink" href="#41-ingestion-fr-1fr-9-durable-via-nfr-11nfr-12" title="Permanent link">&para;</a></h3>
+<pre class="mermaid"><code>sequenceDiagram
+    actor U as Uploader (browser)
+    participant I as ingestion-api
+    participant OS as object store
+    participant PG as Postgres
+    participant N as NATS JetStream
+    participant W as ingestion-worker
+    participant O as embedding Ollama
+    participant Q as Qdrant
+
+    U-&gt;&gt;I: POST /documents (file + Section 6.3 tags)
+    I-&gt;&gt;I: parse_claims(token), validate tags against claims (FR-18)
+    I-&gt;&gt;OS: put(original bytes)
+    I-&gt;&gt;PG: insert Document(status=queued, original_object_key)
+    I-&gt;&gt;N: publish(document_id)
+    I--&gt;&gt;U: 202 Accepted {status: queued}
+    Note over I,N: request already returned -- everything below runs&lt;br/&gt;in a separate process/pod, asynchronously
+    N-&gt;&gt;W: pull_subscribe delivers document_id
+    W-&gt;&gt;PG: update Document(status=processing)
+    W-&gt;&gt;OS: get(original bytes)
+    W-&gt;&gt;W: parse -&gt; chunk (app/parsing.py, app/chunking.py)
+    W-&gt;&gt;O: embed chunks
+    W-&gt;&gt;Q: ensure_collection, upsert_chunks (status=pending_review in payload)
+    W-&gt;&gt;PG: update Document(status=embedded -&gt; pending_review)
+    W-&gt;&gt;N: ack
+    U-&gt;&gt;I: GET /documents/{id} (polls)
+    I--&gt;&gt;U: current status</code></pre>
+<p>Implementation notes:
+- <strong>Why a queue, not <code>BackgroundTasks</code>:</strong> the previous in-process design lost queued/
+  in-flight documents on a process restart or crash mid-processing — nothing recorded
+  that work needed to happen again. JetStream's ack/redelivery semantics fix that: <code>W</code>
+  only acks the message on a terminal outcome. A success or a <em>permanent</em> failure
+  (<code>ParsingError</code>/<code>EmbeddingError</code> — corrupt/unsupported input, an embedding request the
+  service rejects outright) lands the document in <code>failed</code> and acks, since retrying the
+  identical input wouldn't help. An <em>unexpected/transient</em> error (Qdrant or Postgres
+  unreachable, a bug) is deliberately left un-acked, so JetStream redelivers the message
+  to another attempt (this worker's next poll, or a different replica) after its
+  <code>ack_wait</code> timeout — see <code>services/ingestion-worker/app/processing.py</code>.
+- <strong>Why a separate object store, not just the request's in-memory bytes:</strong> before NFR-12,
+  the original file only existed in memory/<code>/tmp</code> for the lifetime of a single
+  <code>BackgroundTask</code> — nothing to hand off to a separate worker process, and nothing left
+  if that process died before finishing. <code>common/object_store.py</code>'s <code>ObjectStore</code>
+  abstraction (filesystem in dev, S3-compatible in prod) durably persists the bytes
+  <em>before</em> the 202 response returns, keyed by <code>document_object_key(document_id)</code>; <code>W</code>
+  reads it back independently rather than receiving it as an argument.
+- <strong>Qdrant credentials:</strong> <code>ingestion-worker</code> now holds the full read/write Qdrant key
+  (it's the one that calls <code>ensure_collection</code>/<code>upsert_chunks</code>); <code>ingestion-api</code> keeps
+  its own full key too, since curation (§4.2) still updates/deletes points directly.
+- <strong>Batch submission (FR-34, issue #356):</strong> <code>POST /documents/batch</code> accepts N files
+  sharing one Classification/Releasability/Access-scope/Source-Originator/Doc-type
+  payload, validated against the caller's claims (FR-18) exactly once rather than per
+  file. Each file then runs the identical sequence above independently (its own object-
+  store write, its own <code>Document</code> row, its own JetStream publish, its own curator
+  review) through the same <code>_ingest_one_file</code> helper <code>POST /documents</code> uses, so the two
+  paths can't drift on what "submitted" means. A per-file failure — bad type, empty,
+  over the per-file size limit, or an infra-level error (object store, DB) — is reported
+  against that file only and does not fail the rest of the batch; files already
+  committed before the failure keep their result in the response. Supersession
+  (<code>supersedes_document_id</code>) stays on the single-file endpoint, since it's inherently
+  one document replacing one other. The endpoint's own aggregate request body (every
+  file in one multipart request) is bounded by <code>MAX_UPLOAD_BYTES x MAX_BATCH_FILES</code>, not
+  <code>MAX_UPLOAD_BYTES</code> alone — see the ingress <code>proxy-body-size</code> note in
+  <code>helm/nexus-rag/values.yaml</code> and the tmpfs note in <code>docs/dev-setup.md</code>.</p>
+<h3 id="42-curation-fr-10fr-16">4.2 Curation (FR-10..FR-16)<a class="headerlink" href="#42-curation-fr-10fr-16" title="Permanent link">&para;</a></h3>
+<pre class="mermaid"><code>sequenceDiagram
+    actor C as Curator (browser)
+    participant I as ingestion-api
+    participant PG as Postgres
+    participant Q as Qdrant
+
+    C-&gt;&gt;I: GET /curate (queue, scoped to curatable orgs)
+    I-&gt;&gt;PG: select Document where status=pending_review, org in curatable_orgs
+    I--&gt;&gt;C: queue rows, inline correction fields,&lt;br/&gt;tagging_advisory box (see §4.6)
+    C-&gt;&gt;I: POST /curate/{id}/approve (optionally corrected tags)
+    I-&gt;&gt;I: re-check claims against (possibly corrected) tags — cap by clearance &amp; releasability
+    I-&gt;&gt;Q: update chunk payload (status=approved, corrected tags if any)
+    I-&gt;&gt;PG: update Document(status=approved), insert audit_log, insert notification
+    alt Postgres commit fails
+        I-&gt;&gt;Q: revert chunk payload (status=pending_review)
+        Note over I: exception still propagates -- caller gets a 5xx,&lt;br/&gt;both stores agree again (NFR-13)
+    end
+    Note over I: reject follows the same path with a required reason,&lt;br/&gt;status=rejected, no Qdrant payload flip to approved</code></pre>
+<p><strong>NFR-13 (safe supersession under partial failure):</strong> validation (curator authority,
+supersede-chain checks — see §4.5) already runs before <em>any</em> mutation, Qdrant or Postgres.
+Given that, the Qdrant write happens before the Postgres commit rather than after: if
+<code>session.commit()</code> came first, a curator could never retry a failed sync through the same
+API call, since <code>_load_pending</code> only accepts a document still in <code>pending_review</code>, and
+Postgres would already say <code>approved</code>. Writing Qdrant first, then committing, keeps the
+document retry-able for as long as the commit hasn't happened. The cost is the reverse
+failure mode: if something <em>between</em> the Qdrant write and the commit raises (a DB error, the
+old document's Qdrant chunk delete failing on a supersede), Postgres rolls back to
+<code>pending_review</code>, but the Qdrant write doesn't roll back with it — leaving Qdrant already
+showing <code>approved</code>/<code>rejected</code>, and therefore already affecting retrieval (FR-11/FR-26
+filtering reads Qdrant's payload, not the Postgres row), while Postgres and the curation
+queue both still call the document <code>pending_review</code>. <code>approve()</code>/<code>reject()</code> close that gap:
+they wrap the sequence in a <code>try</code>/<code>except</code> that best-effort reverts the Qdrant write back to
+<code>pending_review</code> on any failure before re-raising, so the two stores can't end up
+disagreeing about a document's status.</p>
+<p><strong>Suspend (#478):</strong> <code>reject()</code> above only accepts a document still <code>pending_review</code> —
+once approved, the only other ways to stop serving it were the two-person purge flow
+(<code>docs/roles-and-permissions.md</code> §7 gap G3, the right gate for <em>destruction</em>) or
+superseding it with a placeholder that then itself became a permanent approved document.
+<code>POST /curate/{id}/suspend</code> closes that gap: a single curator with existing authority over
+the document demotes it straight back to <code>pending_review</code> (<code>doc.status</code>,
+<code>reviewed_by_sub</code>/<code>reviewed_at</code> cleared, Qdrant payload updated the same way approve/reject
+already do, same NFR-13 best-effort revert on a partial failure) — no new status value,
+since <code>pending_review</code> is already excluded by the FR-26 filter and already the reversible
+target <code>edit_metadata</code>'s #268 authority-mismatch demotion uses. The document lands back in
+the ordinary curation queue for re-approval, correction, or rejection; <code>first_approved_at</code>
+is deliberately left untouched, same reasoning as the #268 demotion (the #286 chat-plane
+purge signal, <code>docs/chat-plane-purge.md</code>, needs it to survive).</p>
+<h3 id="43-query-retrieval-fr-24fr-29">4.3 Query / retrieval (FR-24..FR-29)<a class="headerlink" href="#43-query-retrieval-fr-24fr-29" title="Permanent link">&para;</a></h3>
+<pre class="mermaid"><code>sequenceDiagram
+    actor A as Analyst
+    participant LC as LibreChat
+    participant KC as Keycloak
+    participant M as orchestration-mcp
+    participant Q as Qdrant
+    participant R as reranker-service
+    participant PG as Postgres
+
+    A-&gt;&gt;LC: chat message
+    LC-&gt;&gt;KC: OBO token exchange (RFC 8693, Section 7.7)
+    KC--&gt;&gt;LC: token scoped to rag-app audience
+    LC-&gt;&gt;M: rag_search(query) over MCP, Authorization: Bearer &lt;token&gt;
+    M-&gt;&gt;M: parse_claims(token) -&gt; build access filter (common/qdrant_filters.py)
+    par dense leg
+        M-&gt;&gt;Q: Prefetch dense vector, filter applied
+    and BM25 leg
+        M-&gt;&gt;Q: Prefetch bm25 vector, filter applied
+    end
+    Q--&gt;&gt;M: fused candidates (RRF)
+    M-&gt;&gt;R: rerank(query, candidates)
+    R--&gt;&gt;M: reordered results
+    M-&gt;&gt;PG: audit_log insert (query, applied filter, result count)
+    M--&gt;&gt;LC: results (or "no results pass the access filter" — FR-28)
+    LC--&gt;&gt;A: grounded answer</code></pre>
+<p>The access filter (<code>status=approved</code> + <code>classification</code> at-or-below clearance +
+<code>releasability</code> match + <code>access_scope</code> match) is built entirely server-side from the
+verified token — never from anything the client/LibreChat supplies — which is what makes
+FR-26 non-bypassable.</p>
+<p><strong>Issue #272:</strong> the audited <code>applied_filter</code> reports both <code>collections_eligible</code> (every
+per-classification Qdrant collection §3's collection split says the caller's clearance
+<em>could</em> resolve to) and <code>collections_queried</code> (the subset <code>hybrid_query</code> actually fanned
+out over, skipping any level with no <code>approved</code> documents yet). Reporting only the former,
+as the audit entry did before #272, overstated what a query actually searched — the one
+place that overstatement is dangerous, since FR-31 audit evidence is what an operator
+reconstructs a retrieval decision from after the fact.</p>
+<p><code>orchestration-mcp</code> also exposes this same logic as a plain REST endpoint,
+<code>POST /debug/rag_search</code>, for curl-based testing without an MCP client (§4.4's ingestion
+UI has a <code>/search</code> page that's a thin proxy over this same endpoint, forwarding the
+logged-in user's own session token — no enforcement logic duplicated in <code>ingestion-api</code>,
+it's still all in <code>orchestration-mcp</code>).</p>
+<p><strong>Prompt-injection mitigation (P1):</strong> retrieved chunk <code>text</code> is untrusted by construction —
+it's whatever an uploader submitted, and FR-18's tagging validation constrains metadata, not
+document content. <code>run_rag_search()</code> (<code>app/rag_search.py</code>) delimits every result's <code>text</code>
+with an explicit <code>&lt;untrusted_document_content&gt;</code> marker (applied <em>after</em> reranking, so
+<code>reranker-service</code>'s cross-encoder still scores the raw text) and adds a <code>security_notice</code>
+field to the response instructing the calling model to treat delimited content as reference
+material to cite, not instructions to follow — the same marker-plus-notice pattern also
+carried in the tool's own MCP docstring, so it doesn't depend on one particular client
+surfacing docstrings to its model. This is a mitigation, not a guarantee (§7). Issues</p>
+<h1 id="457458-2026-08-06-a-local-prompt-injection-scan-found-a-document-containing-a-literal">457/#458 (2026-08-06): a local prompt-injection scan found a document containing a literal<a class="headerlink" href="#457458-2026-08-06-a-local-prompt-injection-scan-found-a-document-containing-a-literal" title="Permanent link">&para;</a></h1>
+<p>occurrence of the marker tags could forge a fake close/reopen pair, making injected content
+read as sitting outside the untrusted region — <code>_delimit_untrusted_text</code> now neutralizes any
+literal marker occurrence in the source text first, so at most one real open/close pair
+exists per delimited passage (#458). A separate class, a passage worded as a complete,
+ready-to-copy answer that the model echoed verbatim including a foreign token riding along
+(#457), has no equivalent structural fix — <code>SECURITY_NOTICE</code> gained an explicit
+verbatim-copy warning, same mitigation-not-guarantee posture as the persona/roleplay wording</p>
+<h1 id="427-added">427 added.<a class="headerlink" href="#427-added" title="Permanent link">&para;</a></h1>
+<p><strong>Reconnaissance-shaped query detection (issue #426):</strong> the <code>audit_log insert</code> step above is
+also §4.6's <code>nexus_rag_audit_reporting</code> role's second consumer. <code>scripts/detect_query_anomalies.py</code>
+(offline, not part of this sequence) mines <code>query</code>/<code>query.denied</code> rows for per-identity
+query-rate, denial-ratio, narrow-result-probing, and denial-then-success boundary-mapping
+signals — see <code>docs/threat-model.md</code> section 4 for the full detection design and its
+deliberate choice not to use a per-identity Prometheus label.</p>
+<h3 id="44-ingestion-ui-login">4.4 Ingestion UI login<a class="headerlink" href="#44-ingestion-ui-login" title="Permanent link">&para;</a></h3>
+<p>Replaces the old pasted-access-token dev workaround. Every underlying fetch call (upload,
+curate, notifications) rides a session cookie instead of a manually-attached header. The
+top nav shows the current user's <code>preferred_username</code> plus "Log out" when logged in; it
+doesn't render at all when logged out (see #246 below) — every link on it would just bounce
+an anonymous visitor back to the login page anyway.</p>
+<p><strong>Issue #246: the whole app is gated behind a login landing page.</strong> Every page route
+(<code>GET /</code>, <code>/curate</code>, <code>/admin</code>, <code>/notifications</code>, <code>/search</code>) checks <code>get_current_user_optional</code>
+first and renders <code>login.html</code> in place of its real content for an anonymous visitor —
+same URL, <code>200 OK</code>, no redirect loop — rather than rendering the full page and letting the
+visitor discover they can't do anything on the first action they take. <code>login.html</code> is a
+centered logo/application name/login button, nothing else — the top nav (<code>base.html</code>'s
+<code>&lt;header&gt;</code>) is skipped entirely for an anonymous visitor, since none of its links lead
+anywhere they can reach yet. This is authentication only: <code>/admin</code>'s page still renders for
+any signed-in user regardless of role, exactly as before — role-based authorization stays
+on the <code>/admin/*</code> action endpoints (<code>require_admin</code>), not on the page route. Per-page role
+gating (e.g. hiding <code>/curate</code> from a non-curator) is tracked as a separate, later issue.</p>
+<p><strong>Issue #248: branding and a mandatory-acceptance login banner</strong>, both admin-configurable
+via <code>/admin/branding</code> and <code>/admin/login-banner</code> (<code>PortalSettings</code>, same single-row,
+deployment-wide shape as the classification banner/theme settings above). Application name
+and logo apply everywhere, not just the login page — header, tab title, and favicon — since
+they're a deployment property like the classification banner, not a login-page-only
+concern. The login popup is mandatory by construction rather than by convention: the login
+button is server-rendered <code>hidden</code> whenever an active popup is configured, and only the
+client-side Accept handler reveals it, so there's no path to <code>/auth/login</code> that skips it.
+Decline navigates to <code>/login/declined</code> instead.</p>
+<pre class="mermaid"><code>sequenceDiagram
+    actor U as User (browser)
+    participant I as ingestion-api
+    participant KC as Keycloak
+
+    U-&gt;&gt;I: GET /auth/login (clicked "Log in")
+    I-&gt;&gt;I: generate state + PKCE verifier, insert oauth_states row
+    I--&gt;&gt;U: 302 to Keycloak authorize endpoint, state cookie set
+    U-&gt;&gt;KC: authenticate
+    KC--&gt;&gt;U: 302 /auth/callback?code&amp;state
+    U-&gt;&gt;I: GET /auth/callback
+    I-&gt;&gt;I: state == state cookie? oauth_states row exists?
+    I-&gt;&gt;KC: exchange code for tokens (client secret + PKCE verifier)
+    KC--&gt;&gt;I: access_token, refresh_token, id_token
+    I-&gt;&gt;I: insert user_sessions row, set HttpOnly session-id cookie
+    I--&gt;&gt;U: 302 / (now authenticated)
+    Note over I: subsequent requests: cookie -&gt; user_sessions row -&gt; access_token&lt;br/&gt;(refreshed via refresh_token if expired) -&gt; same parse_claims() as the header-auth path
+    U-&gt;&gt;I: GET /auth/logout
+    I-&gt;&gt;I: delete user_sessions row
+    I--&gt;&gt;U: 302 to Keycloak end_session_endpoint (id_token_hint + post_logout_redirect_uri)
+    Note over U,KC: ends the browser's Keycloak SSO session too, not just this app's --&lt;br/&gt;logging back in re-prompts for credentials</code></pre>
+<p>Implementation notes:
+- <code>rag-app</code> is already a confidential client with a secret in the realm export, so no new
+  Keycloak config was needed — <code>app/routes/auth.py</code> and <code>app/deps.py</code>.
+- Tokens live in a new Postgres <code>user_sessions</code> table (<code>common/models.py</code>), not in the
+  cookie itself — keeps the token out of JS-reachable storage and makes a session
+  individually revocable. <code>oauth_states</code> is a matching short-lived table for the
+  login-in-progress <code>state</code>/PKCE <code>code_verifier</code> pair.
+- The existing header-based <code>get_current_user</code> path is untouched for API/MCP callers;
+  it now checks the session cookie first and falls back to the Authorization header — no
+  forked enforcement logic between browser and API callers. <code>get_current_user_optional</code>
+  (used only by the three page routes, for the nav's username display) is the same
+  resolution but returns <code>None</code> instead of raising on an anonymous visitor.
+- The paste-a-token box was retired outright (not kept behind a flag) rather than running
+  two parallel auth UX paths.
+- Logout uses <code>id_token_hint</code> (the <code>id_token</code> captured at <code>/callback</code>) rather than just
+  <code>client_id</code>, since newer Keycloak versions reject the latter for RP-initiated logout.
+- Helm chart wiring: <code>externalKeycloak.clientId</code>/<code>.clientSecret</code> (Secret-backed, same
+  pattern as <code>externalPostgres</code>) and <code>ingestionApi.oidcRedirectUri</code> (derived from
+  <code>ingress.host</code>/<code>ingress.tls</code> if not set explicitly, via <code>_helpers.tpl</code>'s
+  <code>nexus-rag.oidcRedirectUri</code> — fails the render rather than deploying a broken callback
+  URL if neither is available) / <code>.cookieSecure</code>. Like the rest of the chart, unverified by
+  <code>helm lint</code>/<code>helm template</code> — see <code>docs/dev-setup.md</code>'s "Stubbed / TODO" list.
+- CSRF protection (NFR-14): a second, non-<code>HttpOnly</code> cookie (<code>nexus_rag_csrf</code>) set
+  alongside the session cookie — the session cookie alone would ride along on a forged
+  cross-site request, but only this app's own JS can read the CSRF cookie's value to echo
+  it back as a header, which a cross-site attacker can't. <code>deps.verify_csrf</code> checks
+  cookie == header on every state-changing route, and is a no-op for bearer-token callers
+  (no session cookie means nothing CSRF can forge in the first place).
+- Clickjacking (#444): CSRF alone doesn't cover a framing attack — a victim's browser
+  loading the portal in an invisible frame still has the portal's own JS reading and
+  echoing the CSRF cookie correctly, since the request is same-origin. <code>ingestion-api</code>
+  sends <code>X-Frame-Options: DENY</code> on every response (via the shared
+  <code>common/security_headers.py</code> middleware, also carrying <code>X-Content-Type-Options: nosniff</code>
+  and <code>Referrer-Policy: no-referrer</code> on this and the other two HTTP-facing services, #445)
+  so approve/reject/correct — single-click, high-consequence actions, since approval is
+  what makes a document's chunks retrievable (FR-11) — can't be triggered from a framed
+  page. <code>frame-ancestors 'none'</code> (the CSP-native form of the same protection) is the
+  Content-Security-Policy bullet directly below.
+- Content-Security-Policy (#443): <code>app/csp.py</code>'s <code>ContentSecurityPolicyMiddleware</code>
+  generates one nonce per request (<code>request.state.csp_nonce</code>) and sends it as the CSP
+  header's <code>script-src</code> nonce-source on every response; every inline <code>&lt;script&gt;</code> block
+  across the nine templates carries <code>nonce="{{ csp_nonce }}"</code> to match, and <code>frame-ancestors
+  'none'</code>/<code>object-src 'none'</code>/<code>base-uri 'self'</code> close off the other injection vectors a CSP
+  covers. This is the defense-in-depth layer behind Jinja2 autoescaping (today's only
+  defense against a missed-escape XSS reaching a curator/admin session) — a future template
+  edit that reintroduces unescaped interpolation still can't get a <code>&lt;script&gt;</code> to execute
+  without also carrying that request's nonce. The four inline <code>onclick="..."</code> attributes
+  this required removing (base.html's logout button, curate.html/curate_list.html's
+  Refresh buttons, notifications.html's Refresh button) are now wired via
+  <code>addEventListener</code> instead — a nonce covers <code>&lt;script&gt;</code> elements, not attribute-based
+  event handlers, so those would otherwise have silently stopped firing under this policy.</p>
+<h3 id="45-re-ingestion-versioning-fr-7">4.5 Re-ingestion / versioning (FR-7)<a class="headerlink" href="#45-re-ingestion-versioning-fr-7" title="Permanent link">&para;</a></h3>
+<pre class="mermaid"><code>sequenceDiagram
+    actor U as Uploader
+    actor C as Curator
+    participant I as ingestion-api
+    participant PG as Postgres
+    participant Q as Qdrant
+
+    U-&gt;&gt;I: POST /documents (supersedes_document_id = old doc)
+    I-&gt;&gt;PG: validate_supersede_target — old doc approved, org/clearance/releasability match
+    I-&gt;&gt;PG: insert new Document(status=queued)
+    Note over I: normal ingestion pipeline runs (4.1)
+    C-&gt;&gt;I: POST /curate/{new_id}/approve
+    I-&gt;&gt;I: re-check curator authority against the OLD document too
+    I-&gt;&gt;Q: delete old document's chunks
+    I-&gt;&gt;PG: old Document.status = superseded
+    I-&gt;&gt;PG: new Document.status = approved
+    I-&gt;&gt;PG: audit_log: document.supersede (old id, new id, curator)</code></pre>
+<p>Ordering matters here (NFR-13): the <em>new</em> document's Qdrant chunks are flipped to
+<code>approved</code> — see §4.2's diagram — <em>before</em> the old document's chunks are deleted, and
+<code>_validate_supersede</code> re-checks the whole chain (old document still <code>approved</code>, curator's
+authority over the old document specifically, not just the new one) before any of this
+runs. That's what guarantees there's never a window where neither version is retrievable:
+worst case, both are briefly retrievable at once, which REQUIREMENTS.md's NFR-13 calls out
+as the acceptable, preferable outcome over the alternative.</p>
+<h3 id="46-tagging-advisory-pipeline-issue-138-family">4.6 Tagging advisory pipeline (issue #138 family)<a class="headerlink" href="#46-tagging-advisory-pipeline-issue-138-family" title="Permanent link">&para;</a></h3>
+<p>Curation (§4.2) is a human decision, but the human doesn't decide blind: <code>ingestion-worker</code>
+runs a family of advisory suggesters against a document's own parsed text and its own
+computed embeddings while it's still <code>processing</code>, folding every finding into one JSON
+column, <code>Document.tagging_advisory</code>, that <code>/curate</code>'s queue page renders as an advisory box
+next to the approve/reject controls. Every suggester shares the same posture — advisory
+only (never mutates a tag, never blocks, never delays ingestion), fail-safe (any error,
+including an unreachable model or vector store, is swallowed and logged, leaving whatever
+<code>tagging_advisory</code> already held) — because FR-11's spillage control stays the curator's
+call, not a signal's.</p>
+<pre class="mermaid"><code>flowchart TD
+    text["Document's own parsed text&lt;br/&gt;(app/parsing.py output)"]
+    vec["Document's own chunk embeddings&lt;br/&gt;(already computed for storage)"]
+
+    text --&gt; s1["Marking-mismatch (#138 Phase 1)&lt;br/&gt;always on -- regex-detected classification/&lt;br/&gt;caveat markings vs. assigned tags"]
+    text --&gt; s2["Hidden-instruction / content risk (#284)&lt;br/&gt;always on -- invisible Unicode,&lt;br/&gt;prompt-injection trigger phrases"]
+    text --&gt; s3["PII regex scan (#342 Phase 1)&lt;br/&gt;always on -- SSN, credit card, bank routing,&lt;br/&gt;API keys, private-key blocks;&lt;br/&gt;matched span redacted before storage"]
+    s3 -.-&gt;|opt-in, PII_LLM_MODEL| s3v["PII LLM verification (#378)&lt;br/&gt;context-only read on Phase 1's own findings&lt;br/&gt;(already-redacted excerpt only); annotates&lt;br/&gt;likely_false_positive, never filters"]
+    text -.-&gt;|opt-in, PII_LLM_MODEL| s4["PII LLM-assisted pass (#343 Phase 2)&lt;br/&gt;context-dependent PII a regex can't catch"]
+    text -.-&gt;|opt-in, CLASSIFICATION_MODEL| s5["LLM classification suggestion (#308 Phase 3)&lt;br/&gt;zero-shot vs. configured vocabulary"]
+    vec --&gt; s6["Precedent kNN (#307 Phase 2)&lt;br/&gt;always on -- nearest approved documents'&lt;br/&gt;classification/releasability"]
+
+    s1 &amp; s2 &amp; s3 &amp; s3v &amp; s4 &amp; s5 &amp; s6 --&gt; col[("Document.tagging_advisory&lt;br/&gt;(JSON column, merged by key)")]
+    col --&gt; ui["/curate queue + detail pages&lt;br/&gt;advisory box, per-finding"]
+    ui --&gt; dec{"curator decision"}
+    dec --&gt;|approve / reject / correct| audit["audit_log entry&lt;br/&gt;tagging_advisory outcome embedded (#345):&lt;br/&gt;flagged vs. acted-on, per suggester"]
+    audit --&gt; calib["scripts/calibrate_tagging_advisory.py&lt;br/&gt;(profile: calibration)&lt;br/&gt;nexus_rag_audit_reporting role,&lt;br/&gt;SELECT-only on audit_log"]
+    calib --&gt; report["per-suggester agreement rate&lt;br/&gt;(marking_mismatch / precedent /&lt;br/&gt;llm_classification / pii_regex / pii_llm /&lt;br/&gt;pii_regex_llm_verdict, #380)"]</code></pre>
+<p>What to note:</p>
+<ul>
+<li><strong>Two enforcement-vs-advisory boundaries stay separate on purpose.</strong> The mandatory
+  claims-based checks in §5's table (what a user may tag, what a curator may approve, what
+  a query may retrieve) are hard gates; everything in this section is a hint layered on top
+  of, never instead of, that human curation step (FR-11/FR-12 unchanged).</li>
+<li><strong>PII findings never echo the sensitive value.</strong> #342's regex pass records a fixed label
+  naming the kind of pattern and a context excerpt with the matched span replaced by
+  <code>[REDACTED]</code>; #343's LLM pass is prompted not to repeat the value either, but — unlike
+  Phase 1's code-enforced redaction — that's a prompt instruction the model could ignore,
+  so its <code>kind</code>/<code>rationale</code> fields are treated as untrusted (textContent-only rendering in
+  <code>curate.html</code>, same as the LLM classification suggestion's <code>rationale</code>).</li>
+<li><strong>#378's verification pass has a narrower blast radius than #343's.</strong> It never sees the
+  document's raw text at all -- only the same already-redacted <code>context</code> excerpts Phase 1
+  already produced and the curator already sees, so there is no new prompt-injection
+  surface beyond what Phase 1's own regex pass already exposed. Its <code>likely_false_positive</code>
+  verdict is additive metadata on an existing finding, not a filter: a false-positive
+  verdict never removes, hides, or dims the finding it's attached to.</li>
+<li><strong><code>calibrate_tagging_advisory.py</code> reads through a dedicated, SELECT-only-on-<code>audit_log</code>
+  role</strong> (<code>nexus_rag_audit_reporting</code>) rather than any of the four services' own
+  credentials — NFR-2/NFR-3 keep every application role INSERT-only on <code>audit_log</code>, so
+  reading the curation trail back out has to be its own attributable identity, not a
+  services credential doing double duty.</li>
+<li><strong>Reporting only, not a gate</strong>: a curator override is not, by itself, proof a suggester
+  was wrong, so the calibration report has no CI-enforced accuracy floor by default
+  (<code>--min-agreement</code> is opt-in for a deployment that wants one).</li>
+<li><strong>Confidence varies by phase</strong> — see <code>docs/dev-setup.md</code>'s "What's stubbed vs working"
+  for the current, authoritative per-issue label; several phases (#308, #343, #345) have
+  been validated against a real <code>docker compose up</code> with a real Ollama call and a real
+  curator decision round-trip, others remain tested against mocks only.</li>
+</ul>
+<h2 id="5-security-model">5. Security model<a class="headerlink" href="#5-security-model" title="Permanent link">&para;</a></h2>
+<p>Single enforcement principle: every claim-gated decision — what a user may <em>tag</em> a
+document with (FR-18), what a curator may <em>approve</em> (FR-14), and what a query may
+<em>retrieve</em> (FR-26) — is derived from the same verified OIDC claims via <code>common/claims.py</code>,
+never from client-supplied values. Two independent enforcement points share one library
+rather than reimplementing the check:</p>
+<table>
+<thead>
+<tr>
+<th>Enforcement point</th>
+<th>Where</th>
+<th>What it checks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ingest-time tagging</td>
+<td><code>ingestion-api</code> upload route</td>
+<td>Classification/Releasability offered ≤ uploader's clearance/releasability</td>
+</tr>
+<tr>
+<td>Curation</td>
+<td><code>ingestion-api</code> curate route</td>
+<td>Approving curator holds <code>rag-curate:&lt;org&gt;</code> for the doc's org, and clearance/releasability cover the (possibly corrected) tags</td>
+</tr>
+<tr>
+<td>Query-time retrieval</td>
+<td><code>orchestration-mcp</code></td>
+<td>Qdrant filter restricts to <code>approved</code> + classification ≤ clearance + releasability match + access_scope match</td>
+</tr>
+<tr>
+<td>Audit</td>
+<td>Both services, <code>audit_log</code> table</td>
+<td>Every submit/approve/reject/supersede/query is recorded against the actor's <code>sub</code>, not a self-reported name. Each row is also exported as RFC 5424 syslog to the environment's SIEM when <code>SIEM_SYSLOG_HOST</code> is configured (NFR-2, #73) -- the DB row stays the durable system of record; the syslog copy is an export, fail-open by design so a collector outage never blocks the request path</td>
+</tr>
+</tbody>
+</table>
+<h2 id="6-deployment-topology">6. Deployment topology<a class="headerlink" href="#6-deployment-topology" title="Permanent link">&para;</a></h2>
+<pre class="mermaid"><code>flowchart TB
+    subgraph dev["Dev: docker compose (NFR-9)"]
+        direction LR
+        d1["postgres"] &amp; d2["keycloak"] &amp; d3["qdrant"] &amp; d4["ollama"] &amp; d5["ingestion-api"] &amp; d5b["ingestion-worker"] &amp; d5c["nats"] &amp; d6["orchestration-mcp"] &amp; d7["reranker-service"] &amp; d8["librechat + litellm&lt;br/&gt;(throwaway)"]
+    end
+    subgraph prod["Prod: Helm chart (NFR-10)"]
+        direction LR
+        p1["ingestion-api"] &amp; p1b["ingestion-worker"] &amp; p1c["nats (StatefulSet)"] &amp; p2["orchestration-mcp"] &amp; p3["reranker-service"] &amp; p4["embedding-service"] &amp; p5["qdrant (StatefulSet)"]
+        p6[["external Postgres&lt;br/&gt;(Secret ref)"]]
+        p7[["external Keycloak"]]
+        p8[["existing LibreChat/LiteLLM/vLLM"]]
+        p9[["object store&lt;br/&gt;(S3-compatible, Secret ref -- default;&lt;br/&gt;or bundled SeaweedFS, #404)"]]
+    end</code></pre>
+<p>Dev stands up <em>everything</em>, including throwaway LibreChat/LiteLLM/Keycloak instances, so
+the full OBO/MCP flow can be exercised locally. The Helm chart deploys only the boxes in
+the <code>new</code> component table (§2) — Postgres and Keycloak are referenced via <code>values.yaml</code>
+(<code>externalPostgres.existingSecret</code>, <code>externalKeycloak.issuerUrl</code>), not deployed by the
+chart. The object store defaults to that same external-reference posture
+(<code>objectStore.external.endpoint</code>/<code>.bucket</code>) but, unlike Postgres/Keycloak, can also be
+self-deployed as a bundled SeaweedFS StatefulSet (<code>objectStore.enabled: true</code>, issue #404).</p>
+<p>The <code>qdrant</code>/<code>milvus (StatefulSet)</code>, <code>nats (StatefulSet)</code>, and <code>embedding-service</code> boxes
+in the prod subgraph above are each the <em>default</em> posture, not the only one (issue #401):
+<code>qdrant.enabled</code>/<code>milvus.enabled</code>/<code>nats.enabled</code>/<code>embeddingService.enabled</code> set to <code>false</code>
+turns each into an <code>external.host</code>-referenced box instead. The object store box has the
+same either/or shape but the opposite default (issue #404): <code>objectStore.enabled: true</code>
+turns it into a bundled SeaweedFS StatefulSet instead of the <code>external.endpoint</code>-referenced
+box shown above. Postgres and Keycloak alone have no such toggle — see
+<code>helm/nexus-rag/README.md</code>'s "External backing services" section.</p>
+<h2 id="7-known-gaps">7. Known gaps<a class="headerlink" href="#7-known-gaps" title="Permanent link">&para;</a></h2>
+<h3 id="observability-issue-72">Observability (issue #72)<a class="headerlink" href="#observability-issue-72" title="Permanent link">&para;</a></h3>
+<p><code>orchestration-mcp</code> exposes a Prometheus <code>/metrics</code> endpoint covering the
+retrieval path: per-stage latency (embed / retrieve / rerank / total), query
+outcomes, result-count distribution, and the reranker fallback rate — the last
+of which matters because FR-25 degrades to fused order instead of failing, so
+a ranking-quality drop is otherwise invisible. Per-request timings also land in
+the FR-31 audit entry, next to the actor and the authorization outcome.</p>
+<p>Deliberately <em>not</em> returned to callers: response latency correlates with how
+much the access filter matched and how many candidates were reranked, so
+per-stage figures would sharpen the membership-inference surface #127
+describes. Operators get them via the audit log and the scrape endpoint.</p>
+<p>Closed since this section was written (#133): <code>ingestion-api</code> (:8001),
+<code>ingestion-worker</code> (:8004), and <code>reranker-service</code> (:8003) all expose <code>/metrics</code>
+too, so ingestion throughput, queue depth, and worker processing duration are
+measured. The full stack that consumes them — Prometheus, Loki, Tempo,
+Alertmanager, 13 Grafana dashboards, 12 alert rules — ships as a Compose profile
+(<code>docs/dev-setup.md</code>) and, for clusters with no monitoring stack of their own, as
+the separately-installed <code>helm/observability</code> chart (#257, <code>docs/observability.md</code>).
+Pyroscope also ships in the Compose profile; all four services push it
+continuous CPU profiles once <code>PYROSCOPE_SERVER_ADDRESS</code> is set (#349),
+correlated to Tempo traces via the shared <code>service.name</code>/<code>service_name</code>
+convention.</p>
+<p>Still open: NFR-4's end-to-end latency budget remains an open question in
+REQUIREMENTS.md, so the retrieval alert rule's 5 s p95 threshold is a provisional
+stand-in rather than an agreed target — the instrumentation to answer it with data
+now exists, the number to compare against does not. Continuous profiling (#349)
+sharpens "which stage" beyond what per-stage span durations already show, but
+is not needed to answer NFR-4 itself.</p>
+<p>See <code>docs/dev-setup.md</code>'s "What's stubbed vs working" for the current, authoritative list
+(kept there rather than duplicated here, since it changes as work lands). §4.1's NATS-based
+durable ingestion pipeline (<code>ingestion-worker</code>, NFR-11) — the largest structural change in
+the P0 hardening batch — has since been <strong>validated against a real <code>docker compose up</code></strong>:
+a document submitted through <code>ingestion-api</code> was durably queued, picked up and processed by
+<code>ingestion-worker</code> (<code>queued → processing → pending_review</code>), curated and approved, and
+found by a real claims-filtered query against <code>orchestration-mcp</code>. That run also surfaced a
+real bug this sandbox's mocked verification couldn't have caught (a missing <code>mkdir</code> before
+the non-root <code>chown</code> in <code>ingestion-api</code>/<code>ingestion-worker</code>'s Dockerfiles left the
+object-store mount unwritable) — fixed, see <code>docs/dev-setup.md</code>.</p>
+<p><strong>LibreChat's own OIDC login now works, confirmed live end to end (issue #75)</strong>, after fixing
+<code>librechat.yaml</code>'s <code>mcpServers</code> schema (<code>obo.scopes</code> needs a space-delimited string, not a
+JSON array), <code>ALLOW_SOCIAL_LOGIN</code> (off by default), <code>JWT_SECRET</code>/<code>JWT_REFRESH_SECRET</code>/
+<code>CREDS_KEY</code>/<code>CREDS_IV</code> (all required at LibreChat boot, unrelated to Keycloak), an MCP
+SSRF domain-allowlist blocking <code>orchestration-mcp</code>, a <code>depends_on</code>/Keycloak-healthcheck
+race, a missing <code>OPENID_SCOPE</code> (LibreChat's <code>configureOpenId()</code> silently never runs without
+it), and finally the real root cause: <code>openid-client</code> refuses a plain-HTTP <code>OPENID_ISSUER</code>
+outright. Keycloak now has a real (self-signed, dev-only) HTTPS listener, fronted alongside
+a small nginx proxy for LibreChat itself (which has no HTTPS listener of its own) — verified
+with a scripted login (real Keycloak password submit, full redirect chain, real LibreChat
+session cookie), not just log inspection.</p>
+<p>The OBO token-exchange mechanism (§4.4) is also now confirmed live — and needed no Keycloak
+admin-console permission step at all, contrary to what this section previously said: that
+requirement only applies to the deprecated <em>legacy</em> token exchange. Standard Token Exchange
+V2 (RFC 8693, what <code>standard.token.exchange.enabled</code> actually configures) needs no
+fine-grained permission. The real, previously-undiagnosed bug was that switch sitting on
+<code>rag-app</code> (the exchange's target) instead of <code>librechat</code> (the requester) — plus a second bug,
+the exchanged token's HTTPS issuer wasn't in <code>orchestration-mcp</code>/<code>ingestion-api</code>'s
+<code>OIDC_ISSUERS</code> allowlist. Both fixed; a scripted token exchange now returns a correctly
+claims-filtered <code>rag_search</code> result end to end.</p>
+<p>Still open: LibreChat's <em>own</em> code performing that exchange when a real chat message
+triggers the tool. Driving that specific path hit a separate, genuine LibreChat bug — its
+<code>openidJwt</code> reused-token strategy rejects its own freshly-issued token with "invalid
+algorithm" — tracked as a follow-up rather than chased down inline. Because of that, §4.3's
+<code>rag_search</code> is confirmed two ways (the REST debug endpoint, and now a direct OBO exchange
+replicating exactly what LibreChat's backend should do) but still not through LibreChat's
+actual MCP wire connection, so §4.3's prompt-injection mitigation (no regression test that a
+real generation model actually respects the delimiter/notice) remains unconfirmed against
+the real LibreChat path specifically.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../nist-ai-rmf/evidence/evidence-index/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Evidence index">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Evidence index
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../architecture/diagrams/" class="md-footer__link md-footer__link--next" aria-label="Next: Architecture diagrams">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Architecture diagrams
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.footer", "navigation.top", "navigation.indexes", "search.suggest", "search.highlight", "content.code.copy", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../assets/js/mermaid.min.js"></script>
+      
+        <script src="../assets/js/mermaid-init.js"></script>
+      
+        <script src="../assets/js/lightbox.js"></script>
+      
+    
+  </body>
+</html>

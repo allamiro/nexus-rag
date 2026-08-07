@@ -1,0 +1,2540 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Air-gapped RAG pipeline for MPNexus: classification-aware ingestion, curation, and claims-filtered retrieval.">
+      
+      
+      
+        <link rel="canonical" href="https://allamiro.gitlab.io/nexus-rag/guides/quickstart-helm/">
+      
+      
+        <link rel="prev" href="../quickstart/">
+      
+      
+        <link rel="next" href="../understanding-the-architecture/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Quickstart on Kubernetes - Nexus RAG</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/dracula.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="pink">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#quickstart-on-kubernetes-dev-sandbox" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Nexus RAG" class="md-header__button md-logo" aria-label="Nexus RAG" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18.68 12.32a4.49 4.49 0 0 0-6.36.01 4.49 4.49 0 0 0 0 6.36 4.51 4.51 0 0 0 5.57.63L21 22.39 22.39 21l-3.09-3.11c1.13-1.77.87-4.09-.62-5.57m-1.41 4.95c-.98.98-2.56.97-3.54 0-.97-.98-.97-2.56.01-3.54.97-.97 2.55-.97 3.53 0 .97.98.97 2.56 0 3.54M10.9 20.1a6.5 6.5 0 0 1-1.48-2.32C6.27 17.25 4 15.76 4 14v3c0 2.21 3.58 4 8 4-.4-.26-.77-.56-1.1-.9M4 9v3c0 1.68 2.07 3.12 5 3.7v-.2c0-.93.2-1.85.58-2.69C6.34 12.3 4 10.79 4 9m8-6C7.58 3 4 4.79 4 7c0 2 3 3.68 6.85 4h.05c1.2-1.26 2.86-2 4.6-2 .91 0 1.81.19 2.64.56A3.22 3.22 0 0 0 20 7c0-2.21-3.58-4-8-4"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Nexus RAG
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Quickstart on Kubernetes
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/schuecl/nexus-rag" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    schuecl/nexus-rag
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../.." class="md-tabs__link">
+          
+  
+  
+    
+  
+  🚀 Get Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../deploy-compose/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  🚢 Production Deployment
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../configuration/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  🛠️ How-to Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../security/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  🛡️ Security & Compliance
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../architecture-overview/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  📖 Reference
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Nexus RAG" class="md-nav__button md-logo" aria-label="Nexus RAG" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18.68 12.32a4.49 4.49 0 0 0-6.36.01 4.49 4.49 0 0 0 0 6.36 4.51 4.51 0 0 0 5.57.63L21 22.39 22.39 21l-3.09-3.11c1.13-1.77.87-4.09-.62-5.57m-1.41 4.95c-.98.98-2.56.97-3.54 0-.97-.98-.97-2.56.01-3.54.97-.97 2.55-.97 3.53 0 .97.98.97 2.56 0 3.54M10.9 20.1a6.5 6.5 0 0 1-1.48-2.32C6.27 17.25 4 15.76 4 14v3c0 2.21 3.58 4 8 4-.4-.26-.77-.56-1.1-.9M4 9v3c0 1.68 2.07 3.12 5 3.7v-.2c0-.93.2-1.85.58-2.69C6.34 12.3 4 10.79 4 9m8-6C7.58 3 4 4.79 4 7c0 2 3 3.68 6.85 4h.05c1.2-1.26 2.86-2 4.6-2 .91 0 1.81.19 2.64.56A3.22 3.22 0 0 0 20 7c0-2.21-3.58-4-8-4"/></svg>
+
+    </a>
+    Nexus RAG
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/schuecl/nexus-rag" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    schuecl/nexus-rag
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../.." class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🚀 Get Started
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_1" id="__nav_1_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    🚀 Get Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart on Kubernetes
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart on Kubernetes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-prerequisites-and-a-local-cluster" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Prerequisites and a local cluster
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-throwaway-postgres-and-keycloak-what-compose-gives-you-for-free" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Throwaway Postgres and Keycloak (what Compose gives you for free)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-the-charts-secrets-dev-grade" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. The chart's Secrets, dev-grade
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-install-the-chart" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Install the chart
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-seed-the-sandbox-corpus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Seed the sandbox corpus
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-first-query" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. First query
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-this-differs-from-production" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where this differs from production
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sources
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../understanding-the-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Understanding the architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../connect-chat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Connect the chat plane
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🚢 Production Deployment
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    🚢 Production Deployment
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deploy-compose/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker Compose
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deploy-helm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Helm / Kubernetes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deploy-airgapped/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Air-gapped
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🛠️ How-to Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    🛠️ How-to Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration by use case
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../evaluation-results/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Evaluation & performance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🛡️ Security & Compliance
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    🛡️ Security & Compliance
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nist-ai-rmf/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NIST AI RMF
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    NIST AI RMF
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nist-ai-rmf/rmf-mapping/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RMF mapping
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nist-ai-rmf/governance-policy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Governance policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nist-ai-rmf/impact-assessment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Impact assessment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nist-ai-rmf/risk-register/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk register
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nist-ai-rmf/ai-system-inventory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI system inventory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nist-ai-rmf/evidence/evidence-index/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Evidence index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    📖 Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    📖 Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_1" id="__nav_5_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engineering docs (verbatim)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Engineering docs (verbatim)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture-overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/diagrams/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture diagrams
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../requirements/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Requirements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../governance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data governance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../threat-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privacy threat model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../roles-and-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roles and permissions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dev-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dev environment setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../querying-the-corpus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Querying the corpus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing & CI quality gates
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releasing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Releasing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../credential-rotation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Credential rotation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../chat-plane-purge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chat-plane purge runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../siem-detection-runbook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SIEM detection runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-prerequisites-and-a-local-cluster" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Prerequisites and a local cluster
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-throwaway-postgres-and-keycloak-what-compose-gives-you-for-free" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Throwaway Postgres and Keycloak (what Compose gives you for free)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-the-charts-secrets-dev-grade" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. The chart's Secrets, dev-grade
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-install-the-chart" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Install the chart
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-seed-the-sandbox-corpus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Seed the sandbox corpus
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-first-query" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. First query
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-this-differs-from-production" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where this differs from production
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sources
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="quickstart-on-kubernetes-dev-sandbox">Quickstart on Kubernetes (dev sandbox)<a class="headerlink" href="#quickstart-on-kubernetes-dev-sandbox" title="Permanent link">&para;</a></h1>
+<p>The same fifteen-minute goal as the <a href="../quickstart/">Compose quickstart</a> —
+seeded users, curated sample corpus, first claims-filtered query — but on a
+<strong>local Kubernetes cluster</strong> with the real Helm chart. You stand up throwaway
+dev Postgres and Keycloak the way Compose does, hand the chart its Secrets,
+and seed with the same script the Compose stack uses.</p>
+<div class="admonition note">
+<p class="admonition-title">This is the sandbox, not production — and not your distribution</p>
+<p>Dev-grade shortcuts on purpose: literal dev credentials, <code>start-dev</code>
+Keycloak, a throwaway MinIO/SeaweedFS instead of enterprise S3, no
+ingress/TLS, port-forwards. Two boundaries to respect:</p>
+<ol>
+<li><strong>Sandbox ≠ production.</strong> The <a href="../deploy-helm/">production Helm guide</a>
+   is the real contract (existing enterprise Keycloak/Postgres/S3,
+   generated secrets, ingress), and <a href="../deploy-airgapped/">air-gapped</a> is
+   its disconnected promotion.</li>
+<li><strong>kind ≠ your real Kubernetes.</strong> A local kind/minikube behaves
+   differently from an actual distribution — RKE/RKE2, VMware
+   Tanzu/TKG, OpenShift, or managed EKS/AKS/GKE — in exactly the places
+   this walkthrough takes shortcuts: default StorageClasses and PVC
+   binding, Pod Security admission (OpenShift in particular will reject
+   the naive dev Deployments below without SCC adjustments), ingress
+   controllers, image-pull policy against private registries, and how
+   S3 is really provided (an operator-managed MinIO, Ceph RGW, or
+   enterprise S3 — not a single dev pod). Update images, storage, and
+   security contexts accordingly for your platform.</li>
+</ol>
+<p><em>Honest label:</em> this walkthrough is assembled from the chart's documented
+values contract; the chart is CI-rendered and the pieces are the same
+ones the live-validated Compose stack runs, but this exact kind-cluster
+sequence hasn't itself been exercised end-to-end yet — file anything that
+fights you.</p>
+</div>
+<h2 id="1-prerequisites-and-a-local-cluster">1. Prerequisites and a local cluster<a class="headerlink" href="#1-prerequisites-and-a-local-cluster" title="Permanent link">&para;</a></h2>
+<p><strong>What you'll need</strong> (this stack is heavier than a hello-world — the model
+pulls alone are ~10 GB):</p>
+<ul>
+<li>4 CPUs or more, 8 GB free memory, 30 GB free disk</li>
+<li>Internet connection for the first boot (model pulls)</li>
+<li>A container/VM manager (Docker is the usual choice), <code>kubectl</code>, <code>helm</code>,
+  and this repo cloned</li>
+</ul>
+<p>Then bring up a local cluster with whichever tool you prefer:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">minikube</label><label for="__tabbed_1_2">kind</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><span class="filename">install (x86-64 Linux; other platforms: minikube.sigs.k8s.io/docs/start)</span><pre><span></span><code>curl<span class="w"> </span>-LO<span class="w"> </span>https://github.com/kubernetes/minikube/releases/latest/download/minikube-linux-amd64
+sudo<span class="w"> </span>install<span class="w"> </span>minikube-linux-amd64<span class="w"> </span>/usr/local/bin/minikube<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>rm<span class="w"> </span>minikube-linux-amd64
+</code></pre></div>
+<div class="highlight"><span class="filename">start, sized for this stack</span><pre><span></span><code>minikube<span class="w"> </span>start<span class="w"> </span>--cpus<span class="o">=</span><span class="m">4</span><span class="w"> </span>--memory<span class="o">=</span><span class="m">8192</span><span class="w"> </span>--disk-size<span class="o">=</span>30g
+kubectl<span class="w"> </span>get<span class="w"> </span>po<span class="w"> </span>-A<span class="w">        </span><span class="c1"># storage-provisioner may take a moment — normal</span>
+</code></pre></div>
+<details class="tip">
+<summary>GPU host? Pass the GPU into the sandbox</summary>
+<p>minikube (docker driver, Linux) can pass GPUs through — which lets
+the chart's embedding Ollama, and a CUDA-built reranker image, use
+them. The <strong>NVIDIA</strong> sequence, in full (each step has bitten
+someone):</p>
+<div class="highlight"><pre><span></span><code>nvidia-smi<span class="w">                                  </span><span class="c1"># 1. driver present?</span>
+sudo<span class="w"> </span>sysctl<span class="w"> </span>net.core.bpf_jit_harden<span class="w">         </span><span class="c1"># 2. must be 0</span>
+<span class="c1"># if not: echo &quot;net.core.bpf_jit_harden=0&quot; | sudo tee -a /etc/sysctl.conf &amp;&amp; sudo sysctl -p</span>
+sudo<span class="w"> </span>nvidia-ctk<span class="w"> </span>runtime<span class="w"> </span>configure<span class="w"> </span>--runtime<span class="o">=</span>docker<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>systemctl<span class="w"> </span>restart<span class="w"> </span>docker
+minikube<span class="w"> </span>delete<span class="w">                             </span><span class="c1"># a cluster built BEFORE the</span>
+<span class="w">                                            </span><span class="c1"># nvidia runtime existed won&#39;t see it</span>
+minikube<span class="w"> </span>start<span class="w"> </span>--driver<span class="w"> </span>docker<span class="w"> </span>--container-runtime<span class="w"> </span>docker<span class="w"> </span>--gpus<span class="w"> </span>all<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--cpus<span class="o">=</span><span class="m">4</span><span class="w"> </span>--memory<span class="o">=</span><span class="m">8192</span><span class="w"> </span>--disk-size<span class="o">=</span>30g
+</code></pre></div>
+<p>(<code>--gpus nvidia.com</code> is the CDI variant if your host uses CDI
+instead of the container toolkit.) <strong>AMD</strong> works too —
+<code>minikube start --driver docker --gpus amd</code> after the ROCm driver
+(<code>rocminfo</code> to verify) — but note this repo's GPU path
+(<a href="../configuration/#gpu-hosts">Configuration → GPU hosts</a>) is
+documented and exercised for NVIDIA/CUDA; an AMD run means a ROCm
+torch index for the reranker and is uncharted here.</p>
+</details>
+<p>Handy extras: <code>minikube dashboard</code> gives you a UI over everything you
+deploy below; <code>minikube addons list</code> / <code>minikube addons enable &lt;name&gt;</code>
+for extras like <code>metrics-server</code>; <code>minikube stop</code> / <code>minikube delete</code>
+when you're done. In step 6 you can also use minikube's native service
+access — <code>minikube service nexus-rag-orchestration-mcp --url</code> — in place
+of <code>kubectl port-forward</code> (this guide uses port-forward throughout so
+the commands are identical on kind).</p>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><span class="filename">install (via Go; or grab a release binary from kind.sigs.k8s.io)</span><pre><span></span><code>go<span class="w"> </span>install<span class="w"> </span>sigs.k8s.io/kind@latest
+</code></pre></div>
+<div class="highlight"><span class="filename">create the cluster</span><pre><span></span><code>kind<span class="w"> </span>create<span class="w"> </span>cluster<span class="w"> </span>--name<span class="w"> </span>nexus-rag
+</code></pre></div>
+<p>kind runs nodes as Docker containers, so its resource ceiling is your
+Docker daemon's — make sure Docker itself has ≥4 CPUs / 8 GB available.</p>
+</div>
+</div>
+</div>
+<h2 id="2-throwaway-postgres-and-keycloak-what-compose-gives-you-for-free">2. Throwaway Postgres and Keycloak (what Compose gives you for free)<a class="headerlink" href="#2-throwaway-postgres-and-keycloak-what-compose-gives-you-for-free" title="Permanent link">&para;</a></h2>
+<div class="highlight"><span class="filename">dev Postgres (matches the Compose pin)</span><pre><span></span><code>kubectl<span class="w"> </span>create<span class="w"> </span>deployment<span class="w"> </span>postgres<span class="w"> </span>--image<span class="o">=</span>postgres:16.14<span class="w"> </span>--port<span class="o">=</span><span class="m">5432</span>
+kubectl<span class="w"> </span><span class="nb">set</span><span class="w"> </span>env<span class="w"> </span>deployment/postgres<span class="w"> </span><span class="nv">POSTGRES_USER</span><span class="o">=</span>nexus_rag<span class="w"> </span><span class="nv">POSTGRES_PASSWORD</span><span class="o">=</span>nexus_rag<span class="w"> </span><span class="nv">POSTGRES_DB</span><span class="o">=</span>nexus_rag
+kubectl<span class="w"> </span>expose<span class="w"> </span>deployment<span class="w"> </span>postgres<span class="w"> </span>--port<span class="o">=</span><span class="m">5432</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">dev Keycloak with the repo&#x27;s seeded realm imported</span><pre><span></span><code>kubectl<span class="w"> </span>create<span class="w"> </span>configmap<span class="w"> </span>keycloak-realm<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--from-file<span class="o">=</span>infra/keycloak/realm-export/
+kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>-<span class="w"> </span><span class="s">&lt;&lt;&#39;EOF&#39;</span>
+<span class="s">apiVersion: apps/v1</span>
+<span class="s">kind: Deployment</span>
+<span class="s">metadata: {name: keycloak}</span>
+<span class="s">spec:</span>
+<span class="s">  replicas: 1</span>
+<span class="s">  selector: {matchLabels: {app: keycloak}}</span>
+<span class="s">  template:</span>
+<span class="s">    metadata: {labels: {app: keycloak}}</span>
+<span class="s">    spec:</span>
+<span class="s">      containers:</span>
+<span class="s">        - name: keycloak</span>
+<span class="s">          image: quay.io/keycloak/keycloak:26.7.0</span>
+<span class="s">          args: [&quot;start-dev&quot;, &quot;--import-realm&quot;]</span>
+<span class="s">          env:</span>
+<span class="s">            - {name: KEYCLOAK_ADMIN, value: admin}</span>
+<span class="s">            - {name: KEYCLOAK_ADMIN_PASSWORD, value: admin}</span>
+<span class="s">          ports: [{containerPort: 8080}]</span>
+<span class="s">          volumeMounts:</span>
+<span class="s">            - {name: realm, mountPath: /opt/keycloak/data/import}</span>
+<span class="s">      volumes:</span>
+<span class="s">        - name: realm</span>
+<span class="s">          configMap: {name: keycloak-realm}</span>
+<span class="s">---</span>
+<span class="s">apiVersion: v1</span>
+<span class="s">kind: Service</span>
+<span class="s">metadata: {name: keycloak}</span>
+<span class="s">spec:</span>
+<span class="s">  selector: {app: keycloak}</span>
+<span class="s">  ports: [{port: 8080, targetPort: 8080}]</span>
+<span class="s">EOF</span>
+</code></pre></div>
+<p>The realm import gives you the same <code>alice-ingest</code> / <code>carol-curator</code> /
+<code>bob-query</code> / <code>dave-admin</code> personas (password <code>devpass123</code>) as Compose.</p>
+<div class="highlight"><span class="filename">dev MinIO (throwaway S3 for the object store — original uploaded bytes land here)</span><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>-<span class="w"> </span><span class="s">&lt;&lt;&#39;EOF&#39;</span>
+<span class="s">apiVersion: apps/v1</span>
+<span class="s">kind: Deployment</span>
+<span class="s">metadata: {name: minio}</span>
+<span class="s">spec:</span>
+<span class="s">  replicas: 1</span>
+<span class="s">  selector: {matchLabels: {app: minio}}</span>
+<span class="s">  template:</span>
+<span class="s">    metadata: {labels: {app: minio}}</span>
+<span class="s">    spec:</span>
+<span class="s">      containers:</span>
+<span class="s">        - name: minio</span>
+<span class="s">          image: quay.io/minio/minio:latest   # dev-only; pin a RELEASE.* tag on any shared cluster</span>
+<span class="s">          args: [&quot;server&quot;, &quot;/data&quot;]</span>
+<span class="s">          env:</span>
+<span class="s">            - {name: MINIO_ROOT_USER, value: nexus-rag-dev}</span>
+<span class="s">            - {name: MINIO_ROOT_PASSWORD, value: nexus-rag-dev-secret}</span>
+<span class="s">          ports: [{containerPort: 9000}]</span>
+<span class="s">---</span>
+<span class="s">apiVersion: v1</span>
+<span class="s">kind: Service</span>
+<span class="s">metadata: {name: minio}</span>
+<span class="s">spec:</span>
+<span class="s">  selector: {app: minio}</span>
+<span class="s">  ports: [{port: 9000, targetPort: 9000}]</span>
+<span class="s">EOF</span>
+
+<span class="c1"># the app never creates its bucket itself (a real S3 wouldn&#39;t allow it either)</span>
+kubectl<span class="w"> </span>run<span class="w"> </span>mc<span class="w"> </span>--rm<span class="w"> </span>-it<span class="w"> </span>--restart<span class="o">=</span>Never<span class="w"> </span>--image<span class="o">=</span>quay.io/minio/mc:latest<span class="w"> </span>--<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>/bin/sh<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;mc alias set dev http://minio:9000 nexus-rag-dev nexus-rag-dev-secret &amp;&amp; mc mb dev/nexus-rag-documents&quot;</span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">MinIO here vs the alternatives</p>
+<p>This single-pod MinIO is the <em>classic dev S3</em> and mirrors what most
+teams reach for locally — but it is <strong>not</strong> how object storage looks on
+a real RKE/Tanzu/OpenShift/managed cluster (operator-managed MinIO,
+Ceph RGW, or enterprise S3, with TLS and real credentials — see the
+boundary note at the top). If you'd rather deploy <em>nothing extra</em>, the
+chart can bundle its own SeaweedFS S3 gateway instead — both options
+are wired in step 4.</p>
+</div>
+<h2 id="3-the-charts-secrets-dev-grade">3. The chart's Secrets, dev-grade<a class="headerlink" href="#3-the-charts-secrets-dev-grade" title="Permanent link">&para;</a></h2>
+<p>The chart fails closed without these. Default Secret names from
+<code>values.yaml</code>, dev values matching the seeded realm:</p>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>create<span class="w"> </span>secret<span class="w"> </span>generic<span class="w"> </span>nexus-rag-db<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--from-literal<span class="o">=</span>database-url<span class="o">=</span><span class="s1">&#39;postgresql+psycopg://nexus_rag:nexus_rag@postgres:5432/nexus_rag&#39;</span>
+
+kubectl<span class="w"> </span>create<span class="w"> </span>secret<span class="w"> </span>generic<span class="w"> </span>nexus-rag-keycloak-client-secret<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--from-literal<span class="o">=</span>client-secret<span class="o">=</span><span class="s1">&#39;dev-rag-app-secret&#39;</span>
+
+kubectl<span class="w"> </span>create<span class="w"> </span>secret<span class="w"> </span>generic<span class="w"> </span>nexus-rag-session-token-key<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--from-literal<span class="o">=</span><span class="nv">key</span><span class="o">=</span><span class="s2">&quot;</span><span class="k">$(</span>python3<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())&#39;</span><span class="k">)</span><span class="s2">&quot;</span>
+
+kubectl<span class="w"> </span>create<span class="w"> </span>secret<span class="w"> </span>generic<span class="w"> </span>nexus-rag-qdrant-keys<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--from-literal<span class="o">=</span>api-key<span class="o">=</span><span class="s2">&quot;</span><span class="k">$(</span>openssl<span class="w"> </span>rand<span class="w"> </span>-hex<span class="w"> </span><span class="m">32</span><span class="k">)</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--from-literal<span class="o">=</span>read-only-api-key<span class="o">=</span><span class="s2">&quot;</span><span class="k">$(</span>openssl<span class="w"> </span>rand<span class="w"> </span>-hex<span class="w"> </span><span class="m">32</span><span class="k">)</span><span class="s2">&quot;</span>
+
+kubectl<span class="w"> </span>create<span class="w"> </span>secret<span class="w"> </span>generic<span class="w"> </span>nexus-rag-nats-ingestion-api<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--from-literal<span class="o">=</span><span class="nv">password</span><span class="o">=</span><span class="s2">&quot;</span><span class="k">$(</span>openssl<span class="w"> </span>rand<span class="w"> </span>-hex<span class="w"> </span><span class="m">24</span><span class="k">)</span><span class="s2">&quot;</span>
+kubectl<span class="w"> </span>create<span class="w"> </span>secret<span class="w"> </span>generic<span class="w"> </span>nexus-rag-nats-ingestion-worker<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--from-literal<span class="o">=</span><span class="nv">password</span><span class="o">=</span><span class="s2">&quot;</span><span class="k">$(</span>openssl<span class="w"> </span>rand<span class="w"> </span>-hex<span class="w"> </span><span class="m">24</span><span class="k">)</span><span class="s2">&quot;</span>
+
+<span class="c1"># object-store credentials: MinIO&#39;s dev root user from step 2</span>
+kubectl<span class="w"> </span>create<span class="w"> </span>secret<span class="w"> </span>generic<span class="w"> </span>nexus-rag-object-store<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--from-literal<span class="o">=</span>access-key<span class="o">=</span><span class="s1">&#39;nexus-rag-dev&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--from-literal<span class="o">=</span>secret-key<span class="o">=</span><span class="s1">&#39;nexus-rag-dev-secret&#39;</span>
+</code></pre></div>
+<h2 id="4-install-the-chart">4. Install the chart<a class="headerlink" href="#4-install-the-chart" title="Permanent link">&para;</a></h2>
+<div class="highlight"><span class="filename">dev-values.yaml</span><pre><span></span><code><span class="nt">global</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># the chart&#39;s default is an air-gapped internal-registry EXAMPLE -- a</span>
+<span class="w">  </span><span class="c1"># sandbox pulls the released images straight from GHCR instead</span>
+<span class="w">  </span><span class="nt">imageRegistry</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ghcr.io/schuecl/nexus-rag&quot;</span>
+
+<span class="nt">externalKeycloak</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># comma-separated: in-cluster requests mint tokens as `keycloak:8080`,</span>
+<span class="w">  </span><span class="c1"># your port-forwarded curls as `localhost:8080` -- accept both (the same</span>
+<span class="w">  </span><span class="c1"># two-hostnames-one-Keycloak accommodation the Compose stack uses)</span>
+<span class="w">  </span><span class="nt">issuerUrl</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;http://keycloak:8080/realms/nexus-rag,http://localhost:8080/realms/nexus-rag&quot;</span>
+
+<span class="nt">ingestionApi</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># no ingress in the sandbox; the browser reaches the UI via port-forward</span>
+<span class="w">  </span><span class="nt">oidcRedirectUri</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;http://localhost:8001/auth/callback&quot;</span>
+
+<span class="nt">objectStore</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">            </span><span class="c1"># external S3 = the dev MinIO from step 2</span>
+<span class="w">  </span><span class="nt">external</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;http://minio:9000&quot;</span>
+<span class="w">    </span><span class="nt">bucket</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;nexus-rag-documents&quot;</span>
+<span class="w">    </span><span class="nt">region</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;us-east-1&quot;</span><span class="w">     </span><span class="c1"># MinIO ignores it; boto3 requires some value</span>
+</code></pre></div>
+<details class="example">
+<summary>No-MinIO alternative: let the chart bundle SeaweedFS</summary>
+<p>Skip the MinIO deployment and its Secret entirely; instead create</p>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>create<span class="w"> </span>secret<span class="w"> </span>generic<span class="w"> </span>nexus-rag-seaweedfs-keys<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--from-literal<span class="o">=</span>access-key<span class="o">=</span><span class="s2">&quot;</span><span class="k">$(</span>openssl<span class="w"> </span>rand<span class="w"> </span>-hex<span class="w"> </span><span class="m">16</span><span class="k">)</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--from-literal<span class="o">=</span>secret-key<span class="o">=</span><span class="s2">&quot;</span><span class="k">$(</span>openssl<span class="w"> </span>rand<span class="w"> </span>-hex<span class="w"> </span><span class="m">32</span><span class="k">)</span><span class="s2">&quot;</span>
+</code></pre></div>
+<p>and set</p>
+<div class="highlight"><pre><span></span><code><span class="nt">objectStore</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">   </span><span class="c1"># chart deploys SeaweedFS and pre-creates the bucket</span>
+</code></pre></div>
+</details>
+<div class="highlight"><pre><span></span><code>helm<span class="w"> </span>install<span class="w"> </span>nexus-rag<span class="w"> </span>helm/nexus-rag<span class="w"> </span>-f<span class="w"> </span>dev-values.yaml
+kubectl<span class="w"> </span>get<span class="w"> </span>pods<span class="w"> </span>-w<span class="w">    </span><span class="c1"># wait for Running/Ready; first boot pulls models</span>
+</code></pre></div>
+<details class="tip">
+<summary>Where the images come from (and how to use your own)</summary>
+<ul>
+<li><strong>Default (this guide):</strong> the four service images pull from GHCR
+  (public — no credentials needed) because <code>dev-values.yaml</code> points
+  <code>global.imageRegistry</code> there. Third-party components (Qdrant, NATS,
+  Ollama, SeaweedFS) use their own fully-qualified upstream names.</li>
+<li>
+<p><strong>Locally-built images</strong> (you're iterating on the services): build
+  with the repo's Dockerfiles, then load them straight into the
+  cluster — no registry needed:</p>
+<div class="highlight"><pre><span></span><code>minikube<span class="w"> </span>image<span class="w"> </span>load<span class="w"> </span>ghcr.io/schuecl/nexus-rag/ingestion-api:dev
+<span class="c1"># kind equivalent:</span>
+kind<span class="w"> </span>load<span class="w"> </span>docker-image<span class="w"> </span>ghcr.io/schuecl/nexus-rag/ingestion-api:dev<span class="w"> </span>--name<span class="w"> </span>nexus-rag
+</code></pre></div>
+<p>then set the matching tag in your values. On minikube you can also
+build <em>inside</em> the cluster's Docker daemon directly:
+<code>eval $(minikube docker-env) &amp;&amp; docker build …</code>.</p>
+</li>
+<li>
+<p><strong>A private mirror</strong> (corporate proxy of GHCR): set
+  <code>global.imageRegistry</code> to it and provide <code>global.imagePullSecrets</code>
+  (a standard <code>kubernetes.io/dockerconfigjson</code> Secret). minikube also
+  offers the <code>registry-creds</code> addon
+  (<code>minikube addons configure registry-creds &amp;&amp; minikube addons enable
+  registry-creds</code>) for ECR/GCR/ACR/Docker-registry credentials.</p>
+</li>
+<li><strong>Insecure/in-cluster registries:</strong> start the cluster with
+  <code>minikube start --insecure-registry "10.0.0.0/24"</code> (must be set at
+  cluster creation — <code>minikube delete</code> first if it already exists).</li>
+</ul>
+</details>
+<h2 id="5-seed-the-sandbox-corpus">5. Seed the sandbox corpus<a class="headerlink" href="#5-seed-the-sandbox-corpus" title="Permanent link">&para;</a></h2>
+<p>Same script, same seven documents, same real-API ingest-and-curate flow as
+Compose — run it as a one-off pod from the released <code>scripts</code> image:</p>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>run<span class="w"> </span>seed<span class="w"> </span>--rm<span class="w"> </span>-it<span class="w"> </span>--restart<span class="o">=</span>Never<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--image<span class="o">=</span>ghcr.io/schuecl/nexus-rag/scripts:X.Y.Z<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--env<span class="w"> </span><span class="nv">INGESTION_API_URL</span><span class="o">=</span>http://nexus-rag-ingestion-api:8001<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--env<span class="w"> </span><span class="nv">KEYCLOAK_URL</span><span class="o">=</span>http://keycloak:8080<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--env<span class="w"> </span><span class="nv">RAG_APP_KEYCLOAK_CLIENT_SECRET</span><span class="o">=</span>dev-rag-app-secret<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--<span class="w"> </span>python3<span class="w"> </span>seed_sample_data.py
+</code></pre></div>
+<h2 id="6-first-query">6. First query<a class="headerlink" href="#6-first-query" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>port-forward<span class="w"> </span>svc/nexus-rag-orchestration-mcp<span class="w"> </span><span class="m">8002</span>:8002<span class="w"> </span><span class="p">&amp;</span>
+kubectl<span class="w"> </span>port-forward<span class="w"> </span>svc/keycloak<span class="w"> </span><span class="m">8080</span>:8080<span class="w"> </span><span class="p">&amp;</span>
+
+<span class="nv">TOKEN</span><span class="o">=</span><span class="k">$(</span>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:8080/realms/nexus-rag/protocol/openid-connect/token<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-d<span class="w"> </span><span class="nv">grant_type</span><span class="o">=</span>password<span class="w"> </span>-d<span class="w"> </span><span class="nv">client_id</span><span class="o">=</span>rag-app<span class="w"> </span>-d<span class="w"> </span><span class="nv">client_secret</span><span class="o">=</span>dev-rag-app-secret<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-d<span class="w"> </span><span class="nv">username</span><span class="o">=</span>bob-query<span class="w"> </span>-d<span class="w"> </span><span class="nv">password</span><span class="o">=</span>devpass123<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span>.access_token<span class="k">)</span>
+
+curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:8002/debug/rag_search<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Authorization: Bearer </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span><span class="w"> </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;query&quot;: &quot;how often should passwords be rotated&quot;, &quot;top_k&quot;: 5}&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq
+</code></pre></div>
+<p>From here, everything in the <a href="../quickstart/">Compose quickstart</a> from step 3
+onward applies unchanged — same personas, same access-filter proof
+(<code>dave-admin</code> sees the Signal-Corps SECRET document, <code>bob-query</code> provably
+doesn't), same hand-run of upload → curate → query (port-forward
+<code>svc/nexus-rag-ingestion-api 8001:8001</code> for the UI).</p>
+<details class="tip">
+<summary>minikube-native access instead of port-forward</summary>
+<p>The chart's services default to <code>ClusterIP</code>, which is why this guide
+uses <code>kubectl port-forward</code> (works identically on kind). On minikube you
+can use its native access instead — flip the two user-facing services to
+<code>NodePort</code> in <code>dev-values.yaml</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">ingestionApi</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="nv">NodePort</span><span class="p p-Indicator">,</span><span class="nt"> port</span><span class="p">:</span><span class="w"> </span><span class="nv">8001</span><span class="p p-Indicator">}</span>
+<span class="nt">orchestrationMcp</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="nv">NodePort</span><span class="p p-Indicator">,</span><span class="nt"> port</span><span class="p">:</span><span class="w"> </span><span class="nv">8002</span><span class="p p-Indicator">}</span>
+</code></pre></div>
+<p>then, each in its own terminal (the command keeps a tunnel open on the
+Docker driver — Ctrl-C tears it down):</p>
+<div class="highlight"><pre><span></span><code>minikube<span class="w"> </span>service<span class="w"> </span>nexus-rag-ingestion-api<span class="w"> </span>--url
+minikube<span class="w"> </span>service<span class="w"> </span>nexus-rag-orchestration-mcp<span class="w"> </span>--url
+</code></pre></div>
+<p>and use the printed URLs in place of <code>localhost:8001/8002</code> (remember the
+OIDC redirect in <code>dev-values.yaml</code> must then match the ingestion-api
+URL). <code>minikube tunnel</code> + <code>type: LoadBalancer</code> works too, but needs root
+for the route and buys nothing extra in a sandbox. Keycloak from step 2
+can get the same treatment (<code>minikube service keycloak --url</code>) — and any
+non-<code>localhost</code> Keycloak URL must be added to the <code>issuerUrl</code> list.</p>
+</details>
+<h2 id="where-this-differs-from-production">Where this differs from production<a class="headerlink" href="#where-this-differs-from-production" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>This sandbox</th>
+<th><a href="../deploy-helm/">Production Helm</a> → <a href="../deploy-airgapped/">air-gapped</a></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Keycloak / Postgres / S3</td>
+<td>throwaway, in-cluster, dev creds</td>
+<td>your existing enterprise services, real secrets</td>
+</tr>
+<tr>
+<td>Identities &amp; corpus</td>
+<td>seeded personas + 7 sample docs</td>
+<td>real users, real documents, empty until curated</td>
+</tr>
+<tr>
+<td>Exposure</td>
+<td><code>kubectl port-forward</code></td>
+<td>ingress + TLS, NetworkPolicies doing real work</td>
+</tr>
+<tr>
+<td>Images</td>
+<td>pulled from GHCR</td>
+<td>promoted via the verified bundle into an internal registry</td>
+</tr>
+</tbody>
+</table>
+<h2 id="sources">Sources<a class="headerlink" href="#sources" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="https://github.com/schuecl/nexus-rag/blob/main/helm/nexus-rag/README.md">Helm chart README</a>
+  — the authoritative Secrets/values contract this page instantiates with
+  dev values</li>
+<li><a href="https://github.com/schuecl/nexus-rag/blob/main/infra/keycloak/realm-export/"><code>infra/keycloak/realm-export/</code></a>
+  — the seeded realm imported in step 2</li>
+<li><a href="https://github.com/schuecl/nexus-rag/blob/main/scripts/seed_sample_data.py"><code>scripts/seed_sample_data.py</code></a>
+  — the same seeding the Compose stack runs</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../quickstart/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Quickstart">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Quickstart
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../understanding-the-architecture/" class="md-footer__link md-footer__link--next" aria-label="Next: Understanding the architecture">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Understanding the architecture
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.footer", "navigation.top", "navigation.indexes", "search.suggest", "search.highlight", "content.code.copy", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../../assets/js/mermaid.min.js"></script>
+      
+        <script src="../../assets/js/mermaid-init.js"></script>
+      
+        <script src="../../assets/js/lightbox.js"></script>
+      
+    
+  </body>
+</html>

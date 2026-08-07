@@ -1,0 +1,2525 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Air-gapped RAG pipeline for MPNexus: classification-aware ingestion, curation, and claims-filtered retrieval.">
+      
+      
+      
+        <link rel="canonical" href="https://allamiro.gitlab.io/nexus-rag/siem-detection-runbook/">
+      
+      
+        <link rel="prev" href="../chat-plane-purge/">
+      
+      
+        <link rel="next" href="../changelog/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>SIEM detection runbook - Nexus RAG</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/dracula.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="pink">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#siem-detection-runbook-reconnaissance-shaped-query-patterns" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Nexus RAG" class="md-header__button md-logo" aria-label="Nexus RAG" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18.68 12.32a4.49 4.49 0 0 0-6.36.01 4.49 4.49 0 0 0 0 6.36 4.51 4.51 0 0 0 5.57.63L21 22.39 22.39 21l-3.09-3.11c1.13-1.77.87-4.09-.62-5.57m-1.41 4.95c-.98.98-2.56.97-3.54 0-.97-.98-.97-2.56.01-3.54.97-.97 2.55-.97 3.53 0 .97.98.97 2.56 0 3.54M10.9 20.1a6.5 6.5 0 0 1-1.48-2.32C6.27 17.25 4 15.76 4 14v3c0 2.21 3.58 4 8 4-.4-.26-.77-.56-1.1-.9M4 9v3c0 1.68 2.07 3.12 5 3.7v-.2c0-.93.2-1.85.58-2.69C6.34 12.3 4 10.79 4 9m8-6C7.58 3 4 4.79 4 7c0 2 3 3.68 6.85 4h.05c1.2-1.26 2.86-2 4.6-2 .91 0 1.81.19 2.64.56A3.22 3.22 0 0 0 20 7c0-2.21-3.58-4-8-4"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Nexus RAG
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              SIEM detection runbook
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/schuecl/nexus-rag" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    schuecl/nexus-rag
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+    
+  
+  🚀 Get Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../guides/deploy-compose/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  🚢 Production Deployment
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../guides/configuration/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  🛠️ How-to Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../security/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  🛡️ Security & Compliance
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../architecture-overview/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  📖 Reference
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Nexus RAG" class="md-nav__button md-logo" aria-label="Nexus RAG" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18.68 12.32a4.49 4.49 0 0 0-6.36.01 4.49 4.49 0 0 0 0 6.36 4.51 4.51 0 0 0 5.57.63L21 22.39 22.39 21l-3.09-3.11c1.13-1.77.87-4.09-.62-5.57m-1.41 4.95c-.98.98-2.56.97-3.54 0-.97-.98-.97-2.56.01-3.54.97-.97 2.55-.97 3.53 0 .97.98.97 2.56 0 3.54M10.9 20.1a6.5 6.5 0 0 1-1.48-2.32C6.27 17.25 4 15.76 4 14v3c0 2.21 3.58 4 8 4-.4-.26-.77-.56-1.1-.9M4 9v3c0 1.68 2.07 3.12 5 3.7v-.2c0-.93.2-1.85.58-2.69C6.34 12.3 4 10.79 4 9m8-6C7.58 3 4 4.79 4 7c0 2 3 3.68 6.85 4h.05c1.2-1.26 2.86-2 4.6-2 .91 0 1.81.19 2.64.56A3.22 3.22 0 0 0 20 7c0-2.21-3.58-4-8-4"/></svg>
+
+    </a>
+    Nexus RAG
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/schuecl/nexus-rag" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    schuecl/nexus-rag
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href=".." class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🚀 Get Started
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_1" id="__nav_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    🚀 Get Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/quickstart-helm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart on Kubernetes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/understanding-the-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Understanding the architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/connect-chat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Connect the chat plane
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🚢 Production Deployment
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    🚢 Production Deployment
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/deploy-compose/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker Compose
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/deploy-helm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Helm / Kubernetes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/deploy-airgapped/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Air-gapped
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🛠️ How-to Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    🛠️ How-to Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration by use case
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../evaluation-results/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Evaluation & performance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🛡️ Security & Compliance
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    🛡️ Security & Compliance
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../nist-ai-rmf/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NIST AI RMF
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    NIST AI RMF
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nist-ai-rmf/rmf-mapping/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RMF mapping
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nist-ai-rmf/governance-policy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Governance policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nist-ai-rmf/impact-assessment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Impact assessment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nist-ai-rmf/risk-register/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk register
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nist-ai-rmf/ai-system-inventory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI system inventory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nist-ai-rmf/evidence/evidence-index/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Evidence index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    📖 Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    📖 Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5_1" id="__nav_5_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engineering docs (verbatim)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_1_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Engineering docs (verbatim)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture-overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/diagrams/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture diagrams
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../requirements/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Requirements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../governance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data governance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../threat-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privacy threat model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../roles-and-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roles and permissions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dev-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dev environment setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../querying-the-corpus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Querying the corpus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing & CI quality gates
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../releasing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Releasing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../credential-rotation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Credential rotation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chat-plane-purge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chat-plane purge runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SIEM detection runbook
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SIEM detection runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#when-you-need-this" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When you need this
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-wire-format-your-rule-has-to-parse" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The wire format your rule has to parse
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-four-signals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The four signals
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The four signals">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-high_volume-attempt-rate-spike" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. high_volume — attempt-rate spike
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-high_denial_ratio-one-identitys-denial-rate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. high_denial_ratio — one identity's denial rate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-narrow_probe_shaped-successful-queries-resolving-to-01-chunks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. narrow_probe_shaped — successful queries resolving to 0–1 chunks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-boundary_mapping-denial-immediately-followed-by-success" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. boundary_mapping — denial immediately followed by success
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verifying-a-rule-you-just-wrote" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verifying a rule you just wrote
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-this-runbook-does-not-give-you" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What this runbook does not give you
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#when-you-need-this" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When you need this
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-wire-format-your-rule-has-to-parse" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The wire format your rule has to parse
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-four-signals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The four signals
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The four signals">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-high_volume-attempt-rate-spike" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. high_volume — attempt-rate spike
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-high_denial_ratio-one-identitys-denial-rate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. high_denial_ratio — one identity's denial rate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-narrow_probe_shaped-successful-queries-resolving-to-01-chunks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. narrow_probe_shaped — successful queries resolving to 0–1 chunks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-boundary_mapping-denial-immediately-followed-by-success" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. boundary_mapping — denial immediately followed by success
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verifying-a-rule-you-just-wrote" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verifying a rule you just wrote
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-this-runbook-does-not-give-you" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What this runbook does not give you
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="siem-detection-runbook-reconnaissance-shaped-query-patterns">SIEM detection runbook — reconnaissance-shaped query patterns<a class="headerlink" href="#siem-detection-runbook-reconnaissance-shaped-query-patterns" title="Permanent link">&para;</a></h1>
+<p>Issue <a href="https://github.com/schuecl/nexus-rag/issues/436">#436</a>. This document
+translates the four signals <code>scripts/detect_query_anomalies.py</code> computes (#426)
+into detection content an operator can build in whichever SIEM the deployment
+actually runs, working from the audit rows #73's exporter already ships.</p>
+<p>It is <strong>documentation only</strong>. Nothing here is executed or tested by this repo's
+CI, and that is the reason it is a runbook rather than code:
+<code>docs/threat-model.md</code>'s section 4 records SIEM rule content as deliberately
+out of scope, because Splunk SPL, Elastic KQL/EQL, ArcSight and QRadar rule
+formats are environment-specific and there is no way to exercise them here.
+Treat every query below as a <strong>sketch to adapt</strong>, not a drop-in artifact — the
+field names depend on how your collector parses the syslog MSG field, which this
+repo cannot know.</p>
+<h2 id="when-you-need-this">When you need this<a class="headerlink" href="#when-you-need-this" title="Permanent link">&para;</a></h2>
+<p>You need it if detection should live in the SIEM rather than in (or in addition
+to) periodic runs of <code>scripts/detect_query_anomalies.py</code>. The trade-off:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><code>detect_query_anomalies.py</code></th>
+<th>SIEM detection content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Runs</td>
+<td>manually, or on a schedule you supply (nothing in this repo schedules it)</td>
+<td>continuously, by the SIEM</td>
+</tr>
+<tr>
+<td>Reads</td>
+<td>Postgres <code>audit_log</code> via the <code>nexus_rag_audit_reporting</code> SELECT-only role</td>
+<td>the exported syslog stream</td>
+</tr>
+<tr>
+<td>Attribution</td>
+<td><code>actor_sub</code>/<code>actor_username</code> in its stdout report only</td>
+<td>whatever your SIEM's RBAC exposes</td>
+</tr>
+<tr>
+<td>Correctness</td>
+<td>unit-tested in <code>tests/unit/test_detect_query_anomalies.py</code>; validated against a live stack</td>
+<td>your responsibility</td>
+</tr>
+</tbody>
+</table>
+<p>Running both is reasonable. They read the same fields, so they agree by
+construction — which also makes the script a way to sanity-check a new SIEM rule
+over the same window.</p>
+<p><strong>One privacy constraint carries over and must not be relaxed in the SIEM.</strong>
+Per-identity detail is intentionally confined: #125 removed query <em>text</em> from the
+audit log entirely, and <code>orchestration-mcp/app/metrics.py</code> refuses a per-user
+metric label because it "would rebuild exactly the surveillance surface #125
+removed." A SIEM rule keying on <code>actor_sub</code> is fine — that is what the audit log
+is for, and <code>docs/governance.md</code> already names the audience holding audit-read
+authority. Building a per-user <em>dashboard</em> of query behaviour for a wider
+audience is the thing to avoid.</p>
+<h2 id="the-wire-format-your-rule-has-to-parse">The wire format your rule has to parse<a class="headerlink" href="#the-wire-format-your-rule-has-to-parse" title="Permanent link">&para;</a></h2>
+<p><code>services/common/common/siem.py::format_rfc5424</code> emits one RFC 5424 message per
+audit row: a syslog header carrying the routing/triage fields, then the whole
+event as JSON in the MSG field.</p>
+<div class="highlight"><pre><span></span><code>&lt;109&gt;1 2026-08-06T04:12:33.914217Z rag-host nexus-rag-orchestration-mcp 1 query - {&quot;id&quot;: &quot;...&quot;, &quot;service&quot;: &quot;orchestration-mcp&quot;, &quot;actor_sub&quot;: &quot;...&quot;, &quot;actor_username&quot;: &quot;bob-query&quot;, &quot;action&quot;: &quot;query&quot;, &quot;target_id&quot;: null, &quot;detail&quot;: {&quot;top_k&quot;: 5, &quot;result_count&quot;: 3, ...}, &quot;created_at&quot;: &quot;2026-08-06T04:12:33.914217Z&quot;}
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Position</th>
+<th>Value</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRI</td>
+<td><code>109</code> normal, <code>108</code> for denials</td>
+<td>facility 13 (<code>log_audit</code>) × 8 + severity. NOTICE = 5 → 109; WARNING = 4 → 108. <code>SIEM_SYSLOG_FACILITY</code> can override the facility, so <strong>key on MSGID, not PRI</strong>, if the deployment sets it</td>
+</tr>
+<tr>
+<td>VERSION</td>
+<td><code>1</code></td>
+<td></td>
+</tr>
+<tr>
+<td>TIMESTAMP</td>
+<td>RFC 3339, UTC, <code>Z</code> suffix</td>
+<td>same value as <code>created_at</code> in the JSON</td>
+</tr>
+<tr>
+<td>HOSTNAME</td>
+<td>collector-visible host</td>
+<td></td>
+</tr>
+<tr>
+<td>APP-NAME</td>
+<td><code>nexus-rag-&lt;service&gt;</code></td>
+<td>e.g. <code>nexus-rag-orchestration-mcp</code></td>
+</tr>
+<tr>
+<td>PROCID</td>
+<td>pid</td>
+<td></td>
+</tr>
+<tr>
+<td>MSGID</td>
+<td>the audit action</td>
+<td><code>query</code>, <code>query.denied</code>, <code>document.submit</code>, … — the field to filter on</td>
+</tr>
+<tr>
+<td>STRUCTURED-DATA</td>
+<td><code>-</code> (nil)</td>
+<td>nothing is carried here</td>
+</tr>
+<tr>
+<td>MSG</td>
+<td>the full event as JSON</td>
+<td>ASCII-escaped (<code>ensure_ascii=True</code>), so control characters cannot forge record boundaries</td>
+</tr>
+</tbody>
+</table>
+<p>Two things worth knowing before you write a parser:</p>
+<ul>
+<li><strong>Denials arrive at WARNING, everything else at NOTICE.</strong> That is severity
+  <em>only</em> — <code>_severity()</code> keys on the substring <code>denied</code> in the action. It is a
+  triage convenience, not a security boundary.</li>
+<li><strong>There is no query text to match on, by design.</strong> Any rule attempting
+  near-duplicate <em>text</em> correlation has nothing to work with; <code>result_count</code> is
+  the substitute (see <code>narrow_probe_shaped</code> below). This is why signal 3 is
+  shaped the way it is rather than the way #426 originally suggested.</li>
+</ul>
+<p>Fields the rules below need, all inside the MSG JSON: <code>actor_sub</code>, <code>action</code>,
+<code>detail.result_count</code>, <code>created_at</code>.</p>
+<h2 id="the-four-signals">The four signals<a class="headerlink" href="#the-four-signals" title="Permanent link">&para;</a></h2>
+<p>Thresholds are the script's defaults (<code>scripts/detect_query_anomalies.py:98-105</code>).
+They are starting points calibrated against a dev corpus, not agreed operational
+values — expect to tune them against your own traffic before enabling alerting.</p>
+<p>Scope for every signal: <strong><code>query</code> and <code>query.denied</code> actions only.</strong>
+<code>query.failed</code> is excluded deliberately — it is the #122 embedding-mismatch
+guard, an operational condition rather than a user action, and including it
+would let an infrastructure fault look like reconnaissance.</p>
+<h3 id="1-high_volume-attempt-rate-spike">1. <code>high_volume</code> — attempt-rate spike<a class="headerlink" href="#1-high_volume-attempt-rate-spike" title="Permanent link">&para;</a></h3>
+<p>Total attempts (<code>query</code> + <code>query.denied</code>) per identity at or above
+<strong>30 in 60 minutes</strong>. Catches naive scripted probing.</p>
+<p><strong>Splunk SPL</strong></p>
+<div class="highlight"><pre><span></span><code>index=nexus_rag (MSGID=&quot;query&quot; OR MSGID=&quot;query.denied&quot;)
+| spath input=_raw output=actor_sub path=actor_sub
+| bin _time span=60m
+| stats count AS attempts by actor_sub, _time
+| where attempts &gt;= 30
+</code></pre></div>
+<p><strong>Elastic (ES|QL)</strong></p>
+<div class="highlight"><pre><span></span><code>FROM nexus-rag-audit-*
+| WHERE action IN (&quot;query&quot;, &quot;query.denied&quot;)
+| STATS attempts = COUNT(*) BY actor_sub, bucket = BUCKET(@timestamp, 1 hour)
+| WHERE attempts &gt;= 30
+</code></pre></div>
+<h3 id="2-high_denial_ratio-one-identitys-denial-rate">2. <code>high_denial_ratio</code> — one identity's denial <em>rate</em><a class="headerlink" href="#2-high_denial_ratio-one-identitys-denial-rate" title="Permanent link">&para;</a></h3>
+<p><code>query.denied</code> as a share of that identity's attempts, at or above <strong>0.3</strong>,
+gated by a minimum of <strong>10 attempts</strong> so one denial from a brand-new user isn't
+100 % of one.</p>
+<p>Distinct from the existing <code>NexusRagQueryDeniedSpike</code> Prometheus alert
+(<code>infra/observability/prometheus/rules/nexus-rag.yml</code>), which fires on denial
+<em>volume across all identities</em>. A single identity being denied steadily can stay
+under that aggregate threshold indefinitely — this is the rule that catches it.</p>
+<p><strong>Splunk SPL</strong></p>
+<div class="highlight"><pre><span></span><code>index=nexus_rag (MSGID=&quot;query&quot; OR MSGID=&quot;query.denied&quot;)
+| spath input=_raw output=actor_sub path=actor_sub
+| bin _time span=60m
+| stats count AS attempts, count(eval(MSGID=&quot;query.denied&quot;)) AS denials
+        by actor_sub, _time
+| where attempts &gt;= 10 AND (denials / attempts) &gt;= 0.3
+</code></pre></div>
+<p><strong>Elastic (ES|QL)</strong></p>
+<div class="highlight"><pre><span></span><code>FROM nexus-rag-audit-*
+| WHERE action IN (&quot;query&quot;, &quot;query.denied&quot;)
+| STATS attempts = COUNT(*),
+        denials = COUNT(CASE(action == &quot;query.denied&quot;, 1, NULL))
+    BY actor_sub, bucket = BUCKET(@timestamp, 1 hour)
+| WHERE attempts &gt;= 10 AND denials::double / attempts::double &gt;= 0.3
+</code></pre></div>
+<h3 id="3-narrow_probe_shaped-successful-queries-resolving-to-01-chunks">3. <code>narrow_probe_shaped</code> — successful queries resolving to 0–1 chunks<a class="headerlink" href="#3-narrow_probe_shaped-successful-queries-resolving-to-01-chunks" title="Permanent link">&para;</a></h3>
+<p>Share of that identity's <strong>successful</strong> queries whose <code>detail.result_count</code> is
+0 or 1, at or above <strong>0.6</strong>, gated by a minimum of <strong>10 successes</strong>.</p>
+<p>This is the signal that replaces "near-duplicate query text", which is
+unbuildable here: #125 means the text was never stored. A user running many
+queries that each resolve to at most one chunk is the membership-inference shape
+OWASP describes — crafted, narrow questions checking one document at a time —
+and <code>result_count</code> carries that without any content.</p>
+<p>Note the direction: an <strong>absent</strong> result is informative to the prober, so a run
+of zero-result successes is as interesting as single-result ones. Filter on
+successful <code>query</code> rows only; denials have no meaningful <code>result_count</code>.</p>
+<p><strong>Splunk SPL</strong></p>
+<div class="highlight"><pre><span></span><code>index=nexus_rag MSGID=&quot;query&quot;
+| spath input=_raw output=actor_sub path=actor_sub
+| spath input=_raw output=result_count path=detail.result_count
+| bin _time span=60m
+| stats count AS successes,
+        count(eval(result_count &lt;= 1)) AS narrow
+        by actor_sub, _time
+| where successes &gt;= 10 AND (narrow / successes) &gt;= 0.6
+</code></pre></div>
+<p><strong>Elastic (ES|QL)</strong></p>
+<div class="highlight"><pre><span></span><code>FROM nexus-rag-audit-*
+| WHERE action == &quot;query&quot;
+| STATS successes = COUNT(*),
+        narrow = COUNT(CASE(detail.result_count &lt;= 1, 1, NULL))
+    BY actor_sub, bucket = BUCKET(@timestamp, 1 hour)
+| WHERE successes &gt;= 10 AND narrow::double / successes::double &gt;= 0.6
+</code></pre></div>
+<h3 id="4-boundary_mapping-denial-immediately-followed-by-success">4. <code>boundary_mapping</code> — denial immediately followed by success<a class="headerlink" href="#4-boundary_mapping-denial-immediately-followed-by-success" title="Permanent link">&para;</a></h3>
+<p>Count of <code>query.denied</code> → <code>query</code> transitions for the same identity within
+<strong>300 seconds</strong>, at or above <strong>5</strong> occurrences.</p>
+<p><strong>Read the name with care, because it does not mean what it sounds like.</strong> The
+script's docstring records what a live run established: <code>rag_search.py</code>'s only
+<code>query.denied</code> path is the coarse missing-<code>rag-query</code>-role gate
+(<code>if not claims.can_query</code>) — <strong>not</strong> a per-query FR-26
+classification/releasability/access-scope mismatch. An out-of-scope query returns
+a <em>successful empty result</em>, never a denial. So this signal does not detect
+someone mapping where an access filter's edge sits. What it actually detects is
+an identity's <code>rag-query</code> grant <strong>changing state mid-window and being used
+immediately after</strong>: a role revoked then reinstated, or a delayed token refresh
+picking up a just-granted role. Rarer, narrower, still worth a human look — and
+worth writing that into your alert's description so a responder isn't hunting for
+filter probing that the signal cannot see.</p>
+<p>Because this is a sequence rather than an aggregate, it is the one signal whose
+shape differs most per SIEM. Splunk's <code>transaction</code>/<code>streamstats</code> and Elastic's
+EQL <code>sequence</code> are the natural primitives:</p>
+<p><strong>Splunk SPL</strong> (<code>streamstats</code> to find the previous action per identity)</p>
+<div class="highlight"><pre><span></span><code>index=nexus_rag (MSGID=&quot;query&quot; OR MSGID=&quot;query.denied&quot;)
+| spath input=_raw output=actor_sub path=actor_sub
+| sort 0 actor_sub, _time
+| streamstats current=f last(MSGID) AS prev_action, last(_time) AS prev_time
+              by actor_sub
+| where MSGID=&quot;query&quot; AND prev_action=&quot;query.denied&quot;
+        AND (_time - prev_time) &lt;= 300
+| stats count AS transitions by actor_sub
+| where transitions &gt;= 5
+</code></pre></div>
+<p><strong>Elastic (EQL sequence)</strong></p>
+<div class="highlight"><pre><span></span><code>sequence by actor_sub with maxspan=5m
+  [ any where action == &quot;query.denied&quot; ]
+  [ any where action == &quot;query&quot; ]
+</code></pre></div>
+<p>EQL reports each matching sequence; add a rule threshold of 5 per identity per
+hour to match the script.</p>
+<h2 id="verifying-a-rule-you-just-wrote">Verifying a rule you just wrote<a class="headerlink" href="#verifying-a-rule-you-just-wrote" title="Permanent link">&para;</a></h2>
+<p>Run the in-repo detector over the same window and compare which identities each
+flags:</p>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>scripts/detect_query_anomalies.py<span class="w"> </span>--lookback-minutes<span class="w"> </span><span class="m">60</span>
+
+<span class="c1"># Or against the dev stack&#39;s own Postgres, via the compose one-shot:</span>
+docker<span class="w"> </span>compose<span class="w"> </span>--profile<span class="w"> </span>anomaly-detection<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>detect-query-anomalies
+</code></pre></div>
+<p>The script prints <code>actor_sub</code>/<code>actor_username</code> per flagged signal. If a SIEM rule
+and the script disagree over the same window, the usual causes are: the rule
+including <code>query.failed</code>; the rule counting denials in the <code>narrow_probe_shaped</code>
+denominator; or a bucket boundary splitting a burst across two windows where the
+script uses a single rolling lookback.</p>
+<h2 id="what-this-runbook-does-not-give-you">What this runbook does not give you<a class="headerlink" href="#what-this-runbook-does-not-give-you" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Tuned thresholds.</strong> The defaults above are dev-corpus starting points. A
+  deployment with a large corpus and heavy legitimate use will need higher
+  volume thresholds, and a deployment where most queries legitimately return one
+  chunk will need <code>narrow_probe_shaped</code> reconsidered entirely.</li>
+<li><strong>Response procedure.</strong> What to do with a flagged identity — revoke
+  <code>rag-query</code>, contact the user, escalate — is a deployment policy decision, not
+  something this repo can specify.</li>
+<li><strong>Prevention.</strong> These are detections. <code>docs/threat-model.md</code> section 1 covers
+  the controls that narrow the membership-inference channel itself (score
+  suppression per #127, per-classification collections); this section 4 material
+  exists because that channel cannot be fully closed against an authorized
+  adversary.</li>
+</ul>
+<h2 id="related">Related<a class="headerlink" href="#related" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>scripts/detect_query_anomalies.py</code> — the in-repo equivalent; its module
+  docstring is the authoritative signal definition and the source for this page</li>
+<li><a href="https://github.com/schuecl/nexus-rag/issues/426">#426</a> — implements the
+  detector; <a href="https://github.com/schuecl/nexus-rag/issues/127">#127</a> gap #4 — the
+  threat it addresses</li>
+<li><a href="https://github.com/schuecl/nexus-rag/issues/73">#73</a> — the RFC 5424 export
+  this runbook builds on (<code>services/common/common/siem.py</code>)</li>
+<li><code>docs/threat-model.md</code> section 4 — records SIEM rule content as a deliberate
+  residual, which this page closes as documentation</li>
+<li><code>docs/governance.md</code> — who holds audit-read authority</li>
+<li><code>docs/observability.md</code> — metrics/alerting, including
+  <code>NexusRagQueryAnomalyDetected</code> and <code>NexusRagQueryDeniedSpike</code></li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../chat-plane-purge/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Chat-plane purge runbook">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Chat-plane purge runbook
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../changelog/" class="md-footer__link md-footer__link--next" aria-label="Next: Changelog">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Changelog
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.footer", "navigation.top", "navigation.indexes", "search.suggest", "search.highlight", "content.code.copy", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../assets/js/mermaid.min.js"></script>
+      
+        <script src="../assets/js/mermaid-init.js"></script>
+      
+        <script src="../assets/js/lightbox.js"></script>
+      
+    
+  </body>
+</html>
