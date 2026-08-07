@@ -74,6 +74,15 @@ changed in the running system, with the issue/PR reference for the trail.
 
 ### Changed
 
+- **Field borders, card edges and the upload page's stepper rail are more visible
+  in every theme** (#578). They measured 1.61:1 (Daylight) to 2.40:1 against the
+  surface behind them -- below the 3:1 WCAG 2.1 minimum for the visual boundary of
+  a control, with the light theme, the one meant for a bright room or a projector,
+  the worst of the set. Only the transparency of the line colour changed, never its
+  hue, and each value is the smallest that clears the floor against both the card
+  and the page. **Operator-visible:** borders and dividers now read as defined
+  rather than hinted on every screen.
+
 - **The numbered step markers on the upload page are now readable** (#578). They
   rendered an accent colour on a tinted chip, measuring 2.76:1 against their own
   background in the default theme -- below the 4.5:1 WCAG AA floor for normal
