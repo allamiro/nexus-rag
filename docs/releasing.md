@@ -26,7 +26,7 @@ covers:
 |---|---|
 | `helm/nexus-rag/Chart.yaml` | `version` **and** `appVersion` (equal by rule) |
 | `services/{common,ingestion-api,ingestion-worker,orchestration-mcp,reranker-service}/pyproject.toml` | `[project].version` |
-| `helm/nexus-rag/values.yaml` | the four first-party `image.tag`s |
+| `helm/nexus-rag/values.yaml` | the five first-party `image.tag`s (four services + the scripts image, #527) |
 
 Why lockstep: the five packages are one deployable unit — everything depends
 on `services/common`, compose and the chart deploy them as a set, and the
@@ -61,7 +61,7 @@ was considered in #295 and rejected as convention churn).
 ## Cutting a release
 
 1. **Release PR** (one logical change, like any other):
-   - Bump the version everywhere it lives (the table above — 11 fields).
+   - Bump the version everywhere it lives (the table above — 12 fields).
      `grep -rn "0\.1\.0"` against the table beats trusting memory;
      `python scripts/check_version_consistency.py X.Y.Z` confirms.
    - In `CHANGELOG.md`: retitle `## [Unreleased]` to `## [X.Y.Z] - YYYY-MM-DD`,
@@ -72,7 +72,7 @@ was considered in #295 and rejected as convention churn).
    git tag -a vX.Y.Z -m "vX.Y.Z" <merge-commit>
    git push upstream vX.Y.Z
    ```
-4. `release.yml` does the rest — verifies tag↔files, builds the four images,
+4. `release.yml` does the rest — verifies tag↔files, builds the five images,
    pushes `ghcr.io/schuecl/nexus-rag/<service>:X.Y.Z` (immutable, no
    `:latest`, ever — NFR-16 applied to our own images), generates CycloneDX
    SBOMs, packages the chart and pushes
@@ -131,7 +131,7 @@ scripts/export_release_bundle.sh X.Y.Z
 # -> dist/nexus-rag-X.Y.Z-bundle.tar.gz
 ```
 
-The bundle contains the four images as docker archives, the chart tarball,
+The bundle contains the five images as docker archives, the chart tarball,
 `image-digests.txt`, a `sha256sums.txt` over everything, and an `IMPORT.md`
 with the exact disconnected-side commands.
 

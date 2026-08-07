@@ -10,6 +10,14 @@ check that no unapproved (pending/rejected/superseded) chunk is ever returned,
 regardless of the querying persona's clearance. Any query below full recall@K
 fails the run (issue #397, `--fail-on-miss`), as does any FR-26 leak.
 
+Issue #514 widens the set beyond clean admin-persona queries: typo and
+vague/multi-part phrasings (how operators actually type), a no-relevant-doc
+abstention query feeding a `mean_abstention_noise` advisory metric, and a
+`--persona-set` file of cases that each name their own querying persona, so
+recall and the FR-26 leak check run under multiple claims sets -- including
+bob-query/carol-curator, for whom the Signal-Corps-scoped SECRET document
+must be excluded by the access-scope leg of the mandatory filter.
+
 Issue #397: the original five queries are short and keyword-heavy, and in the
 7-document dev corpus every one of them saturates at recall 1.0 through the
 BM25 leg alone (with only ~4 retrievable documents and top_k=5, the candidate
@@ -64,6 +72,7 @@ import json
 import math
 import os
 import sys
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -72,6 +81,7 @@ from _keycloak import get_token
 
 ORCHESTRATION_MCP_URL = os.environ.get("ORCHESTRATION_MCP_URL", "http://orchestration-mcp:8002")
 DEFAULT_GOLDEN_SET = Path(__file__).parent / "golden_queries.json"
+DEFAULT_PERSONA_SET = Path(__file__).parent / "golden_queries_personas.json"
 # Broadest-access persona by default, so the metrics measure ranking quality
 # rather than being confounded by this user's own clearance/org scoping.
 EVAL_PERSONA = os.environ.get("EVAL_PERSONA", "dave-admin")
@@ -175,11 +185,19 @@ def rank_metrics(returned: list[str], expect: list[str], top_k: int) -> dict:
     return {"reciprocal_rank": reciprocal_rank, "ndcg_at_k": ndcg, "precision_at": precision_at}
 
 
-def evaluate(golden_set: list[dict], token: str, persona: str) -> dict:
+def evaluate(golden_set: list[dict], token_for: Callable[[str], str], persona: str) -> dict:
+    """Score every golden case; `persona` is the default identity, and a case
+    may override it with its own ``persona`` field (issue #514's coverage
+    matrix -- the same pipeline answers differently per claims set, and the
+    FR-26 leak check must hold under each of them, not just the broadest one).
+    `token_for` maps a persona name to a bearer token; main() passes a
+    memoizing wrapper around the Keycloak password grant.
+    """
     per_query = []
     for case in golden_set:
         top_k = case.get("top_k", 5)
-        results = run_query(token, case["query"], top_k)
+        case_persona = case.get("persona", persona)
+        results = run_query(token_for(case_persona), case["query"], top_k)
         returned = [r["filename"] for r in results]
         expect = case.get("expect", [])
         forbid = case.get("forbid", [])
@@ -199,6 +217,7 @@ def evaluate(golden_set: list[dict], token: str, persona: str) -> dict:
         per_query.append(
             {
                 "query": case["query"],
+                "persona": case_persona,
                 "returned": returned,
                 "expect": expect,
                 "forbid": forbid,
@@ -217,6 +236,11 @@ def evaluate(golden_set: list[dict], token: str, persona: str) -> dict:
     rrs = [q["reciprocal_rank"] for q in per_query if q["reciprocal_rank"] is not None]
     ndcgs = [q["ndcg_at_k"] for q in per_query if q["ndcg_at_k"] is not None]
     total_leaks = sum(len(q["unapproved_leaks"]) for q in per_query)
+    # Issue #514: what comes back when nothing should? Mean returned-count
+    # over the abstention queries (empty `expect`). Advisory and *not* in the
+    # baseline comparison: lower is better, which inverts the drop-means-
+    # regression arithmetic every compared metric shares.
+    abstention_counts = [len(q["returned"]) for q in per_query if not q["expect"]]
 
     return {
         "timestamp": datetime.now(UTC).isoformat(),
@@ -226,6 +250,9 @@ def evaluate(golden_set: list[dict], token: str, persona: str) -> dict:
         "mean_precision_at_k": (sum(precisions) / len(precisions)) if precisions else None,
         "mean_reciprocal_rank": (sum(rrs) / len(rrs)) if rrs else None,
         "mean_ndcg_at_k": (sum(ndcgs) / len(ndcgs)) if ndcgs else None,
+        "mean_abstention_noise": (
+            (sum(abstention_counts) / len(abstention_counts)) if abstention_counts else None
+        ),
         "total_forbidden_leaks": total_leaks,
         "queries": per_query,
     }
@@ -237,6 +264,7 @@ def print_report(report: dict) -> None:
     print(f"  mean precision@K: {report['mean_precision_at_k']}")
     print(f"  mean MRR:         {report['mean_reciprocal_rank']}")
     print(f"  mean nDCG@K:      {report['mean_ndcg_at_k']}")
+    print(f"  abstention noise: {report['mean_abstention_noise']}")
     print(f"  config:           {report['fingerprint'][:12]}")
     print(f"  forbidden leaks:  {report['total_forbidden_leaks']}")
     for q in report["queries"]:
@@ -248,7 +276,8 @@ def print_report(report: dict) -> None:
         if q["unapproved_leaks"]:
             status = "LEAK"
         note = f"  ({q['note']})" if q["note"] else ""
-        print(f"  [{status}] {q['query']!r} -> {q['returned']}{note}")
+        who = f" [{q['persona']}]" if q["persona"] != report["persona"] else ""
+        print(f"  [{status}]{who} {q['query']!r} -> {q['returned']}{note}")
         if q["content_overlap"]:
             print(
                 f"    content_overlap (informational, not a leak -- see #226): "
@@ -433,11 +462,29 @@ def main() -> None:
         help="exit non-zero if any golden query returns less than full recall@K "
         "(default: enabled -- this is the documented e2e contract)",
     )
+    parser.add_argument(
+        "--persona-set",
+        type=Path,
+        default=DEFAULT_PERSONA_SET,
+        help="additional golden cases that each name their own querying persona (issue "
+        "#514 coverage matrix). Kept out of golden_queries.json because "
+        "evaluate_rag_quality.py runs that file through LibreChat as a single user, where "
+        "per-case personas would score nonsense. Pass a non-existent path to skip.",
+    )
     args = parser.parse_args()
 
     golden_set = json.loads(args.golden_set.read_text())
-    token = get_token(EVAL_PERSONA)
-    report = evaluate(golden_set, token, EVAL_PERSONA)
+    if args.persona_set and args.persona_set.exists():
+        golden_set = golden_set + json.loads(args.persona_set.read_text())
+
+    tokens: dict[str, str] = {}
+
+    def token_for(persona: str) -> str:
+        if persona not in tokens:
+            tokens[persona] = get_token(persona)
+        return tokens[persona]
+
+    report = evaluate(golden_set, token_for, EVAL_PERSONA)
     print_report(report)
 
     saved: Path | None = None

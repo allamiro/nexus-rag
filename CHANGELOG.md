@@ -17,6 +17,16 @@ changed in the running system, with the issue/PR reference for the trail.
 
 ### Added
 
+- The golden set gains two **adversarial phrasings** and its first
+  **multi-document expectation**, completing issue #528's checklist. The
+  adversarial cases apply maximum lexical pressure toward a document FR-26 must
+  withhold — one quotes the superseded `network-access-sop-v1.md` verbatim, the
+  other borrows the rejected VPN guide's vocabulary — so a failure there is an
+  FR-26 status-filter regression, not a ranking one. The multi-document case is
+  the first whose `expect` names two documents, so `recall_at_k`/`precision_at_k`
+  stop being 0/1-valued and a partial regression (one of two expected documents
+  dropping out) reads as 0.5 instead of hiding behind a still-passing 1.0.
+
 - The golden-query harness (`scripts/evaluate_retrieval.py`) reports advisory
   rank-aware metrics — MRR, nDCG@K, precision@{1,3,5} — alongside the gated
   recall/precision, and stamps every persisted report with a config fingerprint
@@ -26,6 +36,13 @@ changed in the running system, with the issue/PR reference for the trail.
   `RERANKER_MODEL` through `reranker-service` and mirrors the fingerprint knobs
   into `eval-retrieval`, so a model swap shows up in the report instead of
   reading as quality drift.
+- The golden set grows from 8 to 15 cases (#514): typo and vague multi-part
+  queries, an off-topic no-relevant-document query feeding a new advisory
+  `mean_abstention_noise` metric (what retrieval returns when it should return
+  nothing), and `scripts/golden_queries_personas.json` — per-case querying
+  personas (merged in via `--persona-set`) so recall and the FR-26 leak check
+  run under bob-query/carol-curator claims sets, where the access-scope filter
+  leg is the only thing excluding the Signal-Corps-scoped SECRET document.
 
 - `docs/nist-ai-rmf/` — a NIST AI RMF 1.0 compliance documentation set (governance
   policy, risk register, impact assessment, system/vendor inventory, RMF outcome
@@ -472,6 +489,25 @@ changed in the running system, with the issue/PR reference for the trail.
   folded into `existing_classification_collections` itself, since that
   helper also drives #122's embedding-model provenance check, which must
   not sample stale pre-migration data.
+
+### Changed
+
+- `RERANK_SCORE_FLOOR` (#394) now has a validated calibration behind its
+  default instead of an unvalidated starting-point guess (#431).
+  `scripts/calibrate_rerank_floor.py` reproducibly measures, against
+  `scripts/golden_queries.json` on a freshly seeded dev corpus, the interval
+  any floor value must sit inside to preserve full recall on answerable
+  queries while triggering abstention on both `expected_abstention` cases —
+  measured as `(-6.141, -4.257]`. `-5.0` sits inside it and is
+  live-verified end to end (`evaluate_retrieval.py`: recall@K = 1.0,
+  precision@K = 1.0, 0 forbidden leaks, both abstention cases correctly
+  suppressed). `.env.example` now ships `RERANK_SCORE_FLOOR=-5.0` as its
+  default (previously unset); the Helm chart's `orchestrationMcp.rerankScoreFloor`
+  is deliberately left unset — production corpora and reranker models differ
+  from the dev corpus this was calibrated against, so turning the floor on
+  in a real deployment stays an explicit operator decision, not something
+  this chart flips silently on upgrade. See `docs/testing.md`'s
+  "RERANK_SCORE_FLOOR calibration" section for the full methodology.
 
 ## [0.5.0] - 2026-08-05
 

@@ -82,6 +82,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+import httpx
+
 DEFAULT_HOST = os.environ.get("POSTGRES_HOST", "postgres")
 DEFAULT_PORT = os.environ.get("POSTGRES_PORT", "5432")
 DEFAULT_DB = os.environ.get("POSTGRES_DB", "nexus_rag")
@@ -567,6 +569,120 @@ def print_trend(previous: dict, current: dict) -> None:
         )
 
 
+# Issue #527: content-free Pushgateway export, mirroring
+# detect_query_anomalies.py's exposition/publish pair -- the calibration
+# equivalent of that script's staleness heartbeat, so a scheduled run that
+# silently stops firing becomes a Prometheus alert
+# (NexusRagTaggingCalibrationStale) instead of a blind spot. Label values are
+# fixed suggester names from this script's own vocabulary; no document, user,
+# or classification content is ever emitted.
+_CONTENT_TYPE = "text/plain; version=0.0.4; charset=utf-8"
+
+_AGREEMENT_SUGGESTERS = (
+    "marking_mismatch",
+    "releasability_caveats",
+    "precedent",
+    "llm_classification",
+    "pii_regex_llm_verdict",
+)
+_ACTED_ON_SUGGESTERS = ("pii_regex", "pii_llm")
+
+
+def _metric_line(name: str, value: int | float, labels: dict[str, str] | None = None) -> str:
+    suffix = ""
+    if labels:
+        joined = ",".join(f'{key}="{val}"' for key, val in sorted(labels.items()))
+        suffix = f"{{{joined}}}"
+    return f"{name}{suffix} {value:.17g}" if isinstance(value, float) else f"{name}{suffix} {value}"
+
+
+def _family(name: str, help_text: str, lines: list[str]) -> list[str]:
+    if not lines:
+        return []
+    return [f"# HELP {name} {help_text}", f"# TYPE {name} gauge", *lines]
+
+
+def build_exposition(report: dict, run_timestamp: float) -> str:
+    lines: list[str] = []
+    rate_lines = [
+        _metric_line(
+            "nexus_rag_tagging_calibration_agreement_rate",
+            float(report[name]["agreement_rate"]),
+            {"suggester": name},
+        )
+        for name in _AGREEMENT_SUGGESTERS
+        if report[name]["agreement_rate"] is not None
+    ]
+    lines.extend(
+        _family(
+            "nexus_rag_tagging_calibration_agreement_rate",
+            "Curator agreement rate per tagging-advisory suggester in the most "
+            "recent calibration run (#309/#380). Absent when nothing was "
+            "resolvable for that suggester.",
+            rate_lines,
+        )
+    )
+    acted_lines = [
+        _metric_line(
+            "nexus_rag_tagging_calibration_acted_on_rate",
+            float(report[name]["acted_on_rate"]),
+            {"suggester": name},
+        )
+        for name in _ACTED_ON_SUGGESTERS
+        if report[name]["acted_on_rate"] is not None
+    ]
+    lines.extend(
+        _family(
+            "nexus_rag_tagging_calibration_acted_on_rate",
+            "Rate at which curators visibly acted on a PII finding family "
+            "(rejected, or approved with a changed classification) in the most "
+            "recent calibration run (#342/#343).",
+            acted_lines,
+        )
+    )
+    flagged_lines = [
+        _metric_line(
+            "nexus_rag_tagging_calibration_flagged_total",
+            int(report[name]["flagged"]),
+            {"suggester": name},
+        )
+        for name in (*_AGREEMENT_SUGGESTERS[:4], *_ACTED_ON_SUGGESTERS)
+    ]
+    lines.extend(
+        _family(
+            "nexus_rag_tagging_calibration_flagged_total",
+            "Decisions carrying a finding from this suggester in the most recent "
+            "calibration run's window.",
+            flagged_lines,
+        )
+    )
+    lines.extend(
+        _family(
+            "nexus_rag_tagging_calibration_last_run_timestamp_seconds",
+            "Unix timestamp of the most recent calibration run -- alert on "
+            "staleness if this job stops running, since a Pushgateway value "
+            "otherwise persists silently after the job that set it goes away.",
+            [
+                _metric_line(
+                    "nexus_rag_tagging_calibration_last_run_timestamp_seconds", run_timestamp
+                )
+            ],
+        )
+    )
+    return "\n".join(lines) + "\n"
+
+
+def publish(gateway_url: str, payload: str, *, timeout: float = 10.0) -> None:
+    root = gateway_url.rstrip("/")
+    url = f"{root}/metrics/job/nexus-rag-tagging-calibration"
+    with httpx.Client(timeout=timeout) as client:
+        response = client.put(url, content=payload, headers={"Content-Type": _CONTENT_TYPE})
+        response.raise_for_status()
+
+
+DEFAULT_GATEWAY = os.environ.get("RAG_CALIBRATION_PUSHGATEWAY_URL", "")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -586,6 +702,14 @@ def main() -> None:
         help="persist this run's JSON report here under a timestamped name (FR-30 trend "
         "store); if set, also prints an informational trend line against the most recent "
         "prior report in this directory",
+    )
+    parser.add_argument(
+        "--pushgateway-url",
+        default=DEFAULT_GATEWAY,
+        help="publish content-free calibration gauges (agreement/acted-on rates, flagged "
+        "counts, last-run heartbeat) to this Pushgateway (#527); best-effort -- a "
+        "publish failure warns and never fails the run. Defaults to "
+        "$RAG_CALIBRATION_PUSHGATEWAY_URL; empty disables publishing entirely",
     )
     parser.add_argument(
         "--min-agreement",
@@ -626,6 +750,16 @@ def main() -> None:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(report_dict, indent=2))
         print(f"Wrote report to {args.output}")
+
+    if args.pushgateway_url:
+        payload = build_exposition(report_dict, run_timestamp=datetime.now(UTC).timestamp())
+        try:
+            publish(args.pushgateway_url, payload)
+            print(f"Published calibration metrics to {args.pushgateway_url}")
+        except (httpx.HTTPError, OSError) as exc:
+            # Best-effort, same posture as detect_query_anomalies.py: a missing
+            # Pushgateway must not fail the calibration run itself.
+            print(f"WARNING: could not publish to Pushgateway: {exc}", file=sys.stderr)
 
     if args.min_agreement is not None:
         suggesters = (
