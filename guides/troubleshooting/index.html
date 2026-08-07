@@ -567,6 +567,8 @@
       
         
       
+        
+      
     
     
     
@@ -681,6 +683,34 @@
     
   
     Air-gapped
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../identity-oidc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Identity & OIDC
   
 
     
@@ -2082,6 +2112,24 @@ cover the document's tags? Different users see different corpora <strong>by
 design</strong> — verify with a broader persona (<code>dave-admin</code>) before
 suspecting the pipeline. (3) only then check worker logs
 (<code>docker compose logs ingestion-worker</code>).</p>
+</details>
+<details class="failure">
+<summary>Every query returns nothing (or only brand-new uploads), and seeding logs say <code>SKIP … already approved</code></summary>
+<p><strong>Cause:</strong> diverged volumes from an earlier partial run. Postgres (the
+system of record) still holds document rows from a previous stack, so
+the seeder correctly skips re-submitting them — but the Qdrant volume
+was recreated in between, so the <em>vectors</em> those rows describe no
+longer exist. Retrieval then finds nothing even though every document
+reads <code>approved</code>. Documents ingested <em>after</em> the divergence work
+normally, which makes the symptom look intermittent.
+<strong>Confirm:</strong> compare <code>select status, count(*) from documents group by
+status</code> in Postgres against the collection point counts in Qdrant —
+approved rows with (near-)zero points is the signature.
+<strong>Fix:</strong> a dev sandbox holds no data worth keeping —
+<code>docker compose down -v &amp;&amp; docker compose up -d</code> for a coherent fresh
+seed. (This two-store split is exactly what curation's
+write-ordering protects against <em>within</em> a run; volume surgery
+between runs is outside its reach.)</p>
 </details>
 <details class="failure">
 <summary>Off-topic queries return confident irrelevant results</summary>

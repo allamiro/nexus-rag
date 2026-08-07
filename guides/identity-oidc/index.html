@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://allamiro.gitlab.io/nexus-rag/guides/deploy-helm/">
+        <link rel="canonical" href="https://allamiro.gitlab.io/nexus-rag/guides/identity-oidc/">
       
       
-        <link rel="prev" href="../deploy-compose/">
+        <link rel="prev" href="../deploy-airgapped/">
       
       
-        <link rel="next" href="../deploy-airgapped/">
+        <link rel="next" href="../configuration/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Helm / Kubernetes - Nexus RAG</title>
+        <title>Identity & OIDC - Nexus RAG</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#deploy-with-helm-kubernetes" class="md-skip">
+        <a href="#identity-oidc-dev-realm-to-air-gapped" class="md-skip">
           Skip to content
         </a>
       
@@ -112,7 +112,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Helm / Kubernetes
+              Identity & OIDC
             
           </span>
         </div>
@@ -649,37 +649,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Helm / Kubernetes
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../deploy-helm/" class="md-nav__link">
         
   
   
@@ -695,131 +668,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#before-you-install-the-secrets-contract" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Before you install — the Secrets contract
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#install" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Install
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#after-install" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        After install
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#network-requirements-plan-these-before-the-air-gap" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Network requirements — plan these before the air gap
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Network requirements — plan these before the air gap">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#the-traffic-matrix" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The traffic matrix
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#what-the-chart-already-enforces-and-what-it-leaves-to-you" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        What the chart already enforces — and what it leaves to you
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dns-ntp-identity-the-quiet-requirements" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        DNS, NTP, identity — the quiet requirements
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#platform-notes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Platform notes
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#sources" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Sources
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -857,10 +705,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../identity-oidc/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Identity & OIDC
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -876,6 +751,114 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-the-claims-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. The claims contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-what-must-change-when-urls-change-and-what-must-not" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. What must change when URLs change — and what must not
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-how-the-services-consume-identity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. How the services consume identity
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-migrating-the-realm-connected-air-gapped" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Migrating the realm: connected → air-gapped
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-air-gapped-specifics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Air-gapped specifics
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-verify-the-cut-over" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Verify the cut-over
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-each-knob-lives-quick-index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where each knob lives — quick index
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sources
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -2009,10 +1992,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#before-you-install-the-secrets-contract" class="md-nav__link">
+  <a href="#1-the-claims-contract" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Before you install — the Secrets contract
+        1. The claims contract
       
     </span>
   </a>
@@ -2020,10 +2003,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#install" class="md-nav__link">
+  <a href="#2-what-must-change-when-urls-change-and-what-must-not" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Install
+        2. What must change when URLs change — and what must not
       
     </span>
   </a>
@@ -2031,10 +2014,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#after-install" class="md-nav__link">
+  <a href="#3-how-the-services-consume-identity" class="md-nav__link">
     <span class="md-ellipsis">
       
-        After install
+        3. How the services consume identity
       
     </span>
   </a>
@@ -2042,60 +2025,43 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#network-requirements-plan-these-before-the-air-gap" class="md-nav__link">
+  <a href="#4-migrating-the-realm-connected-air-gapped" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Network requirements — plan these before the air gap
+        4. Migrating the realm: connected → air-gapped
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Network requirements — plan these before the air gap">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#the-traffic-matrix" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The traffic matrix
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#what-the-chart-already-enforces-and-what-it-leaves-to-you" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        What the chart already enforces — and what it leaves to you
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dns-ntp-identity-the-quiet-requirements" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        DNS, NTP, identity — the quiet requirements
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#platform-notes" class="md-nav__link">
+  <a href="#5-air-gapped-specifics" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Platform notes
+        5. Air-gapped specifics
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-verify-the-cut-over" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Verify the cut-over
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-each-knob-lives-quick-index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where each knob lives — quick index
       
     </span>
   </a>
@@ -2130,329 +2096,412 @@
 
 
 
-<h1 id="deploy-with-helm-kubernetes">Deploy with Helm (Kubernetes)<a class="headerlink" href="#deploy-with-helm-kubernetes" title="Permanent link">&para;</a></h1>
-<p>The <strong>production</strong> path — for a local Kubernetes <em>sandbox</em> (throwaway dev
-Postgres/Keycloak, seeded corpus), use the
-<a href="../quickstart-helm/">Kubernetes quickstart</a> instead. The chart deploys <strong>only what this project adds</strong> — the
-four custom services, a dedicated embedding Ollama, Qdrant (or Milvus), NATS,
-and optionally SeaweedFS — and <em>integrates</em> with what your cluster already
-runs: Keycloak, Postgres, the object store, and the LibreChat/LiteLLM chat
-plane are configuration, not bundled dependencies.</p>
-<pre class="mermaid"><code>flowchart LR
-    subgraph chart["Deployed by this chart"]
-        IA[ingestion-api] &amp; IW[ingestion-worker] &amp; MCP[orchestration-mcp] &amp; RR[reranker-service]
-        EMB[embedding Ollama] &amp; QD[(Qdrant)] &amp; NQ[NATS]
-    end
-    subgraph existing["Existing cluster infrastructure (external.* values)"]
-        KC[Keycloak] &amp; PG[(Postgres)] &amp; S3[(S3-compatible store)] &amp; LC[LibreChat/LiteLLM]
-    end
-    chart -. Secrets + values .-&gt; existing</code></pre>
-<h2 id="before-you-install-the-secrets-contract">Before you install — the Secrets contract<a class="headerlink" href="#before-you-install-the-secrets-contract" title="Permanent link">&para;</a></h2>
-<p>The chart <strong>fails closed</strong>: it renders nothing rather than deploying broken
-auth. Pre-create these (names/keys configurable in <code>values.yaml</code>):</p>
+<h1 id="identity-oidc-dev-realm-to-air-gapped">Identity &amp; OIDC: dev realm to air-gapped<a class="headerlink" href="#identity-oidc-dev-realm-to-air-gapped" title="Permanent link">&para;</a></h1>
+<p>Every access decision in this system — what a user may tag at upload, what a
+curator may approve, what a query may return — is derived server-side from
+<strong>verified OIDC claims</strong>. That makes the Keycloak realm configuration a
+security surface, not just plumbing: get the claims wrong and the mandatory
+retrieval filter is built from wrong inputs; get the client URLs wrong and
+logins break or, worse, tokens become stealable.</p>
+<p>This page documents the identity contract, reviews exactly which parts of the
+dev realm survive a move to new hostnames and which must change, and walks the
+promotion path: dev sandbox → connected staging → air-gapped production, for
+both Compose and Helm, with a copy-paste migration script using dummy values.</p>
+<h2 id="1-the-claims-contract">1. The claims contract<a class="headerlink" href="#1-the-claims-contract" title="Permanent link">&para;</a></h2>
+<p>Services never trust anything the client sends about identity. Tokens are
+verified (RS256 signature against the issuer's JWKS, <code>iss</code> against an
+allowlist, <code>aud</code> must contain <code>rag-app</code>), then five claims drive every
+decision:</p>
 <table>
 <thead>
 <tr>
-<th>Secret for</th>
-<th>Contains</th>
-<th>Generate with</th>
+<th>Claim</th>
+<th>Where it lives in Keycloak</th>
+<th>Example value</th>
+<th>What it controls</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>externalPostgres</code></td>
-<td>full SQLAlchemy <code>DATABASE_URL</code></td>
-<td>your DBA</td>
+<td><code>rag_roles</code></td>
+<td><strong>Client roles</strong> on the <code>rag-app</code> client</td>
+<td><code>["rag-query", "rag-clearance:SECRET", "rag-releasability:NATO"]</code></td>
+<td>Everything role-shaped — see vocabulary below</td>
 </tr>
 <tr>
-<td><code>externalKeycloak.clientSecret</code></td>
-<td>the <code>rag-app</code> confidential-client secret</td>
-<td>Keycloak admin</td>
+<td><code>groups</code></td>
+<td>User <strong>attribute</strong> <code>groups</code> (multivalued)</td>
+<td><code>["USAREUR-AF", "Signal-Corps"]</code></td>
+<td>Access-scope matching: a document tagged with an <code>access_scope</code> is only retrievable by users holding that group</td>
 </tr>
 <tr>
-<td><code>ingestionApi.sessionTokenEncryption</code></td>
-<td>Fernet key encrypting stored OIDC tokens at rest</td>
-<td><code>python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"</code></td>
+<td><code>org</code></td>
+<td>User <strong>attribute</strong> <code>org</code> (single value)</td>
+<td><code>USAREUR-AF</code></td>
+<td>Organizational ownership (which org's curators review your uploads)</td>
 </tr>
 <tr>
-<td><code>qdrant.apiKey</code></td>
-<td>read/write key <strong>and</strong> read-only key (retrieval gets RO only)</td>
-<td><code>openssl rand -hex 32</code> ×2</td>
+<td><code>aud</code></td>
+<td><code>audience-rag-app</code> protocol mapper</td>
+<td><code>rag-app</code></td>
+<td>Token audience check — a token minted for another client is rejected</td>
 </tr>
 <tr>
-<td><code>nats.credentials.*</code></td>
-<td>publisher and consumer passwords (publish-only / consume-only enforced per subject)</td>
-<td>your secret practice</td>
-</tr>
-<tr>
-<td><code>objectStore.external</code></td>
-<td>S3 access + secret key</td>
-<td>your storage team</td>
+<td><code>sub</code> / <code>preferred_username</code></td>
+<td>Standard OIDC</td>
+<td>—</td>
+<td>Audit-log identity</td>
 </tr>
 </tbody>
 </table>
-<p>Also required: either <code>ingestionApi.ingress.host</code> or an explicit
-<code>ingestionApi.oidcRedirectUri</code> — otherwise the render fails rather than
-shipping a broken OIDC callback. The full identity contract behind these
-values — claims schema, realm review, what changes when hostnames change,
-and the dev→air-gapped realm migration — is on its own page:
-<a href="../identity-oidc/">Identity &amp; OIDC</a>.</p>
+<p>The <code>rag_roles</code> claim is a <strong>flat list of client roles</strong> with a prefix
+convention — clearance and releasability ride inside it rather than being
+separate claims:</p>
+<table>
+<thead>
+<tr>
+<th>Role pattern</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rag-ingest</code></td>
+<td>May upload documents</td>
+</tr>
+<tr>
+<td><code>rag-query</code></td>
+<td>May run retrieval</td>
+</tr>
+<tr>
+<td><code>rag-admin</code></td>
+<td>May administer classification/releasability vocabularies</td>
+</tr>
+<tr>
+<td><code>rag-purge</code></td>
+<td>May execute purge (erasure) operations</td>
+</tr>
+<tr>
+<td><code>rag-curate:&lt;org&gt;</code></td>
+<td>May curate (approve/reject) documents owned by <code>&lt;org&gt;</code></td>
+</tr>
+<tr>
+<td><code>rag-clearance:&lt;level&gt;</code></td>
+<td>Single ranked clearance level, e.g. <code>rag-clearance:SECRET</code></td>
+</tr>
+<tr>
+<td><code>rag-releasability:&lt;value&gt;</code></td>
+<td>One role per releasability marking the user may see, e.g. <code>rag-releasability:FVEY</code></td>
+</tr>
+</tbody>
+</table>
+<p>All of this is delivered by one dedicated <strong>client scope</strong>,
+<code>nexus-rag-claims</code>, attached as a default scope to both clients (<code>rag-app</code>
+and <code>librechat</code>). Its four protocol mappers are the entire mechanism:
+<code>groups-attr</code> and <code>org</code> map the user attributes, <code>rag_roles</code> maps the
+<code>rag-app</code> client roles, and <code>audience-rag-app</code> stamps the audience.</p>
 <div class="admonition tip">
-<p class="admonition-title">Why so many Secrets?</p>
-<p>Least privilege is structural here: retrieval holds a read-only vector
-key, the queue publisher can't consume, no service can read the audit
-log, and stored browser tokens are useless without the Fernet key. Each
-Secret is one blast-radius boundary.</p>
+<p class="admonition-title">Why this design survives migration</p>
+<p>Nothing in the claims model references a hostname, port, or URL. Users,
+attributes, client roles, and the <code>nexus-rag-claims</code> scope port to any
+environment <strong>verbatim</strong>. When you move the stack behind new URLs, only
+the <em>client</em> and <em>server</em> configuration changes — never the
+roles/groups/claims themselves. That is the boundary this page is
+organized around.</p>
 </div>
-<h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code>helm<span class="w"> </span>lint<span class="w"> </span>helm/nexus-rag
-helm<span class="w"> </span>template<span class="w"> </span>helm/nexus-rag<span class="w"> </span>--debug<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--set<span class="w"> </span>ingestionApi.ingress.enabled<span class="o">=</span><span class="nb">true</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--set<span class="w"> </span>ingestionApi.ingress.host<span class="o">=</span>rag.example.internal<span class="w">   </span><span class="c1"># render-check YOUR values first</span>
-
-helm<span class="w"> </span>install<span class="w"> </span>nexus-rag<span class="w"> </span>helm/nexus-rag<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>-f<span class="w"> </span>my-values.yaml
-</code></pre></div>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Connected cluster</label><label for="__tabbed_1_2">Air-gapped cluster</label></div>
+<h2 id="2-what-must-change-when-urls-change-and-what-must-not">2. What must change when URLs change — and what must not<a class="headerlink" href="#2-what-must-change-when-urls-change-and-what-must-not" title="Permanent link">&para;</a></h2>
+<p>Reviewing the dev realm (<code>infra/keycloak/realm-export/nexus-rag-realm.json</code>)
+against a hostname move, the URL-coupled surfaces are exactly five:</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Surface</th>
+<th>Dev value</th>
+<th>What production needs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>rag-app</code> client <code>redirectUris</code> / <code>webOrigins</code></td>
+<td><code>["*"]</code> (wildcard)</td>
+<td>Explicit HTTPS callback URLs only — the ingestion UI's <code>/auth/callback</code> on its real hostname</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>librechat</code> client <code>redirectUris</code> / <code>webOrigins</code></td>
+<td><code>https://localhost:3080/...</code></td>
+<td>The real chat hostname's <code>/oauth/openid/callback</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>Keycloak's own hostname (<code>KC_HOSTNAME</code>)</td>
+<td>unset (<code>start-dev</code>)</td>
+<td>The canonical issuer hostname — it is baked into every minted token's <code>iss</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>Services' issuer allowlist (<code>OIDC_ISSUERS</code> / <code>externalKeycloak.issuerUrl</code>)</td>
+<td>comma-separated list of dev hostnames</td>
+<td>One canonical <code>https://keycloak.internal.example.mil/realms/nexus-rag</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td>Realm <code>sslRequired</code></td>
+<td><code>none</code></td>
+<td><code>external</code> (or <code>all</code>) — never <code>none</code> outside a laptop</td>
+</tr>
+</tbody>
+</table>
+<p>Everything else — the five seeded personas, their attributes, the client-role
+vocabulary, the <code>nexus-rag-claims</code> scope and its mappers — is
+hostname-agnostic and needs no edit to <em>work</em>. (Seeded personas need to be
+<strong>removed</strong> for production, but that's a hygiene change, not a URL change —
+covered below.)</p>
+<div class="admonition danger">
+<p class="admonition-title">The two dev-realm settings you must never ship</p>
+<ul>
+<li><strong><code>redirectUris: ["*"]</code></strong> — a wildcard redirect URI means any site can
+  receive your users' authorization codes. It exists in the dev realm so
+  the sandbox works on any port without editing the realm. Production
+  registers explicit URLs, nothing else.</li>
+<li><strong><code>sslRequired: none</code></strong> — allows the entire OIDC exchange over
+  plaintext HTTP. Same rationale, same rule: dev-only.</li>
+</ul>
+</div>
+<h2 id="3-how-the-services-consume-identity">3. How the services consume identity<a class="headerlink" href="#3-how-the-services-consume-identity" title="Permanent link">&para;</a></h2>
+<p>Both deployment shapes feed the same four knobs into the services
+(<code>common/claims.py</code> is the single shared implementation):</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Docker Compose</label><label for="__tabbed_1_2">Helm</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<p>Images pull from GHCR as pinned in <code>values.yaml</code> — every tag is an exact
-version, floating tags are CI-rejected (NFR-16). Keycloak realm/client
-per the requirements' claims schema (adapt the dev realm export under
-<code>infra/keycloak/realm-export/</code>).</p>
+<div class="highlight"><span class="filename">.env (connected staging example)</span><pre><span></span><code><span class="c1"># Comma-separated allowlist -- a token&#39;s `iss` must match one entry.</span>
+<span class="c1"># The FIRST entry is also where JWKS signing keys are fetched from,</span>
+<span class="c1"># so it must be reachable from inside the services&#39; network.</span>
+<span class="nv">OIDC_ISSUERS</span><span class="o">=</span>https://keycloak.staging.example.com/realms/nexus-rag
+
+<span class="nv">OIDC_AUDIENCE</span><span class="o">=</span>rag-app
+<span class="nv">OIDC_CLIENT_ID</span><span class="o">=</span>rag-app
+<span class="nv">RAG_APP_KEYCLOAK_CLIENT_SECRET</span><span class="o">=</span>&lt;from<span class="w"> </span>your<span class="w"> </span>secret<span class="w"> </span>store&gt;
+
+<span class="c1"># Must exactly match a redirectUri registered on the rag-app client</span>
+<span class="nv">OIDC_REDIRECT_URI</span><span class="o">=</span>https://rag.staging.example.com/auth/callback
+</code></pre></div>
 </div>
 <div class="tabbed-block">
-<p>Same chart, one override:</p>
-<div class="highlight"><pre><span></span><code>helm<span class="w"> </span>install<span class="w"> </span>nexus-rag<span class="w"> </span>./nexus-rag-X.Y.Z.tgz<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--set<span class="w"> </span>global.imageRegistry<span class="o">=</span>registry.internal.example.mil/nexus-rag
+<div class="highlight"><span class="filename">values override (production example)</span><pre><span></span><code><span class="nt">externalKeycloak</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># Single canonical issuer in production. Comma-separated lists are</span>
+<span class="w">  </span><span class="c1"># supported but exist for the dev two-hostnames-one-Keycloak case --</span>
+<span class="w">  </span><span class="c1"># a real deployment has one hostname and needs one entry.</span>
+<span class="w">  </span><span class="nt">issuerUrl</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://keycloak.internal.example.mil/realms/nexus-rag&quot;</span>
+<span class="w">  </span><span class="nt">audience</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;rag-app&quot;</span>
+<span class="w">  </span><span class="nt">clientId</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;rag-app&quot;</span>
+<span class="w">  </span><span class="nt">clientSecret</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">existingSecret</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;nexus-rag-keycloak-client-secret&quot;</span>
+<span class="w">    </span><span class="nt">secretKey</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;client-secret&quot;</span>
+
+<span class="nt">ingestionApi</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">oidcRedirectUri</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://rag.internal.example.mil/auth/callback&quot;</span>
 </code></pre></div>
-<p><code>global.imageRegistry</code> + bare image names exist for exactly this — no
-values surgery per release. Getting the images <em>into</em> that registry is
-the verified-bundle flow: <a href="../deploy-airgapped/">Deploy air-gapped</a>.</p>
+<div class="highlight"><span class="filename">the referenced Secret, created out-of-band</span><pre><span></span><code>kubectl<span class="w"> </span>create<span class="w"> </span>secret<span class="w"> </span>generic<span class="w"> </span>nexus-rag-keycloak-client-secret<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--from-literal<span class="o">=</span>client-secret<span class="o">=</span><span class="s2">&quot;</span><span class="k">$(</span>cat<span class="w"> </span>/path/to/real-secret<span class="k">)</span><span class="s2">&quot;</span>
+</code></pre></div>
 </div>
 </div>
 </div>
-<h2 id="after-install">After install<a class="headerlink" href="#after-install" title="Permanent link">&para;</a></h2>
+<p>Two behaviors worth knowing before you debug a 401:</p>
 <ul>
-<li>Register <code>orchestration-mcp</code> as an MCP server in <strong>LibreChat's own config</strong>
-  (OAuth against Keycloak — the user clicks <em>Connect</em> once; their queries
-  then run under their own identity, which is the whole point).</li>
-<li>NetworkPolicies ship with the chart: retrieval can't reach ingestion's
-  stores and vice versa; <code>/metrics</code> scraping requires explicitly allowing
-  your Prometheus.</li>
-<li>The chart's hardening (non-root, no-new-privileges, read-only rootfs) is
-  mirrored by the dev compose stack and CI-checked, so what you deploy is
-  what every dev run and e2e already exercised.</li>
+<li><strong>JWKS comes from the first issuer.</strong> With multiple <code>OIDC_ISSUERS</code>
+  entries, signature keys are fetched from
+  <code>&lt;first entry&gt;/protocol/openid-connect/certs</code>. A token whose <code>iss</code> matches
+  the <em>second</em> entry still verifies — same Keycloak, same keys — but if the
+  first entry is unreachable <em>from the service pods</em>, every login fails even
+  though the second hostname works from your browser.</li>
+<li><strong>The issuer string must match byte-for-byte.</strong> Keycloak mints <code>iss</code> from
+  its configured hostname (<code>KC_HOSTNAME</code>). If Keycloak believes it is
+  <code>https://sso.internal.example.mil</code> and your allowlist says
+  <code>https://keycloak.internal.example.mil</code>, verification fails with a correct
+  signature. Set <code>KC_HOSTNAME</code> first, then copy the resulting issuer into
+  the services.</li>
 </ul>
-<h2 id="network-requirements-plan-these-before-the-air-gap">Network requirements — plan these before the air gap<a class="headerlink" href="#network-requirements-plan-these-before-the-air-gap" title="Permanent link">&para;</a></h2>
-<p>On Tanzu this section is the hand-off to your NSX/Avi administrator: inside
-an air-gapped TKG cluster, <strong>this is the complete network story</strong> — every
-flow below plus DNS and NTP, and <em>nothing else</em>. The stack needs <strong>zero
-internet egress at runtime</strong> (models are baked into or mirrored with the
-images; nothing downloads after deploy).</p>
-<h3 id="the-traffic-matrix">The traffic matrix<a class="headerlink" href="#the-traffic-matrix" title="Permanent link">&para;</a></h3>
+<h2 id="4-migrating-the-realm-connected-air-gapped">4. Migrating the realm: connected → air-gapped<a class="headerlink" href="#4-migrating-the-realm-connected-air-gapped" title="Permanent link">&para;</a></h2>
+<p>The dev realm export is the <em>starting template</em>, not the production realm.
+The promotion transform does five things: pin redirect URIs, enforce TLS,
+strip the seeded personas, drop the dev client secrets, and keep everything
+claims-related untouched. Using dummy air-gapped hostnames
+(<code>*.internal.example.mil</code> — replace with your enclave's):</p>
+<div class="highlight"><span class="filename">migrate-realm.sh -- transform the dev export into a production realm import</span><pre><span></span><code><span class="ch">#!/bin/bash</span>
+<span class="c1"># Usage: ./migrate-realm.sh &lt;dev-realm.json&gt; &lt;out.json&gt;</span>
+<span class="c1"># Produces a realm import for the air-gapped Keycloak. Claims machinery</span>
+<span class="c1"># (client scopes, mappers, role vocabulary) passes through unchanged.</span>
+<span class="nb">set</span><span class="w"> </span>-euo<span class="w"> </span>pipefail
+
+<span class="nv">RAG_UI_URL</span><span class="o">=</span><span class="s2">&quot;https://rag.internal.example.mil&quot;</span><span class="w">          </span><span class="c1"># ingestion UI/API</span>
+<span class="nv">CHAT_URL</span><span class="o">=</span><span class="s2">&quot;https://chat.internal.example.mil&quot;</span><span class="w">           </span><span class="c1"># LibreChat</span>
+
+jq<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--arg<span class="w"> </span>rag_cb<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$RAG_UI_URL</span><span class="s2">/auth/callback&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--arg<span class="w"> </span>rag_origin<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$RAG_UI_URL</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--arg<span class="w"> </span>chat_cb<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$CHAT_URL</span><span class="s2">/oauth/openid/callback&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--arg<span class="w"> </span>chat_origin<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$CHAT_URL</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="s1">&#39;</span>
+<span class="s1">  # 1. TLS is mandatory outside the sandbox</span>
+<span class="s1">  .sslRequired = &quot;external&quot;</span>
+
+<span class="s1">  # 2. Explicit redirect URIs -- no wildcards in production, ever</span>
+<span class="s1">  | (.clients[] | select(.clientId == &quot;rag-app&quot;)) |=</span>
+<span class="s1">      (.redirectUris = [$rag_cb] | .webOrigins = [$rag_origin])</span>
+<span class="s1">  | (.clients[] | select(.clientId == &quot;librechat&quot;)) |=</span>
+<span class="s1">      (.redirectUris = [$chat_cb] | .webOrigins = [$chat_origin])</span>
+
+<span class="s1">  # 3. Dev client secrets never travel -- Keycloak generates new ones on</span>
+<span class="s1">  #    import; read them out afterwards and place them in your secret store</span>
+<span class="s1">  | .clients[].secret? = null | del(.clients[].secret | nulls)</span>
+
+<span class="s1">  # 4. Seeded dev personas (devpass123) never travel either. Real users</span>
+<span class="s1">  #    arrive by federation (LDAP/AD) or are provisioned by your IdM --</span>
+<span class="s1">  #    what they need is the same attributes + client roles the personas</span>
+<span class="s1">  #    model (see the provisioning template below).</span>
+<span class="s1">  | .users = []</span>
+<span class="s1">  &#39;</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$1</span><span class="s2">&quot;</span><span class="w"> </span>&gt;<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$2</span><span class="s2">&quot;</span>
+
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Wrote </span><span class="nv">$2</span><span class="s2"> -- import with:&quot;</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;  /opt/keycloak/bin/kc.sh start --import-realm  (file mounted at /opt/keycloak/data/import/)&quot;</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Then read the regenerated client secrets:&quot;</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;  kcadm.sh get clients -r nexus-rag --fields clientId,secret&quot;</span>
+</code></pre></div>
+<p>After import, two manual steps complete the cut-over:</p>
+<div class="highlight"><span class="filename">read the regenerated rag-app secret into your secret store</span><pre><span></span><code><span class="c1"># on the Keycloak host / pod</span>
+/opt/keycloak/bin/kcadm.sh<span class="w"> </span>config<span class="w"> </span>credentials<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--server<span class="w"> </span>https://keycloak.internal.example.mil<span class="w"> </span>--realm<span class="w"> </span>master<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--user<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$KC_ADMIN_USER</span><span class="s2">&quot;</span>
+<span class="nv">CLIENT_UUID</span><span class="o">=</span><span class="k">$(</span>/opt/keycloak/bin/kcadm.sh<span class="w"> </span>get<span class="w"> </span>clients<span class="w"> </span>-r<span class="w"> </span>nexus-rag<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-q<span class="w"> </span><span class="nv">clientId</span><span class="o">=</span>rag-app<span class="w"> </span>--fields<span class="w"> </span>id<span class="w"> </span>--format<span class="w"> </span>csv<span class="w"> </span>--noquotes<span class="k">)</span>
+/opt/keycloak/bin/kcadm.sh<span class="w"> </span>get<span class="w"> </span><span class="s2">&quot;clients/</span><span class="nv">$CLIENT_UUID</span><span class="s2">/client-secret&quot;</span><span class="w"> </span>-r<span class="w"> </span>nexus-rag
+<span class="c1"># -&gt; place `value` in the platform secret store; it feeds</span>
+<span class="c1">#    RAG_APP_KEYCLOAK_CLIENT_SECRET (Compose) or the</span>
+<span class="c1">#    nexus-rag-keycloak-client-secret Secret (Helm)</span>
+</code></pre></div>
+<details class="example">
+<summary>Provisioning template: what every real user needs</summary>
+<p>Whether users come from LDAP federation or IdM-driven provisioning, each
+one needs the same three things the dev personas model. As <code>kcadm.sh</code>
+(scriptable against an existing Keycloak, no realm re-import):</p>
+<div class="highlight"><pre><span></span><code><span class="nv">U</span><span class="o">=</span>someuser
+kcadm.sh<span class="w"> </span>create<span class="w"> </span>users<span class="w"> </span>-r<span class="w"> </span>nexus-rag<span class="w"> </span>-s<span class="w"> </span><span class="nv">username</span><span class="o">=</span><span class="nv">$U</span><span class="w"> </span>-s<span class="w"> </span><span class="nv">enabled</span><span class="o">=</span><span class="nb">true</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-s<span class="w"> </span><span class="s1">&#39;attributes.org=[&quot;USAREUR-AF&quot;]&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-s<span class="w"> </span><span class="s1">&#39;attributes.groups=[&quot;USAREUR-AF&quot;,&quot;Signal-Corps&quot;]&#39;</span>
+
+<span class="c1"># roles: base capability + clearance + one role per releasability value</span>
+kcadm.sh<span class="w"> </span>add-roles<span class="w"> </span>-r<span class="w"> </span>nexus-rag<span class="w"> </span>--uusername<span class="w"> </span><span class="nv">$U</span><span class="w"> </span>--cclientid<span class="w"> </span>rag-app<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--rolename<span class="w"> </span>rag-query<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--rolename<span class="w"> </span>rag-clearance:SECRET<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--rolename<span class="w"> </span>rag-releasability:FVEY<span class="w"> </span>--rolename<span class="w"> </span>rag-releasability:NATO
+</code></pre></div>
+<p>A user with <strong>no</strong> <code>rag-clearance:*</code> role is treated as unclassified-only
+by design (fail-closed) — mis-provisioning degrades access, never
+escalates it. In a DoD enclave the browser-facing login is typically
+CAC/PIV: Keycloak's X.509 authentication flow handles the certificate;
+the claims contract above is unchanged by <em>how</em> authentication happens.</p>
+</details>
+<h2 id="5-air-gapped-specifics">5. Air-gapped specifics<a class="headerlink" href="#5-air-gapped-specifics" title="Permanent link">&para;</a></h2>
+<p>Beyond the realm transform, four enclave realities to plan for — these are
+the ones that bite after the wire is cut:</p>
+<ol>
+<li><strong>DNS and reachability.</strong> The canonical issuer hostname must resolve and
+   route <em>from inside the cluster/stack network</em>, not just from admin
+   workstations — the services fetch JWKS from it at runtime (first-issuer
+   rule above). On Kubernetes, if Keycloak lives <em>outside</em> the cluster,
+   verify egress to it is allowed; the chart deliberately leaves egress
+   unrestricted so your platform policy (e.g. NSX DFW on Tanzu) is the
+   arbiter.</li>
+<li><strong>Private CA trust.</strong> An air-gapped Keycloak serves TLS from your
+   enclave CA. The service containers must trust that CA or every JWKS
+   fetch fails at the TLS layer: mount the CA bundle and point
+   <code>REQUESTS_CA_BUNDLE</code>/<code>SSL_CERT_FILE</code> at it (Compose: a bind-mounted
+   file + environment; Helm: a ConfigMap volume added via your values).
+   The same applies to LibreChat's <code>OPENID_ISSUER</code> connection.</li>
+<li><strong>Clock sync.</strong> Token validation checks <code>exp</code>/<code>iat</code>. Enclave NTP (or
+   chrony against a local time source) on every node — clock skew between
+   Keycloak and the services produces intermittent, maddening 401s.</li>
+<li><strong>No public IdP fallbacks.</strong> Everything above assumes Keycloak is
+   <em>inside</em> the enclave. Realm import happens at deploy time from the
+   transformed export; no outbound identity dependency exists at runtime.</li>
+</ol>
+<h2 id="6-verify-the-cut-over">6. Verify the cut-over<a class="headerlink" href="#6-verify-the-cut-over" title="Permanent link">&para;</a></h2>
+<p>Same probes as the sandbox walkthroughs, pointed at the new hostnames. Mint
+a token with a real (or staging) account and inspect exactly the claims the
+services will act on:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">KC</span><span class="o">=</span>https://keycloak.internal.example.mil
+<span class="nv">TOKEN</span><span class="o">=</span><span class="k">$(</span>curl<span class="w"> </span>-s<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$KC</span><span class="s2">/realms/nexus-rag/protocol/openid-connect/token&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-d<span class="w"> </span><span class="nv">grant_type</span><span class="o">=</span>password<span class="w"> </span>-d<span class="w"> </span><span class="nv">client_id</span><span class="o">=</span>rag-app<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-d<span class="w"> </span><span class="nv">client_secret</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$RAG_APP_SECRET</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-d<span class="w"> </span><span class="nv">username</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$TEST_USER</span><span class="s2">&quot;</span><span class="w"> </span>-d<span class="w"> </span><span class="nv">password</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$TEST_PASS</span><span class="s2">&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span>.access_token<span class="k">)</span>
+
+<span class="c1"># decode the payload (verification is the servers&#39; job -- this is a look, not a check)</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$TOKEN</span><span class="s2">&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>cut<span class="w"> </span>-d.<span class="w"> </span>-f2<span class="w"> </span><span class="p">|</span><span class="w"> </span>base64<span class="w"> </span>-d<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">&#39;{iss, aud, org, groups, rag_roles}&#39;</span>
+</code></pre></div>
+<p>Checklist — each maps to a failure mode above:</p>
+<ul>
+<li>[ ] <code>iss</code> equals the configured <code>OIDC_ISSUERS</code> / <code>issuerUrl</code> value exactly</li>
+<li>[ ] <code>aud</code> contains <code>rag-app</code></li>
+<li>[ ] <code>rag_roles</code> carries the expected <code>rag-clearance:*</code> / <code>rag-releasability:*</code> entries</li>
+<li>[ ] <code>groups</code> / <code>org</code> attributes present</li>
+<li>[ ] A retrieval probe (<code>POST /debug/rag_search</code> with the token) returns
+      results with <code>applied_filter</code> reflecting those claims</li>
+<li>[ ] The ingestion UI completes the browser login round-trip on the real
+      hostname (proves redirect URI registration + <code>KC_HOSTNAME</code> agree)</li>
+</ul>
+<h2 id="where-each-knob-lives-quick-index">Where each knob lives — quick index<a class="headerlink" href="#where-each-knob-lives-quick-index" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
-<th>From</th>
-<th>To</th>
-<th>Port</th>
-<th>Purpose</th>
+<th>Setting</th>
+<th>Compose</th>
+<th>Helm</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Ingress / Avi / Contour</td>
-<td>ingestion-api</td>
-<td>8001</td>
-<td>browser UI (upload, curate, search)</td>
+<td>Issuer allowlist</td>
+<td><code>OIDC_ISSUERS</code> in <code>.env</code></td>
+<td><code>externalKeycloak.issuerUrl</code></td>
 </tr>
 <tr>
-<td>LibreChat (chat plane)</td>
-<td>orchestration-mcp</td>
-<td>8002</td>
-<td>the <code>rag_search</code> MCP tool</td>
+<td>Audience / client id</td>
+<td><code>OIDC_AUDIENCE</code> / <code>OIDC_CLIENT_ID</code></td>
+<td><code>externalKeycloak.audience</code> / <code>.clientId</code></td>
 </tr>
 <tr>
-<td>ingestion-api</td>
-<td>orchestration-mcp</td>
-<td>8002</td>
-<td>the UI search page proxies retrieval</td>
+<td>Client secret</td>
+<td><code>RAG_APP_KEYCLOAK_CLIENT_SECRET</code></td>
+<td>Secret <code>nexus-rag-keycloak-client-secret</code>, key <code>client-secret</code></td>
 </tr>
 <tr>
-<td>orchestration-mcp</td>
-<td>Qdrant</td>
-<td>6333 (+6334 gRPC)</td>
-<td>filtered hybrid search (read-only key)</td>
+<td>UI redirect URI</td>
+<td><code>OIDC_REDIRECT_URI</code></td>
+<td><code>ingestionApi.oidcRedirectUri</code></td>
 </tr>
 <tr>
-<td>orchestration-mcp</td>
-<td>reranker-service</td>
-<td>8003</td>
-<td>candidate reranking</td>
-</tr>
-<tr>
-<td>orchestration-mcp</td>
-<td>embedding-service</td>
-<td>11434</td>
-<td>query embedding</td>
-</tr>
-<tr>
-<td>ingestion-worker</td>
-<td>embedding-service</td>
-<td>11434</td>
-<td>document embedding (+ optional vision/classification models)</td>
-</tr>
-<tr>
-<td>ingestion-worker / ingestion-api</td>
-<td>Qdrant</td>
-<td>6333</td>
-<td>write / curation payload updates</td>
-</tr>
-<tr>
-<td>ingestion-api / ingestion-worker</td>
-<td>NATS</td>
-<td>4222</td>
-<td>durable job queue (publish / consume, per-subject credentials)</td>
-</tr>
-<tr>
-<td>ingestion-api / ingestion-worker</td>
-<td>Postgres (external)</td>
-<td>5432</td>
-<td>system of record</td>
-</tr>
-<tr>
-<td>ingestion-api / ingestion-worker</td>
-<td>S3 / SeaweedFS</td>
-<td>8333 (bundled) or your S3's port</td>
-<td>original document bytes</td>
-</tr>
-<tr>
-<td>all four services</td>
-<td>Keycloak (external)</td>
-<td>443</td>
-<td>JWKS fetch + OIDC flows</td>
-</tr>
-<tr>
-<td>your Prometheus</td>
-<td>each service <code>/metrics</code></td>
-<td>service port</td>
-<td>monitoring — <strong>must be explicitly allowed</strong> through the default-deny</td>
+<td>Realm content</td>
+<td><code>infra/keycloak/realm-export/</code> auto-imported</td>
+<td>your transformed export, imported into the enclave Keycloak</td>
 </tr>
 </tbody>
 </table>
-<h3 id="what-the-chart-already-enforces-and-what-it-leaves-to-you">What the chart already enforces — and what it leaves to you<a class="headerlink" href="#what-the-chart-already-enforces-and-what-it-leaves-to-you" title="Permanent link">&para;</a></h3>
-<p>The chart ships <strong>default-deny ingress NetworkPolicies with per-component
-allowlists for every data-plane backend</strong> (Qdrant/Milvus, NATS,
-reranker-service, embedding-service, SeaweedFS). The reason is structural:
-access control is enforced at orchestration-mcp — the vector store applies
-whatever filter it's handed and stores chunk text in cleartext, and the
-reranker takes no credential at all. The policies make "who can open a
-socket to those" a short, named list instead of "any pod in the namespace."</p>
-<p>Deliberately left to the deployment (the chart can't know your topology):</p>
-<ul>
-<li><strong>Who may reach ingestion-api :8001 and orchestration-mcp :8002</strong> — on
-  Tanzu, express this in NSX DFW or your own NetworkPolicies: ingress
-  controller → :8001; the LibreChat pods/VMs → :8002; nothing else.</li>
-<li><strong>Egress restriction</strong> — the services must reach <em>your</em> external
-  Keycloak/Postgres/S3, whose addresses only you know.
-  <code>networkPolicy.denyEgressByDefault</code> is available once you're ready to
-  supply the allow rules; NSX DFW is the natural place on Tanzu.</li>
-</ul>
-<div class="admonition warning">
-<p class="admonition-title">NetworkPolicies are only real if the CNI enforces them</p>
-<p>TKG's default CNI (Antrea) enforces them — good. But verify rather than
-assume: on a non-enforcing CNI, Kubernetes accepts the policies silently
-and protects nothing. <code>kubectl exec</code> a scratch pod and try to reach
-Qdrant directly; a timeout is the correct answer.</p>
-</div>
-<h3 id="dns-ntp-identity-the-quiet-requirements">DNS, NTP, identity — the quiet requirements<a class="headerlink" href="#dns-ntp-identity-the-quiet-requirements" title="Permanent link">&para;</a></h3>
-<ul>
-<li><strong>One canonical Keycloak hostname</strong>, resolvable identically by user
-  browsers <em>and</em> pods, over TLS your platform trusts. The sandbox tolerates
-  a two-hostname issuer allowlist; production should not need it — token
-  <code>iss</code> values must match what services verify.</li>
-<li><strong>NTP everywhere</strong> — token validation is clock-sensitive, and TKG
-  requires host NTP anyway.</li>
-<li><strong>Cluster DNS</strong> resolves all in-cluster service names in the matrix; the
-  external names (Keycloak, Postgres, S3, Harbor) come from your enclave DNS.</li>
-</ul>
-<div class="admonition note">
-<p class="admonition-title">Sandbox → Tanzu: what changes</p>
-<p>The <a href="../quickstart-helm/">minikube sandbox</a> runs all of this with
-port-forwards and permissive networking — it validates the <em>application</em>
-wiring, not the network posture. The matrix above is precisely the delta
-you provision when promoting to TKG: Avi/ingress in front, NSX rules for
-the two user-facing services, the chart's own policies doing the
-data-plane isolation, and the air-gapped registry (Harbor) already
-holding the <a href="../deploy-airgapped/">bundle-imported images</a>.</p>
-</div>
-<h2 id="platform-notes">Platform notes<a class="headerlink" href="#platform-notes" title="Permanent link">&para;</a></h2>
-<p>The chart is platform-neutral Kubernetes; what differs per distribution is
-storage, ingress/load-balancing, security admission, and where images live.</p>
-<details class="note">
-<summary>VMware Tanzu Kubernetes Grid (TKG) / vSphere</summary>
-<p>Likely the closest match to this project's target environment. Deploy
-into a <strong>workload cluster</strong> (created via the Tanzu CLI from your
-management cluster or vSphere Supervisor) — never into the management
-cluster. Platform specifics that map onto this chart:</p>
-<ul>
-<li><strong>Registry:</strong> TKG environments typically run <strong>Harbor</strong> (a Tanzu
-  standard package) as the internal registry — that's exactly what
-  <code>global.imageRegistry</code> points at, and the
-  <a href="../deploy-airgapped/">air-gapped bundle flow</a> retags into it.
-  TKG's own air-gapped reference design covers mirroring the platform
-  images; this chart's five app images ride the same pattern.</li>
-<li><strong>Ingress / LB:</strong> control-plane and Service load-balancing come from
-  kube-vip or Avi Load Balancer; <code>ingestionApi.ingress</code> rides whatever
-  ingress controller (e.g. Contour, another standard package) the
-  cluster provides — set the class/annotations in your values.</li>
-<li><strong>Storage:</strong> the chart's PVCs (Qdrant, NATS, optionally SeaweedFS)
-  bind to the cluster's default StorageClass — vSphere CSI in TKG;
-  confirm one exists or set <code>*.persistence.storageClassName</code>.</li>
-<li><strong>Compliance fit:</strong> TKG releases are validated against DISA STIG and
-  NSA/CISA Kubernetes hardening — that covers the <em>platform</em> layer;
-  this chart's own hardening (non-root, <code>cap_drop: ALL</code>, read-only
-  rootfs, NetworkPolicies) layers the <em>application</em> controls on top.
-  The two are complementary, not redundant.</li>
-<li><strong>Lifecycle:</strong> TKG runs an N-2 support policy — align your base-OS/
-  Kubernetes (TKr) pins with the same discipline this repo applies to
-  images and models, and mind NTP: Keycloak token validation is
-  clock-sensitive, and TKG requires NTP on hosts anyway.</li>
-</ul>
-</details>
-<details class="note">
-<summary>OpenShift</summary>
-<p>The chart's securityContext (fixed non-root UID 10001, no privilege
-escalation, dropped capabilities, read-only rootfs) is written to the
-same posture as the <code>restricted</code> SCC family — but OpenShift assigns
-project UID ranges, so verify the explicit <code>runAsUser</code> against your
-SCC (or grant a scoped <code>nonroot</code>/custom SCC) before assuming admission
-passes. Routes can replace Ingress for <code>ingestionApi</code> exposure.</p>
-</details>
-<details class="note">
-<summary>Managed clusters (EKS / AKS / GKE)</summary>
-<p>Straightforward: a default StorageClass exists, LoadBalancer Services
-provision cloud LBs, and the registry is ECR/ACR/GAR — set
-<code>global.imageRegistry</code> + <code>global.imagePullSecrets</code> (or the cloud's
-workload-identity pull integration). The air-gapped flow doesn't apply;
-the <a href="#install">connected-cluster tab</a> above is your path.</p>
-</details>
-<div class="admonition warning">
-<p class="admonition-title">Render what you deploy</p>
-<p>CI lints and renders the chart only with near-default values. Combinations
-like <code>vectorBackend: milvus</code> or the <code>external.*</code> blocks are supported but
-not CI-rendered — <code>helm template --debug</code> your exact values file before
-trusting it.</p>
-</div>
 <h2 id="sources">Sources<a class="headerlink" href="#sources" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="https://github.com/schuecl/nexus-rag/blob/main/helm/nexus-rag/README.md">Helm chart README</a>
-  (<code>helm/nexus-rag/README.md</code>) — the canonical prerequisites list, every
-  value documented, object-store and NATS auth details</li>
-<li><a href="../../releasing/">Releasing</a> — version lockstep, what a release contains</li>
-<li><a href="../../observability/">Observability</a> — wiring the chart's metrics into a
-  cluster Prometheus</li>
+<li><a href="https://github.com/schuecl/nexus-rag/blob/main/infra/keycloak/realm-export/nexus-rag-realm.json"><code>infra/keycloak/realm-export/nexus-rag-realm.json</code></a>
+  — the dev realm this page's review and migration script start from</li>
+<li><a href="https://github.com/schuecl/nexus-rag/blob/main/services/common/common/claims.py"><code>services/common/common/claims.py</code></a>
+  — the single shared claims-verification implementation (issuer allowlist,
+  first-issuer JWKS, role-prefix parsing, fail-closed clearance)</li>
+<li><a href="https://github.com/schuecl/nexus-rag/blob/main/helm/nexus-rag/values.yaml"><code>helm/nexus-rag/values.yaml</code></a>
+  — the <code>externalKeycloak</code> values contract</li>
+<li><a href="https://www.keycloak.org/docs/latest/server_admin/">Keycloak server administration guide</a>
+  — realm import/export, client scopes, X.509 authentication flows</li>
 </ul>
 
 
@@ -2489,7 +2538,7 @@ trusting it.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../deploy-compose/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Docker Compose">
+          <a href="../deploy-airgapped/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Air-gapped">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -2499,20 +2548,20 @@ trusting it.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Docker Compose
+                Air-gapped
               </div>
             </div>
           </a>
         
         
           
-          <a href="../deploy-airgapped/" class="md-footer__link md-footer__link--next" aria-label="Next: Air-gapped">
+          <a href="../configuration/" class="md-footer__link md-footer__link--next" aria-label="Next: Configuration by use case">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Air-gapped
+                Configuration by use case
               </div>
             </div>
             <div class="md-footer__button md-icon">

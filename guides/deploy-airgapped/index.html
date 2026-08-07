@@ -16,7 +16,7 @@
         <link rel="prev" href="../deploy-helm/">
       
       
-        <link rel="next" href="../configuration/">
+        <link rel="next" href="../identity-oidc/">
       
       
         
@@ -569,6 +569,8 @@
       
         
       
+        
+      
     
     
     
@@ -785,6 +787,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../identity-oidc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Identity & OIDC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -2077,6 +2107,12 @@ preparation before the transfer window, not during it.</p>
 </div>
 <h2 id="what-air-gapped-means-for-operations">What "air-gapped" means for operations<a class="headerlink" href="#what-air-gapped-means-for-operations" title="Permanent link">&para;</a></h2>
 <ul>
+<li><strong>Identity comes with you.</strong> Keycloak runs inside the boundary; the realm
+  is imported at deploy time from a transformed export (explicit redirect
+  URIs, TLS required, no dev users or secrets), and services fetch JWKS
+  from the internal issuer only. The full walkthrough — claims contract,
+  realm migration script with dummy enclave hostnames, CA-trust and DNS
+  requirements — is on the <a href="../identity-oidc/">Identity &amp; OIDC</a> page.</li>
 <li><strong>Updates</strong> are new bundles, same flow — versions move in lockstep across
   all five images and the chart, and immutable releases make any prior
   version redeployable.</li>
@@ -2149,13 +2185,13 @@ preparation before the transfer window, not during it.</p>
         
         
           
-          <a href="../configuration/" class="md-footer__link md-footer__link--next" aria-label="Next: Configuration by use case">
+          <a href="../identity-oidc/" class="md-footer__link md-footer__link--next" aria-label="Next: Identity &amp; OIDC">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Configuration by use case
+                Identity & OIDC
               </div>
             </div>
             <div class="md-footer__button md-icon">
