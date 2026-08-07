@@ -15,7 +15,8 @@ set -euo pipefail
 
 VERSION="${1:?usage: export_release_bundle.sh X.Y.Z [source-registry]}"
 REGISTRY="${2:-ghcr.io/schuecl/nexus-rag}"
-SERVICES=(ingestion-api ingestion-worker orchestration-mcp reranker-service)
+# scripts (#527) backs the chart's audit-reporting CronJobs.
+SERVICES=(ingestion-api ingestion-worker orchestration-mcp reranker-service scripts)
 
 # `docker save` on a daemon backed by the containerd image-store snapshotter
 # has been observed here to report success while writing a tar that contains

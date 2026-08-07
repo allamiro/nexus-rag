@@ -694,6 +694,10 @@ python scripts/calibrate_tagging_advisory.py --history-dir calibration-history
 
 # Or via the compose one-shot, against the dev stack's own Postgres.
 docker compose --profile calibration run --rm calibrate-tagging-advisory
+
+# Or on a schedule (weekly by default, #527), alongside hourly anomaly
+# detection -- production uses the chart's auditReporting CronJobs instead.
+docker compose --profile scheduling up -d
 ```
 
 Deliberately **not** a pass/fail CI gate the way `evaluate_retrieval.py` is:
@@ -731,6 +735,10 @@ python scripts/detect_query_anomalies.py --lookback-minutes 60
 
 # Or via the compose one-shot, against the dev stack's own Postgres.
 docker compose --profile anomaly-detection run --rm detect-query-anomalies
+
+# Or on a schedule (hourly by default, #527) -- see the scheduling profile
+# under the calibration section above.
+docker compose --profile scheduling up -d
 ```
 
 Reporting only, same posture as the calibration script above. What reaches

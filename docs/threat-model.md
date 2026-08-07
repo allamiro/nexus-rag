@@ -375,7 +375,7 @@ which score-suppression already answers without touching recall.
 | Qdrant payload cleartext not encrypted at rest | Bounded by collection split/NetworkPolicy/RO-RW keys, not eliminated; depends on deployment storage layer |
 | Rank-order residual membership-inference channel | Accepted, unmitigated — see "Considered and rejected" above |
 | SIEM-side detection rules for the patterns #426 flags | Not built here — environment-specific SIEM query languages are outside this repo's testable surface; the flagged-event data already reaches a SIEM via #73's export |
-| Automated scheduling of the offline audit-reporting jobs (calibration, #426's detector) | Both are "run manually or on a schedule" per their own docs; nothing in this repo schedules either one |
+| Automated scheduling of the offline audit-reporting jobs (calibration, #426's detector) | Addressed (#527): the dev stack ships a `scheduling` compose profile that loops both jobs on an interval, and the Helm chart ships default-off CronJobs (`auditReporting` in values) backed by the released scripts image; calibration also gained a Pushgateway heartbeat and a `NexusRagTaggingCalibrationStale` alert to match the detector's. Residual: both are opt-in — a deployment that never enables them still runs neither, and only the detector's staleness alert can notice that (and only after a first run has published) |
 
 ## Related
 
