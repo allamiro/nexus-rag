@@ -1671,6 +1671,45 @@ the docs, not a silent "it works" — flag it if you find one.
   surfaced separately during this validation (38 undeliverable JetStream messages blocking
   fresh ones) — unrelated to this change, resolved by recreating those volumes, not a bug in
   the re-embedding path itself.
+- **Periodic object-store integrity re-verification (issue #432, NFR-18 follow-on)** — #285
+  shipped event-triggered content-integrity verification (re-hash on every fetch for parsing
+  or re-embedding), but nothing ever checked a document's original while it just sat approved
+  in the object store untouched — the common case, and exactly the "store-side tampering,
+  backup restore, bit rot" threat NFR-18 names. `python -m app.integrity_sweep` (run inside
+  the `ingestion-worker` container/image, e.g. `docker compose run --rm ingestion-worker
+  python -m app.integrity_sweep`) re-hashes a bounded rolling window of documents
+  (`--batch-size`, default 500) each run, oldest-`last_verified_at`-first, and never changes a
+  document's status on a finding — only a `document.integrity_check_failed` audit_log entry
+  and a `nexus_rag_integrity_check_failures_total` Pushgateway metric, since the cause (bit rot
+  vs. real tampering) needs human triage, not an automatic reaction. Scheduled nightly by
+  default via the chart's `ingestion-worker-integrity-sweep` CronJob
+  (`ingestionWorker.integritySweep`) — see `docs/observability.md`'s "Periodic object-store
+  integrity re-verification" section for why this one, unlike the Q-to-C-to-A CronJob above,
+  ships as an actual chart template. **Tested against mocks**: `services/ingestion-worker/
+  tests/test_integrity_sweep.py` covers the verified/mismatch/missing-original/
+  race-with-a-purge/rolling-window cases with the DB session and object store faked, the same
+  technique `test_reembed.py` uses. **Validated against a live environment** (2026-08-07): ran
+  `docker compose up --build`, let `seed-sample-data` seed and curate the usual 7 sample
+  documents, then `docker compose run --rm ingestion-worker python -m app.integrity_sweep` —
+  all 7 (including the `pending_review`/`rejected`/`superseded` ones, confirming the sweep is
+  status-agnostic by design) came back `verified` with `last_verified_at` stamped in the real
+  `documents` table (confirming the additive-column migration applies against a running stack,
+  not just `init_db()` in isolation). Then manually overwrote one approved document's bytes in
+  the running `ingestion-worker` container's object-store mount to simulate store-side
+  tampering/bit rot and re-ran the sweep: 6 verified, 1 flagged, with a real
+  `document.integrity_check_failed` audit_log row (`digest_mismatch`, no digest values in
+  `detail`) and — the point of "never an automatic status change" — the document's `status`
+  stayed `approved` and its `last_verified_at` stayed at the prior clean run's timestamp rather
+  than advancing. Restored the exact original bytes (reconstructed from `scripts/
+  seed_sample_data.py`'s literal content, confirmed byte-for-byte against the stored
+  `content_sha256` before writing it back) and re-ran once more: all 7 verified again, stack
+  left healthy. Also brought up the `observability` profile's `pushgateway` service and re-ran
+  the sweep: the `PUT http://pushgateway:9091/metrics/job/nexus-rag-integrity-sweep` succeeded
+  (200), and all three metrics (`nexus_rag_integrity_check_failures_total`,
+  `..._documents_checked`, `..._last_run_timestamp_seconds`) read back correctly from
+  Pushgateway's own `/metrics` endpoint. The CronJob/chart wiring itself is
+  `helm template`-rendered (`helm lint helm/nexus-rag` passes) but not yet applied to a real
+  cluster.
 - **Missing `search_document:`/`search_query:` task prefixes on nomic-embed-text (issue
   #392)** — both embedding call sites (`ingestion-worker/app/embedding.py`'s `embed_texts`,
   `orchestration-mcp/app/rag_search.py`'s `_embed_query`) sent raw chunk/query text with no
