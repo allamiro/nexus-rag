@@ -177,8 +177,10 @@ spec:
   ports: [{port: 9000, targetPort: 9000}]
 EOF
 
-# the app never creates its bucket itself (a real S3 wouldn't allow it either)
-kubectl run mc --rm -it --restart=Never --image=quay.io/minio/mc:latest -- \
+# the app never creates its bucket itself (a real S3 wouldn't allow it either).
+# --command matters: the mc image's entrypoint IS `mc`, so without it the
+# shell invocation is handed to mc as arguments and the pod errors out
+kubectl run mc --rm -it --restart=Never --image=quay.io/minio/mc:latest --command -- \
   /bin/sh -c "mc alias set dev http://minio:9000 nexus-rag-dev nexus-rag-dev-secret && mc mb dev/nexus-rag-documents"
 ```
 
@@ -236,8 +238,10 @@ global:
 
 ingestionWorker:
   image: {repository: ghcr.io/schuecl/nexus-rag/ingestion-worker}
+  replicas: 1               # sandbox sizing -- production default is 2
 orchestrationMcp:
   image: {repository: ghcr.io/schuecl/nexus-rag/orchestration-mcp}
+  replicas: 1
 rerankerService:
   image: {repository: ghcr.io/schuecl/nexus-rag/reranker-service}
 auditReporting:
@@ -253,6 +257,19 @@ ingestionApi:
   image: {repository: ghcr.io/schuecl/nexus-rag/ingestion-api}
   # no ingress in the sandbox; the browser reaches the UI via port-forward
   oidcRedirectUri: "http://localhost:8001/auth/callback"
+  # production default is 2 replicas per service -- halve the CPU footprint
+  # so the whole stack schedules on a 4-CPU sandbox node
+  replicas: 1
+
+embeddingService:
+  # the chart's default embedding resources REQUEST A GPU
+  # (nvidia.com/gpu: 1) -- on a CPU-only cluster that pod stays Pending
+  # forever with `Insufficient nvidia.com/gpu`. Null out both entries for
+  # CPU-only; if you passed a GPU through (see the tip above), keep the
+  # defaults instead
+  resources:
+    requests: {cpu: "1", memory: "4Gi", "nvidia.com/gpu": null}
+    limits: {cpu: "2", memory: "8Gi", "nvidia.com/gpu": null}
 
 objectStore:
   enabled: false            # external S3 = the dev MinIO from step 2
