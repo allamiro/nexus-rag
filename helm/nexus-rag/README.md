@@ -21,10 +21,28 @@ deployed by the chart. If that's wrong for your environment, `values.yaml`'s
 `helm lint helm/nexus-rag` and `helm template helm/nexus-rag --debug` run in
 CI on every PR (`.github/workflows/security.yml`'s `helm` job), against the
 default values plus the one override (`ingestionApi.oidcRedirectUri`) the
-chart fails closed on without an ingress host configured. That job does not
-exercise every value combination this chart supports (e.g. `vectorBackend:
-milvus`, or any of the `external` blocks below) — render locally with the
-combination you're about to deploy before trusting it.
+chart fails closed on without an ingress host configured.
+
+That job now also renders a **matrix of every value combination this chart
+documents** — `vectorBackend: milvus`, each `external` block below, the bundled
+object store, the external reranker, `serviceMonitor`, and `ingress` — and
+validates each rendered manifest against the real Kubernetes JSON schemas with
+`kubeconform -strict`. `helm lint` only checks chart grammar: it passes a
+manifest with a misspelled field or a wrong `apiVersion`, which then fails at
+`kubectl apply` time in a cluster. The matrix is what stops a template that only
+breaks under one flag combination from breaking a deployment instead of a build.
+
+Two limits to know:
+
+- One combination (`serviceMonitor`) reports skipped resources, because
+  `ServiceMonitor` is a Prometheus-Operator CRD with no core-Kubernetes schema.
+  Skipped means *not validated*, not valid.
+- Rendering and schema-validating is not installing. Nothing in CI applies these
+  manifests to a live cluster, so admission controllers, PVC provisioning, image
+  pulls, and readiness behaviour remain unexercised there. The chart has been
+  installed against a real cluster by hand (see the observability chart's README
+  for that history); CI proves the manifests are well-formed and internally
+  consistent, not that a deployment converges.
 
 ## Prerequisites
 

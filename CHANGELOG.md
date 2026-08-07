@@ -15,6 +15,28 @@ changed in the running system, with the issue/PR reference for the trail.
 
 ## [Unreleased]
 
+### Added
+
+- `security.yml`'s `helm` job now renders a **matrix of every value combination
+  the chart documents** (`vectorBackend: milvus`, each `external` block, bundled
+  object store, external reranker, `serviceMonitor`, `ingress`) and
+  schema-validates each rendered manifest with `kubeconform -strict` against the
+  real Kubernetes JSON schemas. Previously CI proved only the default values plus
+  one override, and `helm/nexus-rag/README.md` said so outright -- "render locally
+  with the combination you're about to deploy before trusting it". `helm lint`
+  checks chart grammar, not API validity: it passes a misspelled field or a wrong
+  `apiVersion`, which then fails at `kubectl apply` time in a cluster. Two
+  regression guards land alongside it: the `nexus-rag` chart must refuse to
+  render without an OIDC redirect URI (mirroring the observability chart's
+  existing source-ranges guard), and `vectorBackend: milvus` must not render
+  Qdrant resources -- #401's fix had nothing asserting it, so a refactor could
+  quietly reintroduce provisioning both vector stores, which in a classified
+  deployment means chunk payloads in a second store nobody accounted for.
+  kubeconform is version-pinned and SHA-256 verified, the same discipline NFR-16
+  applies to images. Rendering is not installing: nothing here applies manifests
+  to a live cluster, so admission control, PVC provisioning, image pulls and
+  readiness remain unexercised in CI, and the chart README says so.
+
 ## [0.6.0] - 2026-08-07
 
 ### Added
