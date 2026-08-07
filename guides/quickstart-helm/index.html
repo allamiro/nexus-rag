@@ -2269,9 +2269,23 @@ kubectl<span class="w"> </span>create<span class="w"> </span>secret<span class="
 </code></pre></div>
 <h2 id="4-install-the-chart">4. Install the chart<a class="headerlink" href="#4-install-the-chart" title="Permanent link">&para;</a></h2>
 <div class="highlight"><span class="filename">dev-values.yaml</span><pre><span></span><code><span class="nt">global</span><span class="p">:</span>
-<span class="w">  </span><span class="c1"># the chart&#39;s default is an air-gapped internal-registry EXAMPLE -- a</span>
-<span class="w">  </span><span class="c1"># sandbox pulls the released images straight from GHCR instead</span>
-<span class="w">  </span><span class="nt">imageRegistry</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ghcr.io/schuecl/nexus-rag&quot;</span>
+<span class="w">  </span><span class="c1"># keep EMPTY in the sandbox. The chart&#39;s default is an air-gapped</span>
+<span class="w">  </span><span class="c1"># internal-registry EXAMPLE, and this prefix is applied to EVERY image --</span>
+<span class="w">  </span><span class="c1"># third-party ones (qdrant/qdrant, nats, ollama/ollama) included, because</span>
+<span class="w">  </span><span class="c1"># an internal mirror is expected to hold all of them under their original</span>
+<span class="w">  </span><span class="c1"># paths. There is no such mirror on GHCR, so a sandbox blanks the prefix</span>
+<span class="w">  </span><span class="c1"># (third-party images then pull from their canonical registries) and</span>
+<span class="w">  </span><span class="c1"># points only the project&#39;s own images at GHCR, per component below.</span>
+<span class="w">  </span><span class="nt">imageRegistry</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;&quot;</span>
+
+<span class="nt">ingestionWorker</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">repository</span><span class="p">:</span><span class="w"> </span><span class="nv">ghcr.io/schuecl/nexus-rag/ingestion-worker</span><span class="p p-Indicator">}</span>
+<span class="nt">orchestrationMcp</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">repository</span><span class="p">:</span><span class="w"> </span><span class="nv">ghcr.io/schuecl/nexus-rag/orchestration-mcp</span><span class="p p-Indicator">}</span>
+<span class="nt">rerankerService</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">repository</span><span class="p">:</span><span class="w"> </span><span class="nv">ghcr.io/schuecl/nexus-rag/reranker-service</span><span class="p p-Indicator">}</span>
+<span class="nt">auditReporting</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">repository</span><span class="p">:</span><span class="w"> </span><span class="nv">ghcr.io/schuecl/nexus-rag/scripts</span><span class="p p-Indicator">}</span>
 
 <span class="nt">externalKeycloak</span><span class="p">:</span>
 <span class="w">  </span><span class="c1"># comma-separated: in-cluster requests mint tokens as `keycloak:8080`,</span>
@@ -2280,6 +2294,7 @@ kubectl<span class="w"> </span>create<span class="w"> </span>secret<span class="
 <span class="w">  </span><span class="nt">issuerUrl</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;http://keycloak:8080/realms/nexus-rag,http://localhost:8080/realms/nexus-rag&quot;</span>
 
 <span class="nt">ingestionApi</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">repository</span><span class="p">:</span><span class="w"> </span><span class="nv">ghcr.io/schuecl/nexus-rag/ingestion-api</span><span class="p p-Indicator">}</span>
 <span class="w">  </span><span class="c1"># no ingress in the sandbox; the browser reaches the UI via port-forward</span>
 <span class="w">  </span><span class="nt">oidcRedirectUri</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;http://localhost:8001/auth/callback&quot;</span>
 
@@ -2309,9 +2324,15 @@ kubectl<span class="w"> </span>get<span class="w"> </span>pods<span class="w"> <
 <summary>Where the images come from (and how to use your own)</summary>
 <ul>
 <li><strong>Default (this guide):</strong> the four service images pull from GHCR
-  (public — no credentials needed) because <code>dev-values.yaml</code> points
-  <code>global.imageRegistry</code> there. Third-party components (Qdrant, NATS,
-  Ollama, SeaweedFS) use their own fully-qualified upstream names.</li>
+  (public — no credentials needed) via the per-component
+  <code>image.repository</code> overrides in <code>dev-values.yaml</code>; third-party
+  components (Qdrant, NATS, Ollama, SeaweedFS) keep their canonical
+  upstream names because <code>global.imageRegistry</code> is blank. Don't be
+  tempted to set <code>global.imageRegistry: ghcr.io/schuecl/nexus-rag</code>
+  instead — the chart prefixes <em>every</em> image with that registry
+  (its contract is a full internal mirror, path-preserving), and GHCR
+  hosts only this project's own images, so Qdrant/NATS/Ollama would
+  <code>ImagePullBackOff</code> on nonexistent paths.</li>
 <li>
 <p><strong>Locally-built images</strong> (you're iterating on the services): build
   with the repo's Dockerfiles, then load them straight into the
@@ -2341,12 +2362,15 @@ build <em>inside</em> the cluster's Docker daemon directly:
 <p>Same script, same seven documents, same real-API ingest-and-curate flow as
 Compose — run it as a one-off pod from the released <code>scripts</code> image:</p>
 <div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>run<span class="w"> </span>seed<span class="w"> </span>--rm<span class="w"> </span>-it<span class="w"> </span>--restart<span class="o">=</span>Never<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--image<span class="o">=</span>ghcr.io/schuecl/nexus-rag/scripts:X.Y.Z<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--image<span class="o">=</span>ghcr.io/schuecl/nexus-rag/scripts:0.6.0<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--env<span class="w"> </span><span class="nv">INGESTION_API_URL</span><span class="o">=</span>http://nexus-rag-ingestion-api:8001<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--env<span class="w"> </span><span class="nv">KEYCLOAK_URL</span><span class="o">=</span>http://keycloak:8080<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--env<span class="w"> </span><span class="nv">RAG_APP_KEYCLOAK_CLIENT_SECRET</span><span class="o">=</span>dev-rag-app-secret<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--<span class="w"> </span>python3<span class="w"> </span>seed_sample_data.py
 </code></pre></div>
+<p>The <code>scripts</code> image is published by the same release workflow as the four
+service images — use the tag matching your chart's <code>appVersion</code>
+(<code>helm show chart helm/nexus-rag | grep appVersion</code>).</p>
 <h2 id="6-first-query">6. First query<a class="headerlink" href="#6-first-query" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>port-forward<span class="w"> </span>svc/nexus-rag-orchestration-mcp<span class="w"> </span><span class="m">8002</span>:8002<span class="w"> </span><span class="p">&amp;</span>
 kubectl<span class="w"> </span>port-forward<span class="w"> </span>svc/keycloak<span class="w"> </span><span class="m">8080</span>:8080<span class="w"> </span><span class="p">&amp;</span>
