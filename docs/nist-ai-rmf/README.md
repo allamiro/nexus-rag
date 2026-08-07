@@ -73,7 +73,7 @@ date) is what closes it.
 | 9 | Milvus maintainer-of-record vs C2 before production use of that backend | [ai-system-inventory.md](ai-system-inventory.md) A3 | — |
 | 10 | Corpus licensing field: accept scoping decision or add to metadata schema | [ai-system-inventory.md](ai-system-inventory.md) §6 | — |
 | 11 | Impact-assessment ratification questions Q1–Q5 (consequential use, accreditation level, coalition users, PII posture, corpus scale) | [impact-assessment.md](impact-assessment.md) §7 | — |
-| 12 | Management-review cadence + first review | [governance-policy.md](governance-policy.md) §9 | No issue yet |
+| 12 | Management-review cadence + first review | [governance-policy.md](governance-policy.md) §9 | Issue #542 |
 | 13 | Curator risk-awareness training ownership | [governance-policy.md](governance-policy.md) §10 | No issue yet |
 
 ## Audit evidence package — where each item lives
@@ -87,10 +87,10 @@ date) is what closes it.
 | AI / infosec risk registers | [risk-register.md](risk-register.md) | Draft |
 | Data provenance and licensing register | [ai-system-inventory.md](ai-system-inventory.md) §5–6 + [`docs/governance.md`](../governance.md) "Lineage and provenance" | Partial — corpus licensing is a gap |
 | RAG evaluation methodology and test results | [`docs/testing.md`](../testing.md) (methodology); results: `.eval-history` trend store (CI), first archived snapshot pending (issue #532) | Methodology validated live; archived results pending |
-| Security threat model and red-team reports | [`docs/threat-model.md`](../threat-model.md); red-team history in `REQUIREMENTS.md` §11 P1 (issues #97/#427/#457/#458); archived probe report pending (issues #494, #532) | Implemented; live re-validation pending |
+| Security threat model and red-team reports | [`docs/threat-model.md`](../threat-model.md); red-team history in `REQUIREMENTS.md` §11 P1 (issues #97/#427/#457/#458; #457/#458 + PyRIT finding live-validated in PR 541) | Validated live; archived snapshot pending (issue #532) |
 | Privacy assessment and retention/deletion procedures | [`docs/governance.md`](../governance.md) ("Query confidentiality", "Retention and destruction"), [`docs/chat-plane-purge.md`](../chat-plane-purge.md), [`docs/threat-model.md`](../threat-model.md) | Implemented; retention schedule unratified (issue #520) |
 | Human-oversight and acceptable-use procedures | [`docs/roles-and-permissions.md`](../roles-and-permissions.md) (oversight); [governance-policy.md](governance-policy.md) §5–6 (policy) | Oversight validated live; acceptable-use draft |
 | Vendor and model-provider assessments | [ai-system-inventory.md](ai-system-inventory.md) §4 | Draft |
 | Monitoring, incident and change-management records | [`docs/observability.md`](../observability.md), [`docs/siem-detection-runbook.md`](../siem-detection-runbook.md), [`docs/releasing.md`](../releasing.md), [`docs/credential-rotation.md`](../credential-rotation.md), GitHub Releases (SBOMs, digests, changelog) | Implemented; incident ownership pending (issue #522) |
-| Internal audit and management-review evidence | [governance-policy.md](governance-policy.md) §9 defines the process | Gap — no review conducted yet; no tracking issue filed yet |
+| Internal audit and management-review evidence | [governance-policy.md](governance-policy.md) §9 defines the process | Gap — no review conducted yet; tracked in issue #542 |
 | Corrective-action register | [risk-register.md](risk-register.md) §3 | Draft |
