@@ -528,5 +528,20 @@
   ],
   "adminEventsEnabled": true,
   "adminEventsDetailsEnabled": true,
-  "eventsExpiration": 604800
+  "eventsExpiration": 604800,
+  "components": {
+    "org.keycloak.userprofile.UserProfileProvider": [
+      {
+        "name": "declarative-user-profile",
+        "providerId": "declarative-user-profile",
+        "subType": null,
+        "subComponents": {},
+        "config": {
+          "kc.user.profile.config": [
+            "{\"attributes\": [{\"name\": \"username\", \"displayName\": \"${username}\", \"validations\": {\"length\": {\"min\": 3, \"max\": 255}, \"username-prohibited-characters\": {}, \"up-username-not-idn-homograph\": {}}, \"permissions\": {\"view\": [], \"edit\": [\"admin\", \"user\"]}, \"multivalued\": false}, {\"name\": \"email\", \"displayName\": \"${email}\", \"validations\": {\"email\": {}, \"length\": {\"max\": 255}}, \"permissions\": {\"view\": [], \"edit\": [\"admin\", \"user\"]}, \"multivalued\": false}, {\"name\": \"firstName\", \"displayName\": \"${firstName}\", \"validations\": {\"length\": {\"max\": 255}, \"person-name-prohibited-characters\": {}}, \"permissions\": {\"view\": [], \"edit\": [\"admin\", \"user\"]}, \"multivalued\": false}, {\"name\": \"lastName\", \"displayName\": \"${lastName}\", \"validations\": {\"length\": {\"max\": 255}, \"person-name-prohibited-characters\": {}}, \"permissions\": {\"view\": [], \"edit\": [\"admin\", \"user\"]}, \"multivalued\": false}, {\"name\": \"org\", \"displayName\": \"Organization (org claim)\", \"validations\": {\"length\": {\"max\": 255}}, \"annotations\": {\"inputHelperTextBefore\": \"FR-26 access-scope: the identity's owning organization.\"}, \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\"]}, \"multivalued\": false}, {\"name\": \"groups\", \"displayName\": \"Groups (groups claim)\", \"validations\": {}, \"annotations\": {\"inputHelperTextBefore\": \"FR-26 access-scope: need-to-know groups, one per line.\"}, \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\"]}, \"multivalued\": true}], \"groups\": [{\"name\": \"user-metadata\", \"displayHeader\": \"User metadata\", \"displayDescription\": \"Attributes the nexus-rag claim mappers read\"}]}"
+          ]
+        }
+      }
+    ]
+  }
 }
