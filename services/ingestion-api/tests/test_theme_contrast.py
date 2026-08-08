@@ -17,11 +17,9 @@ a table of token pairings is worthless if the stylesheet stops using those pairs
 since the assertions would keep passing while measuring nothing real. That test
 reads the actual declarations back out of `portal.css`.
 
-Not covered here: anything requiring layout. Element geometry, font sizes at a
-given viewport, and the non-text contrast of borders and the stepper rail are
-measured in a browser instead (borders are tracked in #578 and are *known* to be
-below the 3:1 non-text minimum -- deliberately not asserted yet, so this file
-stays honest about what it proves).
+Not covered here: anything requiring layout -- element geometry and font sizes at
+a given viewport are measured in a browser instead. Text thresholds assume normal
+size, since the 3:1 large-text allowance would need font metrics this file avoids.
 """
 
 from __future__ import annotations
@@ -38,6 +36,9 @@ PORTAL_CSS = (Path(__file__).resolve().parent.parent / "app" / "static" / "porta
 # WCAG 2.x SC 1.4.3. Everything asserted here is normal-size text; the 3:1
 # large-text allowance would need font metrics this file deliberately avoids.
 AA_NORMAL_TEXT = 4.5
+# WCAG 2.1 SC 1.4.11: the visual boundary of a control needs 3:1 against what is
+# adjacent. Field borders, card edges and the stepper rail are all --line-strong.
+AA_NON_TEXT = 3.0
 
 Rgba = tuple[float, float, float, float]
 
@@ -156,6 +157,44 @@ def test_text_meets_aa(
         f"{theme}: {rendered_by} renders {fg} on "
         f"{' over '.join(reversed(layers)) or '--page'} at {ratio}:1, "
         f"below the {AA_NORMAL_TEXT}:1 AA floor for normal text"
+    )
+
+
+# (case id, token, background layers over --page, what renders it)
+#
+# Borders sit over both the card and the page depending on the component, so each
+# is asserted against both -- the weaker of the two is what a viewer may get.
+NON_TEXT_CASES = [
+    ("field-border-on-card", "--line-strong", ("--surface",), "input, select, textarea"),
+    ("field-border-on-page", "--line-strong", (), ".form-section (card edge)"),
+    ("stepper-rail", "--line-strong", ("--surface",), ".form-section::after (#566 rail)"),
+]
+
+
+@pytest.mark.parametrize("theme", THEMES)
+@pytest.mark.parametrize(
+    ("case", "fg", "layers", "rendered_by"),
+    NON_TEXT_CASES,
+    ids=[case[0] for case in NON_TEXT_CASES],
+)
+def test_non_text_meets_aa(
+    theme: str, case: str, fg: str, layers: tuple[str, ...], rendered_by: str
+) -> None:
+    background = background_stack(theme, layers)
+    ratio = contrast_ratio(parse_colour(token(theme, fg)), background)
+    assert ratio >= AA_NON_TEXT, (
+        f"{theme}: {rendered_by} draws {fg} on "
+        f"{' over '.join(reversed(layers)) or '--page'} at {ratio}:1, "
+        f"below the {AA_NON_TEXT}:1 SC 1.4.11 floor for a control boundary"
+    )
+
+
+def test_borders_actually_use_the_token_these_cases_measure() -> None:
+    """As above: measuring --line-strong proves nothing if borders stopped using it."""
+    uses = PORTAL_CSS.count("var(--line-strong)")
+    assert uses >= 10, f"only {uses} uses of --line-strong left -- NON_TEXT_CASES may be stale"
+    assert "border: 1px solid var(--line-strong)" in PORTAL_CSS, (
+        "no field/card border uses --line-strong; NON_TEXT_CASES is measuring an unused token"
     )
 
 

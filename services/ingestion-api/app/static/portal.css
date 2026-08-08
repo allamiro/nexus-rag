@@ -20,7 +20,13 @@
   /* Borders were nearly invisible at 0.16 alpha, so fields had no edge and the
      eye had nothing to follow down the form. */
   --line: rgba(140, 170, 220, 0.2);
-  --line-strong: rgba(140, 170, 220, 0.38);
+  /* --line-strong draws field borders, card edges and the #566 stepper rail, so
+     WCAG 2.1 SC 1.4.11 applies to it: 3:1 against the surface behind it. Every
+     alpha here is the smallest value that clears 3.1:1 against *both* the card
+     surface and the page (borders appear over each), computed rather than
+     chosen -- see tests/test_theme_contrast.py, which enforces the floor. The
+     previous values measured 1.61-2.40:1 (#578). */
+  --line-strong: rgba(140, 170, 220, 0.57);
 
   /* One accent, used for every interactive affordance. The previous theme had
      a separate blue for links, a cyan for accents, and a third colour on
@@ -2431,7 +2437,7 @@ label.checkbox-label {
   --text: #e4f4ea;
   --muted: #9dbfad;
   --line: rgba(120, 200, 158, 0.22);
-  --line-strong: rgba(120, 200, 158, 0.4);
+  --line-strong: rgba(120, 200, 158, 0.52);
   --primary: #35d67f;
   --primary-dark: #1fa35c;
   --primary-soft: var(--ring);
@@ -2460,7 +2466,7 @@ label.checkbox-label {
   --text: #e8eaee;
   --muted: #a8afba;
   --line: rgba(180, 190, 205, 0.18);
-  --line-strong: rgba(180, 190, 205, 0.34);
+  --line-strong: rgba(180, 190, 205, 0.5);
   --primary: #8fa8c8;
   --primary-dark: #6b83a3;
   --primary-soft: rgba(143, 168, 200, 0.16);
@@ -2491,7 +2497,7 @@ label.checkbox-label {
   --text: #f5ecdc;
   --muted: #c2ae90;
   --line: rgba(220, 180, 110, 0.2);
-  --line-strong: rgba(220, 180, 110, 0.36);
+  --line-strong: rgba(220, 180, 110, 0.5);
   --primary: #f0b429;
   --primary-dark: #c2900f;
   --primary-soft: rgba(240, 180, 41, 0.14);
@@ -2520,7 +2526,7 @@ label.checkbox-label {
   --text: #16202f;
   --muted: #55627a;
   --line: rgba(30, 60, 100, 0.14);
-  --line-strong: rgba(30, 60, 100, 0.26);
+  --line-strong: rgba(30, 60, 100, 0.56);
   --primary: #1f5fd0;
   --primary-dark: #16469c;
   --primary-soft: rgba(31, 95, 208, 0.09);
