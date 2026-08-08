@@ -97,6 +97,18 @@ changed in the running system, with the issue/PR reference for the trail.
 
 ### Changed
 
+- **Repeated queries no longer re-embed** (#590). Measured against a live stack, the
+  query-side embedding call was **77% of retrieval latency** (7.08s of a 9.22s mean
+  across 311 queries; Qdrant itself was 0.03s) and nothing cached it. A bounded
+  in-process LRU now serves identical queries: measured cold 1.74s → warm 0.28s
+  (6.2x), with the instrumented `embed` stage going 1.34s → 0.000s. **Operator
+  impact:** `QUERY_EMBEDDING_CACHE_SIZE` (default 512, `0` disables) and a new
+  `nexus_rag_query_embedding_cache_total{outcome}` metric -- a falling hit ratio is
+  the leading indicator that `NexusRagHighQueryLatency` is about to fire, since that
+  alert trips on embedding saturation rather than on retrieval. Keys are SHA-256 of
+  model + prefix + query, never the query text, so the cache does not reintroduce the
+  query retention #125 deliberately removed.
+
 - **The accent labels on every portal page now meet WCAG AA** (#578, closing the
   issue): the "DOCUMENT INTAKE"-style eyebrow, the signed-in avatar initial, and
   the info-callout icon rendered an accent that measured 4.04:1, 3.76:1 and 3.70:1

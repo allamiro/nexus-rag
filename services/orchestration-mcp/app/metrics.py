@@ -65,6 +65,16 @@ below_relevance_floor_total = Counter(
 )
 
 
+query_embedding_cache_total = Counter(
+    "nexus_rag_query_embedding_cache_total",
+    "Query-embedding cache lookups by outcome (issue #590). Embedding was 77% of "
+    "measured query latency and every repeat paid it again; a falling hit ratio "
+    "means the cache is being evicted or traffic has stopped repeating, both of "
+    "which show up as rising nexus_rag_query_stage_seconds{stage='embed'}.",
+    ["outcome"],
+)
+
+
 def render() -> tuple[bytes, str]:
     """The scrape payload and its content type."""
     return generate_latest(), CONTENT_TYPE_LATEST

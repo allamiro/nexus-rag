@@ -66,9 +66,12 @@ as #427's persona/roleplay wording.
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import os
 import re
+from collections import OrderedDict
+from threading import Lock
 from time import perf_counter
 
 import httpx
@@ -399,6 +402,37 @@ def format_rag_search_for_model(result: dict) -> str:
     return "\n".join(lines)
 
 
+# Issue #590: measured against a live stack, the query-side embed call was 77% of
+# retrieval latency (7.08s mean of a 9.22s total across 311 queries; Qdrant itself
+# was 0.03s), and nothing cached it -- an identical query re-embedded from scratch
+# every time. This is a bounded in-process LRU.
+#
+# Keyed on a SHA-256 of the prefixed query text, never the text itself. The audit
+# log deliberately does not record query text (#125, `_audit_query_detail`), and a
+# cache keyed on plaintext would put every query string in process memory for the
+# cache's lifetime -- a different retention story than "never stored", arrived at by
+# accident. Hashing keeps the cache while keeping that property: a digest cannot be
+# read back into a question.
+#
+# The key includes the model and the resolved prefix, so an EMBEDDING_MODEL change
+# cannot serve vectors produced by the previous model -- the same class of silent
+# cross-configuration comparison the #525 fingerprint guards on the eval side.
+QUERY_EMBEDDING_CACHE_SIZE = int(os.environ.get("QUERY_EMBEDDING_CACHE_SIZE", "512"))
+
+_embedding_cache: OrderedDict[str, list[float]] = OrderedDict()
+_embedding_cache_lock = Lock()
+
+
+def _embedding_cache_key(model: str, prefix: str, query: str) -> str:
+    return hashlib.sha256(f"{model}\x00{prefix}\x00{query}".encode()).hexdigest()
+
+
+def query_embedding_cache_clear() -> None:
+    """Drop every cached vector. For tests, and for an operator changing models."""
+    with _embedding_cache_lock:
+        _embedding_cache.clear()
+
+
 async def _embed_query(query: str) -> list[float]:
     # Issue #392: the query-side counterpart to embed_texts' document_prefix
     # in ingestion-worker -- the two must agree on which model gets which
@@ -407,8 +441,31 @@ async def _embed_query(query: str) -> list[float]:
     # too, via common.embedding_client -- an httpx.HTTPError from a failed
     # request propagates to this function's caller unwrapped, same as before.
     prefix = query_prefix(EMBEDDING_MODEL)
+
+    if QUERY_EMBEDDING_CACHE_SIZE > 0:
+        key = _embedding_cache_key(EMBEDDING_MODEL, prefix, query)
+        with _embedding_cache_lock:
+            cached = _embedding_cache.get(key)
+            if cached is not None:
+                _embedding_cache.move_to_end(key)
+                metrics.query_embedding_cache_total.labels(outcome="hit").inc()
+                # A copy, so a caller mutating the returned vector cannot corrupt
+                # every later hit on the same query.
+                return list(cached)
+        metrics.query_embedding_cache_total.labels(outcome="miss").inc()
+
     async with httpx.AsyncClient(timeout=30) as client:
-        return await request_embedding(client, OLLAMA_URL, EMBEDDING_MODEL, prefix + query)
+        vector = await request_embedding(client, OLLAMA_URL, EMBEDDING_MODEL, prefix + query)
+
+    # Only a successful embedding is cached: an httpx.HTTPError propagates from the
+    # line above, so a failed call leaves no entry to serve later.
+    if QUERY_EMBEDDING_CACHE_SIZE > 0:
+        with _embedding_cache_lock:
+            _embedding_cache[key] = list(vector)
+            _embedding_cache.move_to_end(key)
+            while len(_embedding_cache) > QUERY_EMBEDDING_CACHE_SIZE:
+                _embedding_cache.popitem(last=False)
+    return vector
 
 
 def _timings_ms(timings: dict[str, float], started: float) -> dict[str, int]:
