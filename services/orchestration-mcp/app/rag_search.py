@@ -135,6 +135,17 @@ DEFAULT_TOP_K = 5
 MAX_QUERY_CHARS = int(os.environ.get("MAX_QUERY_CHARS", "4000"))
 
 
+class EmbeddingUnavailable(Exception):
+    """Issue #595: the query could not be embedded.
+
+    Exists only to keep this failure distinguishable from the vector store
+    being unqueryable. The two look identical to the caller today (empty
+    results) but need opposite remediations -- embedding capacity versus the
+    vector database -- and the note the caller used to get asserted the wrong
+    one, so a transient overload was reported as an empty corpus.
+    """
+
+
 def _audit_query_detail(query: str, **extra: object) -> dict:
     """The FR-31 detail payload for a retrieval attempt.
 
@@ -553,7 +564,17 @@ async def _run_rag_search(
         # text (the same rule #125 applies to the audit log and #72 to
         # metric labels; see common/tracing.py).
         with tracer.start_as_current_span("embed.query"):
-            dense_vector = await _embed_query(query)
+            try:
+                dense_vector = await _embed_query(query)
+            except httpx.HTTPError as exc:
+                # Tagged before it can reach the handler below, which used to
+                # catch bare httpx.HTTPError alongside VectorStoreUnavailable
+                # and report both as the vector backend being down. See #595:
+                # every backend wraps its own failures in VectorStoreUnavailable
+                # (qdrant_backend, milvus_store), so an httpx error arriving
+                # there could only ever have come from *this* call -- the
+                # embedding service -- and was named after the wrong dependency.
+                raise EmbeddingUnavailable(str(exc)) from exc
             sparse_vector = embed_sparse([query])[0]
         timings["embed"] = perf_counter() - started
         retrieval_started = perf_counter()
@@ -573,7 +594,7 @@ async def _run_rag_search(
             )
             query_span.set_attribute("vector.candidates", len(hits))
         timings["retrieve"] = perf_counter() - retrieval_started
-    except (VectorStoreUnavailable, httpx.HTTPError) as exc:
+    except (VectorStoreUnavailable, EmbeddingUnavailable) as exc:
         result["hybrid_retrieval"] = "combined semantic and keyword search"
         result["reranking"] = "skipped, no candidates"
         result["results"] = []
@@ -582,17 +603,37 @@ async def _run_rag_search(
         # error string carries internal hostnames, ports, and collection
         # names. The operational detail goes to the log instead, where the
         # people who can act on it are.
-        logger.warning(
-            "vector backend %s unavailable: %s: %s",
-            backend_name(),
-            type(exc).__name__,
-            log_safe(exc),
-        )
-        result["note"] = (
-            "the search index is not queryable; it's created lazily on first "
-            "ingestion, so this is expected if no document has been submitted yet"
-        )
-        metrics.queries_total.labels(outcome="unavailable").inc()
+        #
+        # #595: which dependency failed goes in the note, because "retry in a
+        # moment" and "the corpus is empty" are different answers and the
+        # model relays whichever one it is given as fact. Measured under load:
+        # 201 embedding timeouts logged as "vector backend qdrant unavailable"
+        # while Qdrant sat at 1% CPU, never called.
+        if isinstance(exc, EmbeddingUnavailable):
+            logger.warning("query embedding unavailable: %s: %s", type(exc).__name__, log_safe(exc))
+            result["note"] = (
+                "the query could not be prepared for search because the embedding "
+                "service did not answer in time; this is a temporary failure, NOT an "
+                "empty or unauthorized corpus -- the same query may succeed on retry"
+            )
+            metrics.queries_total.labels(outcome="embedding_unavailable").inc()
+        else:
+            logger.warning(
+                "vector backend %s unavailable: %s: %s",
+                backend_name(),
+                type(exc).__name__,
+                log_safe(exc),
+            )
+            # Was asserted unconditionally, including for a timeout against a
+            # populated index. Lazy creation is one *possible* cause, so it is
+            # offered as one rather than stated as the reason.
+            result["note"] = (
+                "the search index could not be queried, so no results could be "
+                "retrieved; this is a backend failure rather than an empty result -- "
+                "if nothing has been ingested yet the index may not exist, since it "
+                "is created lazily on first ingestion"
+            )
+            metrics.queries_total.labels(outcome="unavailable").inc()
         _audit(
             claims,
             "query",

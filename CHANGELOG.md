@@ -113,6 +113,25 @@ changed in the running system, with the issue/PR reference for the trail.
 
 ### Fixed
 
+- **A query that failed because the embedding service timed out told the caller
+  the corpus was empty** (#595): `rag_search` caught the embedding call and the
+  vector store in one `except`, so a timeout against a populated, curated index
+  returned the note "created lazily on first ingestion, so this is expected if
+  no document has been submitted yet" — which the MCP tool passes into the
+  model's context and the model relays as fact. A user asking about a document
+  that was present, approved, and within their clearance was told it did not
+  exist, in wording that discouraged retrying. Zero results was already correct
+  (FR-26 fails closed); the explanation was not. The two dependencies now report
+  separately: an embedding failure says it is temporary and worth retrying and
+  counts as `nexus_rag_queries_total{outcome="embedding_unavailable"}`, while
+  the vector-store note offers lazy creation as a possible cause instead of
+  asserting it. Operators get the other half of this: the same handler logged
+  embedding timeouts as `vector backend qdrant unavailable`, and because every
+  backend wraps its own failures in `VectorStoreUnavailable`, an `httpx` error
+  reaching it never came from the vector store at all — 201 such warnings were
+  recorded under load while Qdrant sat at 1% CPU, uncalled. No exception text
+  enters either note (#214).
+
 - **NFR-13's Qdrant revert silently no-op'd on a real Postgres connection
   failure** (found by the new live test above, #439): `approve()`/
   `reject()`/`suspend()`'s except-block revert re-read `doc.id`/

@@ -190,8 +190,11 @@ class TestBackendErrorsStayOutOfTheResponse:
         note = result.get("note", "")
         assert "internal.example.mil" not in note
         assert "6333" not in note
-        # Still says the useful thing: this is expected before first ingestion.
-        assert "not queryable" in note
+        # Still says the useful thing -- checked by meaning rather than by phrase,
+        # since #595 reworded this note (it no longer *asserts* "expected before
+        # first ingestion", which was false whenever the index existed and the
+        # backend had merely failed).
+        assert "index" in note and "quer" in note
 
 
 class _Session:
