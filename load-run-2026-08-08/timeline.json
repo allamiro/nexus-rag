@@ -1,0 +1,595 @@
+{
+ "started_epoch": 1786221833.728575,
+ "duration_s": 308.5,
+ "identities": 1000,
+ "phases": [
+  {
+   "phase": 1,
+   "users": 120,
+   "seconds": 30.0,
+   "ops": 408,
+   "outcomes": {
+    "upload:401": 57,
+    "upload:202": 9,
+    "upload:403": 14,
+    "query:error": 184,
+    "query:denied-role": 37,
+    "query:200": 92,
+    "queue:empty": 14,
+    "queue:200": 1,
+    "reject:200": 1
+   },
+   "violations": 0,
+   "violation_samples": [],
+   "latency": {
+    "upload": {
+     "n": 80,
+     "p50_ms": 19,
+     "p95_ms": 29
+    },
+    "query": {
+     "n": 313,
+     "p50_ms": 475,
+     "p95_ms": 1845
+    },
+    "queue": {
+     "n": 15,
+     "p50_ms": 21,
+     "p95_ms": 78
+    },
+    "reject": {
+     "n": 1,
+     "p50_ms": 15,
+     "p95_ms": 15
+    }
+   },
+   "accepted_uploads": 9,
+   "app": {
+    "queries": 104.0,
+    "embed_mean_ms": 273,
+    "rerank_mean_ms": 750,
+    "retrieve_mean_ms": 24,
+    "total_mean_ms": 1047,
+    "cache_hits": 92,
+    "cache_misses": 12
+   },
+   "elapsed_s": 31.2
+  },
+  {
+   "phase": 2,
+   "users": 120,
+   "seconds": 30.0,
+   "ops": 408,
+   "outcomes": {
+    "upload:401": 29,
+    "queue:empty": 25,
+    "query:error": 200,
+    "query:200": 111,
+    "upload:403": 6,
+    "queue:200": 6,
+    "approve:200": 8,
+    "upload:202": 6,
+    "query:denied-role": 25,
+    "reject:200": 3
+   },
+   "violations": 0,
+   "violation_samples": [],
+   "latency": {
+    "upload": {
+     "n": 41,
+     "p50_ms": 16,
+     "p95_ms": 31
+    },
+    "queue": {
+     "n": 31,
+     "p50_ms": 15,
+     "p95_ms": 26
+    },
+    "query": {
+     "n": 336,
+     "p50_ms": 724,
+     "p95_ms": 2015
+    },
+    "approve": {
+     "n": 8,
+     "p50_ms": 17,
+     "p95_ms": 34
+    },
+    "reject": {
+     "n": 3,
+     "p50_ms": 14,
+     "p95_ms": 15
+    }
+   },
+   "accepted_uploads": 6,
+   "app": {
+    "queries": 123.0,
+    "embed_mean_ms": 0,
+    "rerank_mean_ms": 906,
+    "retrieve_mean_ms": 33,
+    "total_mean_ms": 940,
+    "cache_hits": 123,
+    "cache_misses": 0
+   },
+   "elapsed_s": 62.5
+  },
+  {
+   "phase": 3,
+   "users": 500,
+   "seconds": 30.0,
+   "ops": 504,
+   "outcomes": {
+    "upload:401": 51,
+    "queue:empty": 25,
+    "upload:403": 13,
+    "query:error": 249,
+    "query:200": 113,
+    "query:denied-role": 33,
+    "queue:200": 8,
+    "reject:200": 5,
+    "approve:200": 13,
+    "upload:202": 12
+   },
+   "violations": 0,
+   "violation_samples": [],
+   "latency": {
+    "upload": {
+     "n": 76,
+     "p50_ms": 17,
+     "p95_ms": 35
+    },
+    "queue": {
+     "n": 33,
+     "p50_ms": 17,
+     "p95_ms": 37
+    },
+    "query": {
+     "n": 395,
+     "p50_ms": 472,
+     "p95_ms": 2013
+    },
+    "reject": {
+     "n": 5,
+     "p50_ms": 12,
+     "p95_ms": 13
+    },
+    "approve": {
+     "n": 13,
+     "p50_ms": 15,
+     "p95_ms": 50
+    }
+   },
+   "accepted_uploads": 12,
+   "app": {
+    "queries": 122.0,
+    "embed_mean_ms": 0,
+    "rerank_mean_ms": 925,
+    "retrieve_mean_ms": 29,
+    "total_mean_ms": 954,
+    "cache_hits": 122,
+    "cache_misses": 0
+   },
+   "elapsed_s": 93.5
+  },
+  {
+   "phase": 4,
+   "users": 120,
+   "seconds": 30.0,
+   "ops": 360,
+   "outcomes": {
+    "query:error": 154,
+    "upload:401": 41,
+    "queue:empty": 24,
+    "upload:403": 12,
+    "queue:200": 5,
+    "approve:200": 5,
+    "query:denied-role": 25,
+    "query:200": 93,
+    "upload:202": 6,
+    "reject:200": 2
+   },
+   "violations": 0,
+   "violation_samples": [],
+   "latency": {
+    "query": {
+     "n": 272,
+     "p50_ms": 728,
+     "p95_ms": 3452
+    },
+    "upload": {
+     "n": 59,
+     "p50_ms": 24,
+     "p95_ms": 89
+    },
+    "queue": {
+     "n": 29,
+     "p50_ms": 26,
+     "p95_ms": 84
+    },
+    "approve": {
+     "n": 5,
+     "p50_ms": 13,
+     "p95_ms": 78
+    },
+    "reject": {
+     "n": 2,
+     "p50_ms": 15,
+     "p95_ms": 15
+    }
+   },
+   "accepted_uploads": 6,
+   "app": {
+    "queries": 100.0,
+    "embed_mean_ms": 0,
+    "rerank_mean_ms": 1317,
+    "retrieve_mean_ms": 34,
+    "total_mean_ms": 1351,
+    "cache_hits": 100,
+    "cache_misses": 0
+   },
+   "elapsed_s": 125.8
+  },
+  {
+   "phase": 5,
+   "users": 120,
+   "seconds": 30.0,
+   "ops": 408,
+   "outcomes": {
+    "query:denied-role": 44,
+    "query:error": 167,
+    "upload:401": 72,
+    "query:200": 66,
+    "queue:empty": 30,
+    "upload:403": 12,
+    "queue:200": 8,
+    "approve:200": 11,
+    "upload:202": 9,
+    "reject:200": 6,
+    "approve:409": 1
+   },
+   "violations": 0,
+   "violation_samples": [],
+   "latency": {
+    "query": {
+     "n": 277,
+     "p50_ms": 381,
+     "p95_ms": 2234
+    },
+    "upload": {
+     "n": 93,
+     "p50_ms": 30,
+     "p95_ms": 125
+    },
+    "queue": {
+     "n": 38,
+     "p50_ms": 27,
+     "p95_ms": 161
+    },
+    "approve": {
+     "n": 12,
+     "p50_ms": 29,
+     "p95_ms": 104
+    },
+    "reject": {
+     "n": 6,
+     "p50_ms": 39,
+     "p95_ms": 104
+    }
+   },
+   "accepted_uploads": 9,
+   "app": {
+    "queries": 69.0,
+    "embed_mean_ms": 0,
+    "rerank_mean_ms": 1075,
+    "retrieve_mean_ms": 28,
+    "total_mean_ms": 1103,
+    "cache_hits": 69,
+    "cache_misses": 0
+   },
+   "elapsed_s": 156.2
+  },
+  {
+   "phase": 6,
+   "users": 40,
+   "seconds": 30.0,
+   "ops": 408,
+   "outcomes": {
+    "upload:401": 48,
+    "queue:empty": 12,
+    "upload:403": 13,
+    "upload:202": 27,
+    "query:error": 187,
+    "query:denied-role": 25,
+    "query:200": 70,
+    "queue:200": 26,
+    "reject:200": 10,
+    "approve:200": 29,
+    "reject:409": 1,
+    "approve:409": 7
+   },
+   "violations": 0,
+   "violation_samples": [],
+   "latency": {
+    "upload": {
+     "n": 88,
+     "p50_ms": 41,
+     "p95_ms": 173
+    },
+    "queue": {
+     "n": 38,
+     "p50_ms": 50,
+     "p95_ms": 218
+    },
+    "query": {
+     "n": 282,
+     "p50_ms": 374,
+     "p95_ms": 2045
+    },
+    "reject": {
+     "n": 11,
+     "p50_ms": 26,
+     "p95_ms": 121
+    },
+    "approve": {
+     "n": 36,
+     "p50_ms": 29,
+     "p95_ms": 100
+    }
+   },
+   "accepted_uploads": 27,
+   "app": {
+    "queries": 74.0,
+    "embed_mean_ms": 0,
+    "rerank_mean_ms": 885,
+    "retrieve_mean_ms": 27,
+    "total_mean_ms": 913,
+    "cache_hits": 74,
+    "cache_misses": 0
+   },
+   "elapsed_s": 186.5
+  },
+  {
+   "phase": 7,
+   "users": 900,
+   "seconds": 30.0,
+   "ops": 456,
+   "outcomes": {
+    "queue:empty": 14,
+    "upload:401": 29,
+    "queue:200": 5,
+    "upload:202": 8,
+    "reject:200": 4,
+    "approve:200": 6,
+    "query:error": 237,
+    "query:denied-role": 29,
+    "query:200": 122,
+    "upload:403": 12
+   },
+   "violations": 0,
+   "violation_samples": [],
+   "latency": {
+    "queue": {
+     "n": 19,
+     "p50_ms": 25,
+     "p95_ms": 98
+    },
+    "upload": {
+     "n": 49,
+     "p50_ms": 18,
+     "p95_ms": 86
+    },
+    "reject": {
+     "n": 4,
+     "p50_ms": 19,
+     "p95_ms": 53
+    },
+    "approve": {
+     "n": 6,
+     "p50_ms": 26,
+     "p95_ms": 52
+    },
+    "query": {
+     "n": 388,
+     "p50_ms": 637,
+     "p95_ms": 1917
+    }
+   },
+   "accepted_uploads": 8,
+   "app": {
+    "queries": 131.0,
+    "embed_mean_ms": 0,
+    "rerank_mean_ms": 812,
+    "retrieve_mean_ms": 26,
+    "total_mean_ms": 838,
+    "cache_hits": 131,
+    "cache_misses": 0
+   },
+   "elapsed_s": 217.1
+  },
+  {
+   "phase": 8,
+   "users": 900,
+   "seconds": 30.0,
+   "ops": 480,
+   "outcomes": {
+    "query:error": 238,
+    "upload:401": 49,
+    "upload:403": 11,
+    "upload:202": 17,
+    "query:denied-role": 25,
+    "query:200": 103,
+    "queue:empty": 25,
+    "queue:200": 12,
+    "approve:200": 20,
+    "reject:200": 4
+   },
+   "violations": 0,
+   "violation_samples": [],
+   "latency": {
+    "query": {
+     "n": 366,
+     "p50_ms": 506,
+     "p95_ms": 2234
+    },
+    "upload": {
+     "n": 77,
+     "p50_ms": 24,
+     "p95_ms": 54
+    },
+    "queue": {
+     "n": 37,
+     "p50_ms": 22,
+     "p95_ms": 59
+    },
+    "approve": {
+     "n": 20,
+     "p50_ms": 19,
+     "p95_ms": 152
+    },
+    "reject": {
+     "n": 4,
+     "p50_ms": 16,
+     "p95_ms": 19
+    }
+   },
+   "accepted_uploads": 17,
+   "app": {
+    "queries": 110.0,
+    "embed_mean_ms": 0,
+    "rerank_mean_ms": 958,
+    "retrieve_mean_ms": 21,
+    "total_mean_ms": 979,
+    "cache_hits": 110,
+    "cache_misses": 0
+   },
+   "elapsed_s": 247.2
+  },
+  {
+   "phase": 9,
+   "users": 120,
+   "seconds": 30.0,
+   "ops": 504,
+   "outcomes": {
+    "query:error": 199,
+    "upload:401": 69,
+    "queue:empty": 33,
+    "upload:202": 16,
+    "upload:403": 5,
+    "query:denied-role": 58,
+    "query:200": 117,
+    "queue:200": 7,
+    "approve:200": 9,
+    "reject:200": 3
+   },
+   "violations": 0,
+   "violation_samples": [],
+   "latency": {
+    "query": {
+     "n": 374,
+     "p50_ms": 546,
+     "p95_ms": 1981
+    },
+    "upload": {
+     "n": 90,
+     "p50_ms": 19,
+     "p95_ms": 56
+    },
+    "queue": {
+     "n": 40,
+     "p50_ms": 22,
+     "p95_ms": 96
+    },
+    "approve": {
+     "n": 9,
+     "p50_ms": 15,
+     "p95_ms": 39
+    },
+    "reject": {
+     "n": 3,
+     "p50_ms": 28,
+     "p95_ms": 49
+    }
+   },
+   "accepted_uploads": 16,
+   "app": {
+    "queries": 129.0,
+    "embed_mean_ms": 0,
+    "rerank_mean_ms": 854,
+    "retrieve_mean_ms": 18,
+    "total_mean_ms": 872,
+    "cache_hits": 129,
+    "cache_misses": 0
+   },
+   "elapsed_s": 277.5
+  },
+  {
+   "phase": 10,
+   "users": 500,
+   "seconds": 30.0,
+   "ops": 552,
+   "outcomes": {
+    "upload:401": 49,
+    "queue:empty": 25,
+    "upload:403": 19,
+    "query:error": 275,
+    "query:200": 130,
+    "query:denied-role": 38,
+    "upload:202": 8,
+    "queue:200": 8,
+    "approve:200": 9,
+    "reject:200": 6
+   },
+   "violations": 0,
+   "violation_samples": [],
+   "latency": {
+    "upload": {
+     "n": 76,
+     "p50_ms": 17,
+     "p95_ms": 41
+    },
+    "queue": {
+     "n": 33,
+     "p50_ms": 17,
+     "p95_ms": 43
+    },
+    "query": {
+     "n": 443,
+     "p50_ms": 484,
+     "p95_ms": 2054
+    },
+    "approve": {
+     "n": 9,
+     "p50_ms": 13,
+     "p95_ms": 18
+    },
+    "reject": {
+     "n": 6,
+     "p50_ms": 14,
+     "p95_ms": 14
+    }
+   },
+   "accepted_uploads": 8,
+   "app": {
+    "queries": 147.0,
+    "embed_mean_ms": 0,
+    "rerank_mean_ms": 773,
+    "retrieve_mean_ms": 20,
+    "total_mean_ms": 793,
+    "cache_hits": 147,
+    "cache_misses": 0
+   },
+   "elapsed_s": 308.5
+  }
+ ],
+ "metrics_delta": {
+  "embed_sum": 28.61,
+  "embed_count": 1109.0,
+  "rerank_sum": 1009.445,
+  "retrieve_sum": 28.23,
+  "total_sum": 1066.308,
+  "total_count": 1109.0,
+  "cache_hit": 1097.0,
+  "cache_miss": 12.0
+ },
+ "total_violations": 0
+}
