@@ -72,6 +72,18 @@ changed in the running system, with the issue/PR reference for the trail.
   upload form's default option). Seeding stays empty-table-only, so C9's
   runtime admin editing is untouched.
 
+### Changed
+
+- **The numbered step markers on the upload page are now readable** (#578). They
+  rendered an accent colour on a tinted chip, measuring 2.76:1 against their own
+  background in the default theme -- below the 4.5:1 WCAG AA floor for normal
+  text, and below it in four of the five themes. The cause was one token doing two
+  incompatible jobs: chip foreground *and* solid hover fill. The chips now use the
+  body-text token (10.63:1 in the default theme, 8.75-14.40 across the set); the
+  fill role is unchanged, so the accent tint still marks the step. The same fix
+  applies to the active nav item and the sidebar step lists, which shared the
+  pairing. A new per-theme contrast gate keeps any future palette above the floor.
+
 ### Fixed
 
 - **NFR-13's Qdrant revert silently no-op'd on a real Postgres connection
