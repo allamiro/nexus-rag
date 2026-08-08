@@ -173,7 +173,7 @@ def get_banner(
 # The stylesheet defines a token block per theme; anything not in this set has
 # no block and would silently render as the default, so it is rejected rather
 # than accepted-and-ignored.
-THEMES = frozenset({"", "midnight", "phosphor", "slate", "amber", "daylight"})
+THEMES = frozenset({"", "midnight", "phosphor", "slate", "amber", "daylight", "dracula"})
 
 
 class BannerIn(BaseModel):

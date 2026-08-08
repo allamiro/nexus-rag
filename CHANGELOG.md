@@ -17,6 +17,15 @@ changed in the running system, with the issue/PR reference for the trail.
 
 ### Added
 
+- **Dracula is available as a sixth portal theme** (#576), selectable from
+  `/admin` alongside the default (midnight), Phosphor, Slate, Amber and Daylight.
+  The palette is transcribed into the portal's own design tokens rather than
+  pulled from Dracula's CDN stylesheet or npm package, either of which would put
+  a network fetch in the render path and break NFR-1's air-gap assumption. Two
+  token values deliberately differ from the published palette because the
+  published value failed a measured contrast check -- the step badge's foreground
+  and the line colour that draws field borders and the upload page's stepper rail.
+
 - **Live NFR-13 revert-on-partial-failure test** (#439, phase 1 of 2):
   `tests/integration/test_nfr13_live_revert.py` exercises `approve()`/
   `reject()`'s Qdrant-revert-on-Postgres-failure branch against a real

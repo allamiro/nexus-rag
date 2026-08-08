@@ -2550,6 +2550,59 @@ label.checkbox-label {
 }
 
 /* Each theme's ambient gradient follows its own accent. */
+/* Dracula (https://draculatheme.com), mapped onto this portal's own tokens
+   rather than pulled in as a stylesheet. dracula-css ships via CDN/npm, and
+   fetching a stylesheet at runtime is an NFR-1 violation in an air-gapped
+   deployment -- so the official palette is transcribed here and the portal's
+   existing token contract carries it. Every theme must define the same 24
+   tokens; a missing one silently falls back to the default theme's value and
+   produces a half-themed page.
+
+   Palette provenance: bg #282a36, fg #f8f8f2, comment #6272a4, purple #bd93f9,
+   cyan #8be9fd, pink #ff79c6, plus the UI scale (#191a21 darker, #21222c dark,
+   #343746 light, #424450 lighter) and ui-focus #815cd6. `comment` is Dracula's
+   own muted colour, which is why it carries --muted and both --line values. */
+:root[data-theme="dracula"] {
+  --page: #282a36;
+  --page-deep: #191a21;
+  --surface: rgba(52, 55, 70, 0.92);
+  --surface-muted: rgba(33, 34, 44, 0.88);
+  --text: #f8f8f2;
+  --muted: #9aa7d0;
+  --line: rgba(98, 114, 164, 0.32);
+  /* Not Dracula's `comment` (#6272a4), which is what a straight transcription
+     would use here. --line-strong draws field borders, card edges and the #566
+     stepper rail, so WCAG 2.1 SC 1.4.11 applies: 3:1 against the surface behind
+     it. `comment` cannot reach that on this page at any alpha -- fully opaque it
+     measures 2.55:1 against the card -- so the hue is lightened to this theme's
+     own --muted, at the smallest alpha clearing 3.1:1 against both the card
+     (3.14:1) and the page (3.53:1). At the palette's own 0.38 alpha the rail
+     measured 1.43:1, the faintest of any theme here. See #578. */
+  --line-strong: rgba(154, 167, 208, 0.67);
+  --primary: #bd93f9;
+  /* A +10% tint of Dracula purple rather than the palette's ui-focus #815cd6.
+     This token has two jobs that pull in opposite directions: it is the text
+     colour on a --primary-soft chip (the step badge) AND a solid hover fill
+     behind --on-primary. #815cd6 failed both (badge 1.92:1, fill 3.34:1);
+     #caa9fa passes both (4.58:1 and 7.95:1). Brightening on hover is the
+     conventional direction for a dark theme, so the fill still reads right. */
+  --primary-dark: #caa9fa;
+  --primary-soft: rgba(189, 147, 249, 0.16);
+  --cyan: #8be9fd;
+  --navy: #191a21;
+  --navy-soft: #21222c;
+  --header-bg: rgba(33, 34, 44, 0.94);
+  --dropzone-bg: rgba(33, 34, 44, 0.88);
+  --code-bg: rgba(25, 26, 33, 0.6);
+  --glow-a: rgba(189, 147, 249, 0.22);
+  --glow-b: rgba(139, 233, 253, 0.12);
+  --glow-accent: rgba(255, 121, 198, 0.2);
+  --ring: rgba(129, 92, 214, 0.32);
+  --on-primary: #21222c;
+  --invert-bg: #424450;
+  --invert-fg: #f8f8f2;
+}
+
 :root[data-theme="phosphor"] body {
   background-image:
     radial-gradient(ellipse 120% 80% at 18% 108%, rgba(53, 214, 127, 0.5), transparent 62%),
@@ -2558,7 +2611,8 @@ label.checkbox-label {
 }
 
 :root[data-theme="slate"] body,
-:root[data-theme="amber"] body {
+:root[data-theme="amber"] body,
+:root[data-theme="dracula"] body {
   background-image:
     radial-gradient(ellipse 120% 80% at 18% 108%, var(--primary-soft), transparent 62%),
     linear-gradient(178deg, var(--page-deep) 0%, var(--page) 55%, var(--page-deep) 100%);
