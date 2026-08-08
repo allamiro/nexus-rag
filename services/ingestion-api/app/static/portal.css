@@ -361,7 +361,7 @@ svg {
   place-items: center;
   border-radius: 10px;
   background: var(--surface-muted);
-  color: var(--primary-dark);
+  color: var(--primary);
   font-size: 0.78rem;
   font-weight: 850;
 }
@@ -496,12 +496,21 @@ svg {
   margin-bottom: 26px;
 }
 
+/* Issue #578: the accent labels below (.eyebrow, .user-avatar, .info-callout's
+   icon) use --primary, not --primary-dark. --primary-dark has to double as a
+   solid hover fill behind --on-primary, so on a dark theme it cannot also be
+   light enough to read as small bold text: measured 4.04:1 (eyebrow), 3.76:1
+   (avatar) and 3.70:1 (callout icon) on the default theme, all below the 4.5:1
+   AA floor, and slate failed two of the three. --primary clears it in all six
+   themes while keeping the accent colour, which is the point of these labels --
+   moving them to --text would have removed it. Enforced by
+   tests/test_theme_contrast.py. */
 .eyebrow {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 9px;
-  color: var(--primary-dark);
+  color: var(--primary);
   font-size: 0.71rem;
   font-weight: 850;
   letter-spacing: 0.12em;
@@ -1084,7 +1093,7 @@ code {
   place-items: center;
   border-radius: 7px;
   background: var(--surface-muted);
-  color: var(--primary-dark);
+  color: var(--primary);
   font-size: 0.75rem;
   font-weight: 900;
 }

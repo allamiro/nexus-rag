@@ -83,6 +83,15 @@ changed in the running system, with the issue/PR reference for the trail.
 
 ### Changed
 
+- **The accent labels on every portal page now meet WCAG AA** (#578, closing the
+  issue): the "DOCUMENT INTAKE"-style eyebrow, the signed-in avatar initial, and
+  the info-callout icon rendered an accent that measured 4.04:1, 3.76:1 and 3.70:1
+  against their real backgrounds on the default theme -- below the 4.5:1 floor for
+  normal text -- with two of the three also failing on Slate. They now use the
+  brighter accent token, clearing AA in all six themes (worst pairing 5.42:1) while
+  keeping the accent colour that is the point of them. **Operator-visible:** those
+  labels read slightly brighter; nothing moves or changes shape.
+
 - **Field borders, card edges and the upload page's stepper rail are more visible
   in every theme** (#578). They measured 1.61:1 (Daylight) to 2.40:1 against the
   surface behind them -- below the 3:1 WCAG 2.1 minimum for the visual boundary of
